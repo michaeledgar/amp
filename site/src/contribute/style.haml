@@ -1,0 +1,297 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Contribute
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "contribute")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 Style Guidelines
+          %p
+            If you want to contribute to #{blue_amp}, we'd love for you to stick to these guidelines as best as you can. #{ruby_link} has a very flexible, beautiful syntax, which means it's quite easy to write quite ugly code in it. This is <b>not</b> a guide to idiomatic Ruby. It's not even a guide to good-looking Ruby. It's just how we like our code done. This document is a work in progress, so if you see something missing, let us know. If you submit code, we'll eventually end up reformatting it to this style anyway. So try to use this guide!
+          
+          %h3 Table of Contents
+          %ul.tight
+            %li #{link_to "#general", "General Coding"}
+            %ul.tight
+              %li #{link_to "#multiple-assignment", "Multiple Assignment"}
+              %li #{link_to "#80-columns", "80 Columns"}
+              %li #{link_to "#block-bracing", "Block Bracing"}
+              %li #{link_to "#ternary", "Ternary and &&"}
+              %li #{link_to "#for-in", "for...in"}
+            %li #{link_to "#variables", "Variable Names"}
+            %ul.tight
+              %li #{link_to "#descriptive", "Be Descriptive!"}
+              %li #{link_to "#underscores", "Underscores"}
+            %li #{link_to "#method-defs", "Method Definitions"}
+            %ul.tight
+              %li #{link_to "#parens", "Parentheses"}
+              %li #{link_to "#descriptive-methods", "Descriptive Method Names"}
+              %li #{link_to "#one-liners", "Minimize One-line Methods"}
+              %li #{link_to "#spacing", "Spacing!"}
+              %li #{link_to "#class-methods", "Class (Singleton) Methods"}
+            %li #{link_to "#calling-methods", "Calling Methods"}
+            %ul.tight
+              %li #{link_to "#calling-parens", "Parentheses (Redux)"}
+              %li #{link_to "#options-hashes", "Options Hashes"}
+              
+          %a.anchor{:name => "general"}
+          %h2 General Coding
+          %a.anchor{:name => "multiple-assignment"}
+          %h3 Multiple Assignment
+          %p
+            Assigning more than one variable on one line is awesome. As long as it makes sense. If the variables are not related, or the assignments are complex, then you just made things much more confusing. So if you use multiple assignment, the variables should be related, and the values should be concise.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              repo, user_msg, command_arg = options[:repo], gets, parse_args(2)
+              val1, val2 = proc { |input| input * input.to_i }, proc { |input| input + input.to_i }
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              list, others, queue = [], [], []
+              text, date, user = options[:text], options[:date], options[:user]
+
+          %a.anchor{:name => "80-columns"}
+          %h3 80 Columns. If not, 100 columns.
+          %p Self explanatory. We know our long method names make this difficult at times, and we sympathize. Please keep it skinny.
+          
+          %a.anchor{:name => "block-bracing"}
+          %h3 Block Bracing
+          %p
+            Blocks can use "do...end" or "{ ... }" syntax. Braces are to be used for one-line blocks, do...end for multi-line blocks.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              list.map { |item|
+                item.to_s
+              }
+              list.map do |item|; item.to_s; end
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              list.map {|item| item.to_s}
+              list.map do |item|
+                item.to_s
+              end
+          
+          %a.anchor{:name => "ternary"}
+          %h3 Ternary and &&
+          %p
+            Use ternary when possible. Ruby, sadly, makes a full-out if..else..end block a minimum of 5 lines. So use ternary when you can - it's idiomatic and good to get used to. Also, for short "if X then Y" statements, consider using the && syntax, see below.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              if index > 10
+                return 5
+              else
+                return 7
+              end
+              if idx
+                x = idx
+              end
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              return index > 10 ? 5 : 7
+              idx && x = idx
+          
+          %a.anchor{:name => "for-in"}
+          %h3 Never use for..in.
+          %p
+            The #{shellscript "for x in list"} syntax doesn't fly with us. #{link_to "http://blog.grayproductions.net/articles/the_evils_of_the_for_loop", "It isn't exactly the same as calling #each"}. Plus, you can't use { brace } syntax with the for…in loop. So just use #each.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              for x in 0..9 do
+                p x
+              end
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              0..9.each {|i| p i }
+          
+          %a.anchor{:name => "variables"}
+          %h2 Variable Names
+          %a.anchor{:name => "descriptive"}
+          %h3 Descriptive!
+          %p
+            Variable names must be descriptive. When dealing with complex systems, nothing more will scare off developers than these kind of variables: #{shellscript "ctx"}, #{shellscript "octx"}, #{shellscript "wctx"}. In #{blue_amp}'s source, those variables should be named #{shellscript "changeset"}, #{shellscript "other_changeset"}, #{shellscript "working_changeset"}. Yes, it's so much longer. We don't care. If you use descriptive variable names, anyone reading your code knows what that variable is for.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              acs = cs.ancestor
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              ancestor_changeset = current_changeset.ancestor
+          %a.anchor{:name => "underscores"}
+          %h3 under_scores, not CaMeLcAsE
+          %p
+            If your variable name has two words, and is longer than say, 6 letters, put an underscore between the words. Don't use camelcase.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              currentRepositoryList = currentRepository.changesets
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              current_repository_list = current_repository.changesets
+          
+          %a.anchor{:name => "method-defs"}
+          %h2 Method Definitions
+          %a.anchor{:name => "parens"}
+          %h3 Parentheses!
+          %p
+            When defining a method that takes arguments, include the parentheses around the arguments. If the method has no arguments, do not include an empty set of parentheses.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def silly_method message, *args
+                puts msg + args.join("\n")
+              end
+              def empty_method()
+                puts "Empty"
+              end
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def silly_method(message, *args)
+                puts msg + args.join("\n")
+              end
+              def empty_method
+                puts "Empty"
+              end
+          %a.anchor{:name => "descriptive-methods"}
+          %h3 Descriptive Method Names
+          %p
+            The title of a method is like the title of a poem: it should provide insight. Make your method names mean something. Now, we have in some cases very long method names for clarity of those reading our documentation. It is acceptable to provide a nice, shorter alias to the method, after defining it with a descriptive name. 
+          %p Below is a comparison between the #{hg_link} methods (slightly Ruby-tized) to the corresponding #{blue_amp} methods here. They perform the exact same operation.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def parents(node)
+              def parentrevs(rev)
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def parents_for_node(id)
+              def parent_indices_for_index(index)
+          
+          %a.anchor{:name => "one-liners"}
+          %h3 Minimize One-line Definitions
+          %p
+            There's a time and a place for everything, and one-line methods have a place. If your method body (between <i>def</i> and <i>end</i>) is already one line, and contains no complex logic, then a one-line method might be acceptable. Otherwise, make it a normal, multiline method.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              # has 3 separate body lines packed into 1
+              def list_stuff(arg1, arg2); arg3 = arg1 + arg2; puts arg3; puts arg1+arg2; end
+              # one line method body, but it's complex enough to put on its own line
+              def silly_one_liner(arg1); arg1.map {|i| i.nil? ? "" : i.to_s}; end
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def silly_one_liner(arg1)
+                arg1.map {|i| i.nil? ? "" : i.to_s}
+              end
+              # simple enough that one line might work
+              def get_value; self.value; end
+          
+          %a.anchor{:name => "spacing"}
+          %h3 Spacing!
+          %p Spacing in your method definitions is a picky matter, and we'll be the first to admit that our style is pretty arbitrary. If you make a good case for a different spacing style, we'll hear it. But for now: put spaces between arguments, none between method name and the following open-parentheses. For optional arguments, but do put spaces around the equals sign. For "splat" or variable-argument holders, don't put spaces between the * and the variable name.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def method_one(arg1,arg2)
+              def method_two (arg1, arg2, * rest)
+              def method_three(arg1, arg2, arg3 = {})
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              def method_one(arg1, arg2)
+              def method_two(arg1, arg2, *rest)
+              def method_three(arg1, arg2, arg3={})
+              
+          %a.anchor{:name => "class-methods"}
+          %h3 Class (Singleton) Methods
+          %p
+            If you are going to be adding methods to a class, don't use #{shellscript "def self.method"}, use the #{shellscript "class << self"} syntax. This helps delineate which sections of the code belong to the class, and which sections are instance methods. Also, if you need to add class-level attr_accessors, the #{shellscript "class << self"} block is the best way to do that.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              class Silly
+                def self.monkey
+                  puts "monkey"
+                end
+                def instance_method
+                  puts "yarr"
+                end
+              end
+                
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              class Silly
+                class << self
+                  def monkey
+                    puts "monkey"
+                  end
+                end
+                def instance_method
+                  puts "yarr"
+                end
+              end
+          %a.anchor{:name => "calling-methods"}
+          %h2 Calling Methods
+          %a.anchor{:name => "calling-parens"}
+          %h3 Parentheses?
+          %p
+            This one's a tricky one. Generally speaking, you don't need to put parentheses around method arguments in Ruby unless you are nesting method calls. (This isn't always true, there are a few exceptions) This has the effect of making some method calls look like statements. However, you can't chain methods off of a no-parentheses method call, and they have some quirks in conditionals. However, for simple, single method calls, <b>we like this technique.</b> The examples should help clear this up.
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              # always use parentheses on calls inside a block or as an argument to a method
+              puts list.map {|item| item.unshift "h"}
+              # You don't need parentheses here. Strip 'em.
+              puts("hi there")
+              # weirdly enough, this is a syntax error. The exist? call needs parentheses.
+              if file.any? && File.exist? file
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              puts list.map {|item| item.unshift("h") }
+            
+              STDERR.puts message
+              
+              if File.exist? file
+                input = File.read file
+              end
+              
+              my_repo.commit revisions, files, :text => options[:text]
+          %a.anchor{:name => "options-hashes"}
+          %h3 Options Hashes
+          %p
+            Ruby has a neat way of doing named optional arguments, until Ruby 2.0 comes out: options hashes. If a method takes a hash as its last argument, you don't need to put { curly braces } around the hash argument. These hashes typically take #{link_to "http://www.troubleshooters.com/codecorn/ruby/symbols.htm", "Symbols"} as keys, instead of strings, due to memory savings. There are some methods in #{blue_amp} that can take many, many options, and formatting calls to these methods can be tricky. The general rule is: if your options wrap to another line, put each option on its own line. Here's how it's done:
+          %p <b>Unacceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              result = repo.commit arg1, arg2, "text" => "hi", "user" => "hello"
+              result = repo.commit arg1, arg2, :text => "hi", :user => "hello", :date => Time.now, 
+                                               :changeset_base => repo[arg1.to_i], :ancestor => some_other_changeset
+          %p <b>Acceptable:</b>
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              result = repo.commit arg1, arg2, :text => "hi", :user => "hello"
+              result = repo.commit arg1, arg2, :text => "hi", 
+                                               :user => "hello", 
+                                               :date => Time.now, 
+                                               :changeset_base => repo[arg1.to_i], 
+                                               :ancestor => some_other_changeset
+    = render("include/_footer.haml")

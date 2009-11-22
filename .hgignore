@@ -1,0 +1,26 @@
+syntax: glob
+.git/*
+doc/*
+.idea/*
+.yardoc
+test/store_tests/store/*
+test/localrepo_tests/testrepo/*
+test/localrepo_tests/.hg/*
+test/functional_tests/testrepo/*
+test/functional_tests/conflictrepo/*
+test/functional_tests/newrepo/*
+test/merge_tests/local.txt.out
+test/functional_tests/commit.log
+test/functional_tests/dirstate
+ext/*/*/*.o
+ext/*/*/*.bundle
+ext/*/*/Makefile
+ext/*/*.o
+ext/*/*.bundle
+ext/*/Makefile
+amp_serve_users.db
+pkg/*
+site/build/*
+site/src/doc*
+syntax: regexp
+\.DS_Store

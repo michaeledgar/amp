@@ -1,0 +1,32 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Get Amp
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "get")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 Get #{blue_amp "Amp"}
+          %p
+            Amp is written in #{ruby_link}, so you'll need that first. We don't have a self-contained installer, yet. If you'd like to help with that, #{link_to "/contribute/", "check out how to help"}!
+          %p
+            Amp also has a couple other, very basic, requirements right now.
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li Linux or Mac OS X. Testing on Linux has been minimal as of yet
+            %li Ruby 1.8.6+, Ruby 1.9
+            %li A C compiler is required for #{blue_amp}'s high-performance extensions
+          %p
+            Once you have #{ruby_link}, you simply need to run the following command from your favorite command line:
+            .floatleft.dark.rounded.codeholder
+              :syntaxhighlighter
+                #!highlighting syntax=shell-unix-generic
+                sudo gem install amp --no-wrappers
+          %p
+            Amp's gem is hosted on #{link_to "http://www.rubyforge.org/", "Rubyforge"} and #{link_to "http://www.gemcutter.org/", "Gemcutter"}.
+          
+    = render("include/_footer.haml")

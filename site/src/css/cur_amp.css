@@ -1,0 +1,185 @@
+@charset "UTF-8";
+ul, li {
+	list-style-type:none;
+}
+a {
+	color: blue;
+	text-decoration: none;
+}
+body {
+	font: 100% Verdana, Arial, Helvetica, sans-serif;
+	background: #000;
+	margin: 0; /* it's good practice to zero the margin and padding of the body element to account for differing browser defaults */
+	padding: 0;
+	text-align: center; /* this centers the container in IE 5* browsers. The text is then set to the left aligned default in the #container selector */
+	color: #000000;
+	line-height:1.2em;
+}
+.oneColFixCtr #container {
+	width: 100%;  /* using 20px less than a full 800px width allows for browser chrome and avoids a horizontal scroll bar */
+	background: #FFFFFF; /* the auto margins (in conjunction with a width) center the page */
+	border: 0px solid #000000;
+	text-align: left; /* this overrides the text-align: center on the body element. */
+	clear: left;
+	float: left;
+	height: auto;
+	margin-top: 0;
+	margin-right: auto;
+	margin-bottom: 0;
+	margin-left: auto;
+	position: relative;
+}
+.oneColFixCtr #mainContent {
+	padding: 0 20px; /* remember that padding is the space inside the div box and margin is the space outside the div box */
+}
+.amp {
+  color: #b8feff;
+}
+.section-header .amp {
+  color: #b8feff;
+}
+/*.amp {
+  color: #b8feff;
+}
+*/
+#header {
+	clear: left;
+	float: left;
+	height: 90px;
+	width: 100%;
+	position: relative;
+}
+#footer {
+	clear: left;
+	float: left;
+	height: 90px;
+	width: 100%;
+	position: relative;
+	text-align:center;
+	padding-top:1em;
+}
+#footer p {
+	position:relative;
+	float:left;
+	clear:left;
+	width:100%;
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	color:#999999;
+	font-size:10px;
+}
+.body-width {
+	height: 100%;
+	width: 780px;
+	margin-right: auto;
+	margin-left: auto;
+}
+
+.floatleft {
+	position: relative;
+	float:left;
+}
+
+#amp-logo {
+	position:absolute;
+	top:3px;
+	left:0px;
+	z-index:100;
+}
+
+#amp-revolution {
+	position:absolute;
+	top:73px;
+	left:90px;
+	z-index:100;
+}
+
+#navbar {
+	position:absolute;
+	top:65px;
+	left:319px;
+	width: 595px;
+}
+
+#navbar li {
+	float:left;
+	clear:none;
+	background: url(../images/tab-sliding-right.png) no-repeat right top;
+	margin: 5px;
+	height: 20px;
+}
+
+#navbar a {
+	display: block;
+	background: url(../images/tab-sliding-left.png) no-repeat left top;
+	padding: 1px 5px 0px;
+	height: 20px;
+	color: black;
+	font-family:"Lucida Grande", "Lucida Sans Unicode", sans-serif;
+	font-size:13px;
+}
+#navbar li.selected, #navbar li.selected a {
+	background: white;
+}
+
+.section-header {
+	position:relative;
+	float:left;
+	clear:left;
+	background-color: black;
+	color:white;
+	font-family:"Arial Black", Arial, Helvetica, sans-serif;
+	font-weight:bold;
+	font-size:14px;
+	width:auto;
+	padding:3px 13px;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+}
+
+.rounded {
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+}
+
+.bigbox {
+	position:relative;
+	float:left;
+	clear:left;
+	padding:3px 10px 10px;
+	width:93%;
+	margin-top:8px;
+}
+
+.bigbox p {
+	font-family: "Helvetica Neue", Helvetica, Verdana, Arial, Helvetica, sans-serif;
+	font-size:14px;
+	width:100%;
+	margin: 3px;
+}
+
+.bigbox ul {
+	font-family: "Helvetica Neue", Helvetica, Verdana, Arial, Helvetica, sans-serif;
+	font-size:14px;
+	margin:3px 3px 3px 30px;
+}
+
+ul.bullets, ul.bullets li { list-style-type:disc; }
+ul.bluelist { color: #1b2278; }
+
+.half-border { border-right: solid 1px #ccc; border-bottom: solid 1px #ccc; }
+
+.blue { }
+.pink { background-color: #e6c5d4; color: #373636; font-family: "Arial Black", Arial, Helvetica, sans-serif; font-size:18px; font-weight: bold; }
+.pink h1 { text-align:center; width:100%; font-size:14px; }
+.pink a, .pink a:hover, .pink a:active, .pink a:visited { color: #700707; text-decoration: underline; }
+.teal { background-color:#bcddee; color: #414141;  font-family: "Arial Black", Arial, Helvetica, sans-serif; font-size:12px; font-weight: bold; }
+.teal a, .teal a:hover, .teal a:active, .teal a:visited { color: #1b2278; text-decoration: underline; }
+.teal tt { color: #cf6844; }
+.red-text  { color: #700707; }
+.yellow { background-color: #ffe7b8; }
+.yellow a, .yellow a:hover, .yellow a:active, .yellow a:visited { color: #1b2278; text-decoration: underline; }
+.dark { background-color:#111111; }
+
+pre.code {
+	padding-top:8px;
+}

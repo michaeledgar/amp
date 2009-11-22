@@ -1,0 +1,16 @@
+First line
+second line
+third line
+3 1/2th line
+fourth line
+fifth line
+sixth line
+<<<<<<< local
+seventh line MODIFIED
+=======
+seventh line CHANGED
+>>>>>>> other
+eighth line
+ninth line
+9 1/2th line
+tenth line

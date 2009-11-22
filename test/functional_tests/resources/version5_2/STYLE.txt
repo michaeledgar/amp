@@ -1,0 +1,14 @@
+The Amp Commandments Redux:
+    1. Thou shalt not useth the "for...in" syntax.
+    2. Thou shalt useth only but 80 columns, for those who useth the lord's
+       editors, vim and emacs. (emacs sucks - oh no he didn't)
+    3. Thou shalt preface thine variables with _ only when thou needest,
+       lest ye face judgement for this most grave sin. (this isn't python.
+       no __method__ is necessary!)
+    4. Thine variables should have descriptive names, for thine ruby might
+       read like the psalms.
+    5. Thine variables, longer than 6 letters and composed of two or more
+       words, shall separate those words with the lord's underscore, so thine
+       code shall flow like the Nile herself.
+    6. Thou shalt rake thine yard frequently, to be sure thine code is
+       well-documented for thine neighbors.

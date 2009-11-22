@@ -1,0 +1,57 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Ampfiles
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "about")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 What's an Ampfile?
+          %p
+            #{blue_amp "Ampfiles"} are how you load your customizations into #{blue_amp}. INI files are handy, and we use them maintain compatibility with the #{hg_link} distribution. However, you can't put code in an INI file. And the files, quite frankly, aren't very pretty. That's why we have ampfiles.
+          %p
+            For those familiar with #{ruby_link}, ampfiles are sort of similar to #{link_to "http://rake.rubyforge.org/", "Rake"}'s Rakefiles. When you run #{blue_amp}, amp will look in the current directory for a file called "Ampfile" (or "ampfile", "ampfile.rb", etc.). If it doesn't find one it looks in the folder containing the current one - and up and up until it gives up. If it doesn't find one, that's ok - you don't need an ampfile to use #{blue_amp}!
+          %h2 So how does Amp use Ampfiles?
+          %p
+            The cool thing about ampfiles is that they're just Ruby code. So #{blue_amp} just runs your ampfile as Ruby. "But wait," you say, "what use is running a script every time I use amp?" Well, silly, we give you a bunch of Ruby methods you can use to modify #{blue_amp}, and when your ampfile is run, those changes happen!
+          %h2 ~/.amprc
+          %p
+            A quick note: #{blue_amp} will also run the file located at #{shellscript "~/.amprc"} (~ means "your user directory"), right before running any ampfiles. That way, the ampfile in your repository can override any global settings in #{shellscript ".amprc"}.
+          %h2 Example! Now!
+          %p
+            Ok, ok. For starters, you can modify existing commands very simply. In Ruby, you can open a class up, add a method, and close it again. In Amp, you do that like this:
+          .rounded.dark.codeholder.floatleft
+            :syntaxhighlighter
+              command "status" do |c|
+                c.default :"no-color", true
+              end
+          %p
+            If you put that in your Ampfile, the #{shellscript "amp status"} command will no longer use color. Why don't we create a new command entirely?
+          .rounded.dark.codeholder.floatleft
+            :syntaxhighlighter
+              command "stats" do |c|
+                c.workflow :hg
+                c.desc "Prints how many commits each user has contributed"
+                c.on_run do |opts, args|
+                  repo = opts[:repository]
+                  users = Hash.new {|h, k| h[k] = 0}
+                  repo.each do |changeset|
+                    users[changeset.user] += 1
+                  end
+                  users.to_a.sort {|a,b| b[1] <=> a[1]}.each do |u,c|
+                    puts "\#{u}: \#{c}"
+                  end
+                end
+              end
+          %p
+            You can put that in your ampfile and get commit statistics right away. In fact, it's in #{blue_amp}'s ampfile. If you run #{shellscript "amp help"}, your new command will be in the list! Why does this work? Well, it's not much of a secret: <b>You're actually writing the exact same code used to create the built-in amp commands.</b> If you look at our code, each of the commands you know and love, such as #{shellscript "amp commit"}, #{shellscript "amp move"} are written using this exact same code style.
+          %h2 Cool! What now?
+          %p
+            Well, start hacking away! You might find the #{commands_link} section interesting, as well as our #{link_to "/learn/", "Learn Amp"} pages, where you can find the #{blue_amp} API. We'll be setting up a place for useful snippets to be posted soon.
+          
+    = render("include/_footer.haml")

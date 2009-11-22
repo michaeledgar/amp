@@ -1,0 +1,33 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | About Amp
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "about")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 About #{blue_amp "Amp"}
+          %p
+            #{blue_amp "Amp"} is a general-purpose version-control system. It currently implements #{hg_link}, and we hope to support #{git_link}, #{link_to "http://bazaar-vcs.org/", "bazaar"}, #{link_to "http://subversion.tigris.org/", "svn"}, #{link_to "http://www.nongnu.org/cvs/", "cvs" }, and #{link_to "http://darcs.net/", "darcs" } in the future. Why? Well, that leads us to the question: "Why #{blue_amp "Amp"}?"
+          %h2 #{blue_amp "Amp"} is NOT:
+          %p
+            #{blue_amp "Amp"} does not define a repository format, and most likely never will.
+          %h2 Then why make a VCS?
+          %p
+            #{blue_amp "Amp"} exists because there's plenty of excellent repository formats out there, but none of them are truly good <em>software</em>. We chose #{hg_link} as our first VCS to implement because it comes closest to what we feel is a solid user experience, and that's what we're building upon.
+            %br/
+            %br/
+            #{blue_amp "Amp"} exists to make VCS work for you. Want to add your own commands? #{commands_link "Write a few lines of code"}. Want to use git's commands on a Mercurial repository, switches and all? #{blue_amp "Amp"} is #{workflows_link "working on it"}. Our goal is to produce a piece of software that lets you forget that you're working on #{git_link} project one moment and a #{hg_link} project the next.
+          %h2 #{blue_amp "Amp"}'s Features
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li #{workflows_link "Workflows"} - customizable command sets (e.g. git's commands, svn's commands)
+            %li #{commands_link "Commands"} - work with your VCS on your terms
+            %li #{ampfile_link "Ampfiles"} - tweak amp's settings for a specific repository with one file
+            %li Want more features? #{link_to "/contribute/", "Help develop"} #{blue_amp "Amp"}! We've got a lot planned! 
+          
+    = render("include/_footer.haml")

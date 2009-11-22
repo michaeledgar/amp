@@ -1,0 +1,23 @@
+
+
+AMP: Enter commit message. Lines beginning with 'AMP:' are removed.
+AMP: --
+AMP: <%= user %>
+<%- if p2 != nil -%>
+AMP: branch merge
+<%- end -%>
+<%- if branch -%>
+AMP: branch '<%= branch %>'
+<%- end -%>
+<%- added.each do |file| -%>
+AMP: added <%= file %>
+<%- end -%>
+<%- updated.each do |file| -%>
+AMP: changed <%= file %>
+<%- end -%>
+<%- removed.each do |file| -%>
+AMP: removed <%= file %>
+<%- end -%>
+<%- if added.size + updated.size + removed.size == 0 -%>
+AMP: no files changed
+<%- end -%>

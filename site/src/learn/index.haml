@@ -1,0 +1,46 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Learn Amp
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    - @selected = "learn"
+    = render("include/_header.haml", :selected => "learn")
+    #container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %br/
+          %h2 Learning #{blue_amp("Amp")}
+          %p
+            Amp is still in its building stages, but there are some things to learn about it that are different from other VCS software.
+            Currently, the main commands are (nearly) identical to #{hg_link}'s, so you should know how to use Mercurial before using
+            #{blue_amp}. There's still plenty of other things that are different.
+          %h2 Templates
+          %p 
+            Templates are damn important to us. We're still hammering out the API, but if you run
+            %span.shellscript amp templates
+            you can use our interactive template editor. You can write templates in #{link_to "http://www.ruby-doc.org/stdlib/libdoc/erb/rdoc/index.html", "ERb"}, and access all the variables #{blue_amp} has. At the moment, #{blue_amp} only comes with one template for viewing changesets (such as in
+            %span.shellscript amp log
+            or
+            %span.shellscript amp head
+            ), and one template for commit messages. Both match (roughly) the default templates used by #{hg_link}. However, you can add your own, and save them as either global templates (usable in any repository) or local (usable only in the current repository).
+          %h2 Ampfiles
+          %p 
+            The #{ampfile_link} is how you handle high-level configuration of an #{blue_amp} repository. This is where you add commands, hooks, modify command defaults, and so on. We have a full page discussing ampfiles #{ampfile_link "here"}, but we'll leave you with this snippet.
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              command :push do |c|
+                c.before { system "rake test" }
+              end
+          %p
+            Those 3 lines add a block of code which will run every time you run
+            %span.shellscript amp push
+            , right before the actual push happens, which will run unit tests. If a test fails, the block returns false, which cancels the push. If the tests pass, the block returns true, and the push happens.
+          %h2 
+            = link_to "/learn/docs/", "API Documentation"
+          %p
+            One of the most important aspects of our code is that it should be highly documented. We're sitting at around 45% comment/LOC ratio, and there's still plenty of places we want more documentation. We use #{yard_link} to document our code. You can find the complete documentation for our code (and the dependencies we've included in the #{blue_amp} source) by clicking "API Documentation" above, or just clicking #{link_to "/learn/docs/", "right here"}.
+    = render("include/_footer.haml")

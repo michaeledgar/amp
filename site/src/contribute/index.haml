@@ -1,0 +1,59 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Contribute
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "contribute")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 How can I help?
+          %p
+            There's a ton you can do! We need people to write nice fancy writeups for the site, and we need developers who can add features. We've got #{link_to "#list", "lots of places you can help"}, and a #{link_to "#features", "good list of features"} we want to develop to reach #{blue_amp}'s goals, and developers will make that easier! We have an account at #{lighthouse_link} - if you see an unclaimed bug, fix it!
+          %h2 OK, but how do I submit code?
+          %p
+            #{blue_amp "Amp"} is run on a "commit bit" policy. Get one patch approved, and you have full repo access. Our source is #{link_to "http://bitbucket.org/carbonica/amp/", "hosted at BitBucket"} - just fork us and send a pull request. 
+          %p 
+            We don't have strict requirements about how you format your patch, but keep in mind that we have to verify your patch is good before we accept the pull. So here's a list of things that will make that faster if you are submitting code:
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li Try to stick to the #{link_to "/contribute/style.html", "code style guidelines"}.
+            %li Include tests! Not required, but it certainly makes it easier to check if your patch works.
+            %li Document your new code! Methods are always documented in #{blue_amp} - end of story. 
+            %li Comments-in-code are great for non-trivial algorithms, but we'll be the first to admit our code doesn't have enough inline comments.
+            %li Provide some way for us to know what your patch does - even if you think it's obvious.
+          %p
+            Again, these aren't requirements, but we want you to work on #{blue_amp}, which means we want to approve your patches!
+          %a{:name => "list"}
+          %h2 I'm ready to jump in! Any ideas?
+          %p
+            Here's a list of things to think about, in order from least-to-most effort required:
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li Write for this site! The source for the website is actually stored in the amp repository - a #{shellscript "rake build-website"} will rebuild the site from the source. We like write-ups on major amp features, especially, but anything you think could help, send it in!
+            %li Clean up code in general. If you see code violating style guidelines, fix it up. If you see obvious silliness (branches that never execute, superfluous conditionals, so on) then lend a hand and patch it up!
+            %li Comment existing code. Some methods are undocumented, some enormous methods don't have inline comments explaining things.
+            %li Write tests! We don't have nearly enough tests, and we want to maximize both unit test (where possible) and functional test coverage.
+            %li Ruby-tize the code. There are places where, in our innocent pursuit to port #{hg_link} to Ruby, we directly ported algorithms. We apologize. Help us make it idiomatic.
+            %li Fix bugs on #{lighthouse_link}. These might be simple fixes, they might not. Either way, we'll give you an e-hug.
+            %li Refactor huge methods. There's a few instances where there are simply enormous, mind-numbing methods that need to be cleaned up. They're often the most important methods too, which is probably why nobody has done it yet. Be a hero.
+            %li Take a look at our #{link_to "#features", "feature hit-list"}. These are major goals we hope to achieve in #{blue_amp}'s development. The core team focuses on these when possible.
+          %h2 Feature Hit-List
+          %p
+            These are the features that take the most work, and are the most important to #{blue_amp}'s development.
+          %a{:name => "features"}
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li Support for other repository formats: #{git_link}, #{link_to "http://bazaar-vcs.org/", "bazaar"}, #{link_to "http://subversion.tigris.org/", "svn"}, #{link_to "http://www.nongnu.org/cvs/", "cvs" }, #{link_to "http://darcs.net/", "darcs" }. No shelling out (except when stubbing methods).
+            %li #{workflows_link "Workflows"} for other VCS systems - commands that emulate #{shellscript "bzr push"} instead of #{shellscript "hg push"}, for example.
+            %li Windows support. Honestly, this is primarily just going to be handling file and system paths differently.
+            %li GUI Application on top of #{blue_amp}. Think about that - the one app would support all major VCSs. Cool, eh?
+          %h2 Who works on #{blue_amp}?
+          %p Here's a list of all our contributors, sorted by number of commits:
+          %ul.contributor-list
+            - commit_count.each do |user, commits|
+              %li
+                %span{:style => "width:80px;"}= commits.to_s
+                %span{:style => "width:400px;"}= user
+    = render("include/_footer.haml")

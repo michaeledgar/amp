@@ -1,0 +1,28 @@
+- total_name = ""
+%a.pagebutton{:href => "/code/#{changeset_node}/#{total_name}"} /
+- parts = path.split("/").map {|p| p + '/' }
+- parts.last.chop! if vf_cur && parts.last
+- parts.each do |item|
+  - total_name += item
+  = link_to_file root, changeset_node, total_name, :text => item, :style => "clear:none;", :class => "pagebutton"
+  
+%table.browser-list
+  %tr
+    %th.filename Filename
+    %th.date Date
+    %th.message Message
+  - file_list.each do |file|
+    %tr{:class => (path + "/" + file[:link] == orig_path) ? "selected" : ""}
+      - if file[:type] == :file
+        - fl = repo.file(path + '/' + file[:name])
+        - last = fl.index[-2].link_rev
+      %td.filename
+        = link_to_file root, changeset_node, file[:link], :text => file[:name]
+      %td.date
+        - if file[:type] == :file
+          = rel_date repo[last].easy_date
+      %td.message
+        - if file[:type] == :directory
+          %i (directory)
+        - else
+          = repo[last].description

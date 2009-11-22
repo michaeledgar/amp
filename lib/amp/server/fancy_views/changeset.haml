@@ -1,0 +1,31 @@
+!!!
+%html
+  %head
+    %title== Changeset: #{@changeset.node_id.hexlify[0..9]}
+    %link{:rel => "stylesheet", :href => "/stylesheet.css"}
+  %body
+    #main_container
+      = haml :_navbar, :locals => {:root => root, :selected => "overview", :changeset => @changeset}
+      #main
+        %h2.header== Changeset #{@changeset.revision}:#{@changeset.node_id.hexlify[0..11]}
+        .changeset-desc
+          %blockquote= @changeset.description
+          %table.two-column
+            %tr
+              %td.label author
+              %td.data= @changeset.user
+            %tr
+              %td.label date
+              %td.data== #{@changeset.easy_date.to_s} (#{rel_date(@changeset.easy_date)})
+            %tr
+              %td.label parents
+              %td.data= @changeset.parents.map { |p| link_to_changeset(root, p.node_id.hexlify) }.join(" ")
+            %tr
+              %td.label children
+              %td.data= @changeset.children.map {|c| link_to_changeset(root, c.node_id.hexlify) }.join(" ")
+            %tr
+              %td.label files
+              %td.data= @changeset.files.map {|file| link_to_file(root, @changeset.node_id.hexlify, file) }.join("<br />")
+        %ul.diff-list
+          - @changeset.files.each do |file|
+            = haml :_diff_file, :locals => {:file => file, :changeset => @changeset}

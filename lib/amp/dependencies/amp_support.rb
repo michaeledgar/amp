@@ -1,0 +1,1 @@
+amp_c_extension '../../../ext/amp/support/Support', 'amp_support/ruby_amp_support'

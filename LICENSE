@@ -1,0 +1,37 @@
+This project includes a large amount of source code from a number of different resources.
+They are listed, in no particular order, along with the license ascribed to the code
+associated with it.
+
+1. Mercurial (GPLv2)
+	A large number of algorithms in Amp are inspired by, or in some cases, direct translations,
+	of code in the Mercurial source. This makes this our code a derivative work, and thus GPLv2.
+2. BZ2 (Ruby License) - Guy Decoux 
+	This code has been copied verbatim into our repository.
+	
+	"This extension module is copyrighted free software by Guy Decoux
+
+    You can redistribute it and/or modify it under the same term as
+    Ruby." -- README.rdoc of BZ2 gem
+
+3. Priority Queue - 2005 Brian Schroder
+	This code has been copied verbatim into our repository.
+
+	"* (c) 2005 Brian Schroder
+     * 
+     * Please submit bugreports to priority_queue@brian-schroeder.de
+     *
+     * This extension is under the same license as ruby."
+	-- priority_queue.c, lines 5-10
+	
+4. Rubyzip - Thomas Sondergaard
+	This code has been copied verbatim into our repository.
+	
+	"License
+
+	rubyzip is distributed under the same license as ruby. See www.ruby-lang.org/en/LICENSE.txt"
+	http://rubyzip.sourceforge.net/
+	
+5. Minitar - Copyright 2004 Mauricio Julio Fernández Pradier and Austin Ziegler 
+	This code has been copied verbatim into our repository.
+	
+	"This program is free software. It may be redistributed and/or modified under the terms of the GPL version 2 (or later) or Ruby’s licence. " -- http://raa.ruby-lang.org/project/minitar/

@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby1.9
+
+def caller_file(level=0)
+  if caller[level]
+    File.expand_path(caller[level].split(":").first)
+  else
+    nil
+  end
+end
+
+private :caller_file
+
+$start   = Time.now
+$display = true
+$cl      = true # this lets us know we're a command line app
+$amp_executable = File.expand_path(__FILE__)
+
+ARGV.each { |arg| $USE_RUBY = true if arg == "--pure-ruby" || arg == '-u' }
+
+def follow_link(file)
+  file = File.expand_path(file)
+  while File.symlink?(file)
+    file = File.expand_path(File.readlink(file), File.dirname(file))
+  end
+  file
+end
+
+require File.join(File.dirname(follow_link(__FILE__)), "..", "lib", "amp")
+
+Amp::Dispatch.run

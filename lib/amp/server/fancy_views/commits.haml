@@ -1,0 +1,32 @@
+!!!
+%html
+  %head
+    %title== Overview: #{opts[:title]}
+    %link{:rel => "stylesheet", :href => "/stylesheet.css"}
+  %body
+    #main_container
+      = haml :_navbar, :locals => {:root => root, :selected => "commits"}
+      #main
+        - page = 1 if page == 0
+        - start = (repo.size - 1) - ((page - 1) * 20)
+        %br/
+        - if page > 1
+          %a.pagebutton{:href => "/commits/#{page-1}/"} Previous Page
+        - if start > 21
+          %a.pagebutton{:href => "/commits/#{page+1}/"} Next Page
+        %table.shortlog
+          %tr
+            %th.index Rev. #
+            %th.date Date
+            %th.user User
+            %th.description Description
+          - (start).downto(start - 21) do |val|
+            - cs = repo[val]
+            %tr
+              %td.index= val
+              %td.date= rel_date Time.at(cs.date.first)
+              - user = cs.user =~ /\@/ ? cs.user.split(/@/).first : cs.user
+              %td.user= user
+              %td.description
+                = link_to_changeset root, cs.node_id.hexlify, :text => cs.description
+      

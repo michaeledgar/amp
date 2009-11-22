@@ -1,0 +1,17 @@
+#header
+  .body-width
+    .floatleft{ :style => "height:90px;width:100%;" }
+      %a{:href => "/"}
+        %img#amp-logo{ :src => "/images/amp_logo.png", :height => "111", :alt => "Amp - Version Control Revolution", :width => "82" }
+      %img#amp-revolution{ :src => "/images/revolution.png", :height => "16", :width => "200" }
+      %ul#navbar
+        %li{ :class => selected == "home" && "selected"}
+          %a{ :href => "/" } Home
+        %li{ :class => selected == "about" && "selected"}
+          %a{ :href => "/about/" } About Amp
+        %li{ :class => selected == "get" && "selected"}
+          %a{ :href => "/get/" } Get Amp
+        %li{ :class => selected == "learn" && "selected"}
+          %a{ :href => "/learn/" } Learn Amp
+        %li{ :class => selected == "contribute" && "selected"}
+          %a{ :href => "/contribute/" } Contribute to Amp

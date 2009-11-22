@@ -1,0 +1,23 @@
+!!!
+%html
+  %head
+    %title== Diff of #{path} @ Revision #{changeset.revision}
+    %link{:rel => "stylesheet", :href => "/stylesheet.css"}
+    %link{:rel => "stylesheet", :href => "/harshcss/twilight.css"}
+  %body
+    #main_container
+      = haml :_navbar, :locals => {:root => root, :selected => "browser", :changeset => changeset, :file => vf_cur}
+      #main
+        - changeset_node = changeset.node_id.hexlify[0..11]
+        
+        = haml :_browser, :locals => {:root => root, :vf_cur => vf_cur, :path => path, :orig_path => orig_path, :file_list => file_list, :changeset_node => changeset_node, :repo => repo}
+        .browser-file
+          - if vf_cur
+            - filelog = repo.file orig_path
+            %h2.header Versions
+            %ul.versions
+              - filelog.each do |rev|
+                %li
+                  = link_to_file_diff root, repo.changelog.node(rev.link_rev).hexlify, orig_path, :text => "#{rev.link_rev}: #{repo[rev.link_rev].easy_date.strftime("%m/%d/%Y")}"
+            %h2.header== Diff @ Revision #{vf_cur.revision}
+            = haml :_diff_file, :locals => {:file => orig_path, :changeset => changeset}

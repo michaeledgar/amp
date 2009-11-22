@@ -1,0 +1,34 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Amp Workflows
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "about")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 What's a workflow?
+          %p
+            This might be a little confusing. We coined this term for ourselves before we realized that #{link_to "http://www.bazaar-vcs.org/", "bazaar"} had their own workflows. Ours are different. A workflow in #{blue_amp} parlance is <b>a set of commands that go together.</b> #{blue_amp "Amp"} currently has a #{hg_link} workflow: a set of commands that mimics #{hg_link}'s command interface. There is a 1-1 mapping between (most of) Mercurial's commands and the commands in the hg workflow. We're still working on matching them exactly, but we're close.
+          %h2 When does this get interesting?
+          %p
+            It gets interesting because we're working on a #{git_link} workflow. So, if you cut your teeth on git but are working on a project using Mercurial, we're going to let you use git's commands. Think about it - almost all of the basic operations in git have a similar command in Mercurial. The difference are in basic command syntax ( #{shellscript "git push origin master"} vs #{shellscript "hg push"} ) and in the options.
+          %h2 Why do options matter?
+          %p
+            The allowed options matter because they're what we get used to in our command-line software, and there often <i>is not</i> analogous options between VCS clients. #{git_link "Git"} has #{shellscript "git commit --reuse-message=123"}, but there's no such option in #{hg_link}. That's just one point. When you use the same software for long, you develop sets of options you get used to. Switch to a project with a different VCS, and your favorite options aren't there. Annoying. Think of workflows as theming your VCS.
+          %h2 How do I change my workflow?
+          %p
+            #{shellscript "amp workflow git"}. Or #{shellscript "amp workflow hg"}.
+          %h2 Git != Mercurial
+          %p
+            The fact remains that the different VCS systems have different commands, in part, because the underlying repositories are different. Git allows for destructive operations in it's repository and exposes that in in some of its options and commands. Mercurial doesn't allow it. So what happens when you do a #{shellscript "git filter-branch"} on a #{hg_link} repository?
+          %p
+            %b It will fail, and tell you that you requested an impossible action. Rely on that.
+          %h2 The git workflow sucks.
+          %p
+            We know. We're working on it. But #{commands_link "writing commands"} is actually pretty easy - do you want to #{contribute_link "help us out"}?
+    = render("include/_footer.haml")

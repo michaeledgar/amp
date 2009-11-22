@@ -1,0 +1,26 @@
+<%- if config[:verbose] -%>
+changeset:  <%= revision %>:<%= change_node.hexlify %>
+<%- else -%>
+changeset:  <%= revision %>:<%= change_node[0..5].hexlify %>
+<%- end -%>
+branch:     <%= branch %>
+<%- parents.each do |index, node| -%>
+parent:     <%= "#{index}:#{node}" %>
+<%- end -%>
+<%- if cs_tags.any? -%>
+tags:       <%= cs_tags %>
+<%- end -%>
+user:       <%= username %>
+date:       <%= date %>
+<%- if config[:verbose] -%>
+files:      <%= files.join(" ") %>
+<%- end -%>
+<%- if description && description.any?
+    if config[:verbose] -%>
+description:
+<%= description %>
+<%- else -%>
+summary:    <%= description.split_lines_better.first.strip %>
+<%- end -%>
+<%- end -%>
+

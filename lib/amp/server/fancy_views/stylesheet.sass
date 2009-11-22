@@ -1,0 +1,175 @@
+!lightblue = #ddddff
+!medblue   = #bbbbff
+!darkblue  = #aaaaff
+=pushleft
+  :position relative
+  :float left
+  :clear left
+body
+  :font-family "Lucida Grande"
+  :line-height 1.1em
+  :font-size 80%
+  a
+    :text-decoration none
+    :color #3333dd
+    &:hover
+      :text-decoration underline
+#main_container
+  :position relative
+
+h2.header
+  +pushleft
+#navbar
+  :position absolute
+  :top 10px
+  :left 10px
+  :background-color #ddd
+  :width 140px
+  ul
+    :padding 0
+    :text-align left
+    :font-size 12px
+    :font-family "Lucida Grande"
+    li
+      :padding 6px
+      :background-color #ddd
+      :border none
+      a
+        :text-decoration none
+        :color black
+    li:hover, li.selected
+      :background-color #f8f8f8
+      :border-left solid 2px #444
+      :padding-left 4px
+#navbar ul, #navbar li
+  :list-style-type none
+  :margin 0
+#main
+  :padding-left 160px
+.shortlog
+  +pushleft
+  tr
+    :background-color #DDFFE3
+    :border-bottom solid 1px #555
+    :padding 3px 0
+    :width 100%
+    :float left
+    &:hover, &.selected
+      :background-color #bbddc3
+  .index
+    :width 35px
+  .user
+    :width 150px
+  .date
+    :width 150px
+  .description a
+    :text-decoration none
+    &:hover
+      :text-decoration underline
+.pagebutton
+  +pushleft
+  :background-color = !lightblue
+  :padding 3px
+  :margin 2px
+  :text-decoration none
+  :color black
+  &:hover
+    :background-color = !medblue
+    :padding 2px
+    :border solid 1px = !darkblue
+.browser-list
+  +pushleft
+  tr
+    :background-color #DDFFE3
+    :border-bottom solid 1px #555
+    :padding 3px 0
+    :width 100%
+    :float left
+    &:hover, &.selected
+      :background-color #bbddc3
+  .filename
+    :width 200px
+    a
+      :color = #3333cc
+      :text-decoration none
+  .date
+    :width 25%
+  .message
+    :width 50%
+.browser-file
+  +pushleft
+  :width 100%
+  .source-holder
+    :position relative
+    :float left
+    :clear left
+    :background-color #eee
+    :border solid 1px #ddd
+    :width 90%
+    :padding 15px
+    :overflow-x auto
+    pre
+      +pushleft
+      :font-size 14px
+      :line-height 1.1em
+      :width 100%
+      :overflow-x auto
+ul.versions
+  +pushleft
+  :width 800px
+  :list-style-type none
+  li
+    :position relative
+    :float left
+    :clear none
+    :width 120px
+    :text-align center
+    :padding-top 2px
+    :margin 1px
+    :height 20px
+    :font-size 12px
+    :list-style-type none
+    :background-color = !medblue
+    a
+      :color black
+      :text-decoration none
+    &:hover
+      :background-color = !lightblue
+      :border = solid 1px !darkblue
+      :width 118px
+      :height 19px
+      :padding-top 1px
+.changeset-desc
+  +pushleft
+  blockquote
+    +pushleft
+    :border-left solid 2px #444
+    :margin 1em 0 1em 0
+    :padding 0px 0px 0px 8px
+  .two-column
+    +pushleft
+    td.label
+      :text-align right
+      :color #999
+    td.data
+      :text-align left
+      :color #222
+.diff-list
+  +pushleft
+  :width 100%
+  &>li
+    :list-style-type none
+.diff
+  :width 90%
+  :overflow-x auto
+.diff, .diff li, pre
+  :list-style-type none
+  :margin 0
+  :padding 1px 0px
+  :size 12px
+.diff-add
+  :background-color #aaffaa
+.diff-del
+  :background-color #ffaaaa
+.diff-ctx
+  :background-color #aaaaaa

@@ -1,0 +1,24 @@
+have_library: checking for BZ2_bzWriteOpen() in -lbz2... -------------------- yes
+
+"gcc -o conftest -I. -I/Users/ari/local//lib/ruby/1.8/powerpc-darwin8.11.0 -I/Volumes/music/src/amp.code/ext/amp/bz2  -g -O2 -pipe -fno-common conftest.c  -L"." -L"/Users/ari/local//lib" -L.      -lruby-static -lbz2  -ldl -lobjc  "
+conftest.c: In function 't':
+conftest.c:3: error: 'BZ2_bzWriteOpen' undeclared (first use in this function)
+conftest.c:3: error: (Each undeclared identifier is reported only once
+conftest.c:3: error: for each function it appears in.)
+checked program was:
+/* begin */
+1: /*top*/
+2: int main() { return 0; }
+3: int t() { void ((*volatile p)()); p = (void ((*)()))BZ2_bzWriteOpen; return 0; }
+/* end */
+
+"gcc -o conftest -I. -I/Users/ari/local//lib/ruby/1.8/powerpc-darwin8.11.0 -I/Volumes/music/src/amp.code/ext/amp/bz2  -g -O2 -pipe -fno-common conftest.c  -L"." -L"/Users/ari/local//lib" -L.      -lruby-static -lbz2  -ldl -lobjc  "
+checked program was:
+/* begin */
+1: /*top*/
+2: int main() { return 0; }
+3: int t() { BZ2_bzWriteOpen(); return 0; }
+/* end */
+
+--------------------
+

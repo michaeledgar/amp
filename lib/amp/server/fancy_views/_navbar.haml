@@ -1,0 +1,17 @@
+#navbar
+  %ul
+    %li{:class => (selected == "commits" ? "selected" : "")}
+      %a{:href => root+"/commits/"} Commits
+    %li
+      = link_to_file root, "tip", nil, :text => "Latest Source"
+    - if defined?(changeset) && changeset
+      %li
+      %li{:class => "selected"}== Changeset: #{changeset.revision}
+      %li= link_to_changeset root, changeset.node_id.hexlify, :text => "Overview"
+      %li= link_to_file root, changeset.node_id.hexlify, nil, :text => "Browse Source"
+    - if defined?(file) && file
+      %li
+      %li{:class => "selected"}== #{file.path.split('/').last}
+      %li= link_to_file      root, changeset.node_id.hexlify, file.path, :text => "Source"
+      %li= link_to_file_raw  root, changeset.node_id.hexlify, file.path, :text => "Raw"
+      %li= link_to_file_diff root, changeset.node_id.hexlify, file.path, :text => "Diff"

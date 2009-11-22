@@ -1,0 +1,22 @@
+#footer
+  .body-width
+    .floatleft{ :style => "width:100%;" }
+      %a{:href => "http://www.carboni.ca/" }
+        %img{ :src => "/images/carbonica.png", :height => "50", :width => "244" }
+      %form
+        %select#picker
+          - themes.each do |theme|
+            %option{:name => theme.to_s, :value => theme.to_s}= theme.to_s
+:javascript
+  $(function() {
+    $("#picker").change(function() { 
+      var val = $("#picker option:selected").val();
+      $("pre").attr("class","").addClass("code").addClass(val);
+      $.cookie("codetheme", val);
+    });
+    var currentCookie = $.cookie("codetheme");
+    if (currentCookie) {
+      $("#picker").val(currentCookie);
+      $("#picker").change();
+    }
+  });

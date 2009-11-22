@@ -1,0 +1,106 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Amp Commands
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "about")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 #{blue_amp "Amp"} Commands
+          %p
+            Amp's commands are the driving force behind what makes #{blue_amp} unique. Most VCS users are programmers, and yet programming existing VCS systems isn't a simple, well-documented task. In #{git_link} you might write a shell script, yet with #{hg_link} you'll find yourself writing a python module and adding it through arcane INI file wizardry. With #{blue_amp} you just add Ruby code directly to your #{ampfile_link}, which is <em>not</em> a hidden file in some strange directory.
+          %p
+            All of #{blue_amp}'s commands have access to a first-class options parser and command line arguments. You don't have to parse options yourself, of course - you just declare them. Now, we've got some really simple commands littered throughout the site to illustrate how simple commands are. But if you're at this page, you probably want a little bit more. So here's the #{shellscript "amp log"} command in #{blue_amp} - unmodified:
+          .floatleft.dark.rounded{:style => "width:100%;padding-top:4px; padding-bottom:4px;"}
+            .floatleft{:style => "width:95%; margin-left:5%;"}
+              :syntaxhighlighter
+                command :log do |c|
+                  c.workflow :hg
+                  c.desc "Prints the commit history."
+                  c.opt :verbose,  "Verbose output", {:short => "-v"}
+                  c.opt :limit,    "Limit how many revisions to show", 
+                                   {:short => "-l", :type => :integer, :default => -1}
+                  c.opt :template, "Which template to use while printing", 
+                                   {:short => "-t", :type => :string, :default => "default"}
+                  c.opt :no_output, "Doesn't print output (useful for benchmarking)"
+                  c.on_run do |options, args|
+                    repo = options[:repository]
+                    limit = options[:limit]
+                    limit = repo.size if limit == -1
+
+                    start = repo.size - 1
+                    stop  = start - limit + 1
+
+                    options.merge! :template_type => :log
+                    start.downto stop do |x|
+                      puts repo[x].to_templated_s(options) unless options[:no_output]
+                    end
+                  end
+                end
+          %p
+            There's a lot going on here. Let's break it down:
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              command :log do |c|
+          %p 
+            This line creates a command called #{symbol :log}, and passes it to the block as <b>c</b>. <b>If the command #{symbol :log} exists already, then the existing command is passed to the block as <i>c</i></b>. The inside of the block is where we declare our command. This is where things get interesting!
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              c.workflow :hg
+          %p
+            The <tt>workflow</tt> method specifies which #{workflows_link "workflow"} the command belongs to. We use it here to specify that the #{symbol :log} command we're defining belongs to the #{symbol :hg} workflow, and shouldn't appear if the user is using the git workflow (or any other). If you specify #{symbol :all} as the workflow (or don't specify one), the command will be available to all workflows.
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              c.desc "Prints the commit history."
+          %p
+            The <tt>desc</tt> method declares a small description of the command, which shows up when the user runs #{shellscript "amp help"} to get a list of all available commands. It should fit on one line and be succinct. You may also use <tt>desc=</tt> if you prefer that style.
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              c.opt :verbose,  "Verbose output", {:short => "-v"}
+              c.opt :limit,    "Limit how many revisions to show",
+                               {:short => "-l", :type => :integer, :default => -1}
+              c.opt :template, "Which template to use while printing",
+                               {:short => "-t", :type => :string, :default => "default"}
+          %p
+            Now that's what we're talking about! We're declaring some options here, and can see a small portion of #{blue_amp}'s option parser at work. Take a look at the #{symbol :verbose} line. 
+          %p
+            By declaring #{shellscript "c.opt #{symbol :verbose}"}, we create a #{shellscript "--verbose"} option for our #{shellscript "amp log"} command. The first argument is the name of the option - it can be a string, or a symbol. The second argument is a short description - these first two arguments are required. After that come the nifty options! (Note - #{blue_amp} uses #{link_to "http://trollop.rubyforge.org/", "trollop"} under-the-hood, so its options are identical to trollop's.)
+            %ul.bullets{:style => "margin-left:2em;"}
+              %li #{symbol :short} - By setting #{symbol :short} to "-v", we can now use #{shellscript "amp log -v"} as well as #{shellscript "amp log --verbose"}
+              %li 
+                #{symbol :type} - The type of the option. This defaults to #{symbol :flag}, which is a normal on-or-off switch, like #{shellscript "--verbose"}.
+                %br/
+                %br/
+                You'll notice the #{symbol :limit} option has #{symbol :type} => #{symbol :integer}. This makes the #{symbol :limit} option require an argument, and forces it into an integer during parsing. Easy, eh?
+              %li #{symbol :default} - The default value of the option. If the user doesn't specify the option, it will normally be parsed as #{shellscript "nil"} - you can set a default value here.
+          %p
+            For more ways to configure your options, see the documentation for the #{shellscript "opt"} method #{link_to "http://amp.carboni.ca/learn/docs/Amp/Command.html#opt-instance_method", "here"}.
+          .floatleft.dark.rounded.codeholder
+            :syntaxhighlighter
+              c.on_run do |options, args|
+                repo = options[:repository]
+                limit = options[:limit]
+                limit = repo.size if limit == -1
+            
+                start = repo.size - 1
+                stop  = start - limit + 1
+            
+                options.merge! :template_type => :log
+                start.downto stop do |x|
+                  puts repo[x].to_templated_s(options) unless options[:no_output]
+                end
+              end
+          %p
+            Last, but not least, we have the #{shellscript "on_run"} method. This is how we declare what <em>happens</em> when our command is run - which is what we really care about! You specify what the command does in #{shellscript "on_run"}'s block, which takes two arguments: #{shellscript "options"} and #{shellscript "args"}. These are, respectively, the command-line options passed in plus amp's additions, and the arguments provided by the user. For example: #{shellscript "amp log --verbose --limit=3 arg1 arg2"} would provide #{shellscript "{:verbose => true, :limit => 3, :repository => #&lt;LocalRepository repo&gt;}"} as #{shellscript "options"} and #{shellscript "[arg1, arg2]"} as #{shellscript "args"}.
+          %p
+            Our command is getting changeset information, so it needs a repository to interact with. Unless told to do otherwise, #{blue_amp} will look for a repository and store it in #{shellscript "options[#{symbol :repository}]"}. This will always be an object of the class #{link_to "http://amp.carboni.ca/learn/docs/Amp/Repositories/LocalRepository.html", "LocalRepository"}.
+          %p
+            Once we extract our repository, we decide which changesets to print based on the options. To get a given changeset, we simply use #{shellscript "repo[x]"}, where #{shellscript "x"} can be a revision number, a partial node ID, "tip", and so on. See the documentation for #{link_to "http://amp.carboni.ca/learn/docs/Amp/Repositories/LocalRepository.html#%5B%5D-instance_method", "LocalRepository#[]"} for more details.
+          %p
+            This is just a quick once-over of some of the more obvious features of #{blue_amp "Amp's"} command system - there are far more features to discuss. Until those pages are written, take a look at the #{link_to "http://amp.carboni.ca/learn/docs/Amp/Command.html", "Documentation for the Command class"}.
+    = render("include/_footer.haml")

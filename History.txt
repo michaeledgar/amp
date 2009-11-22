@@ -1,0 +1,6 @@
+=== 0.1.1 / 2009-07-24
+
+* First public release
+
+  * Full implementation of Mercurial in Ruby.
+  * Spiffy command system.
