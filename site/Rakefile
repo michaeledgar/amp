@@ -8,7 +8,7 @@ require 'src/helpers.rb'
 require 'ftools'
 
 desc "Compile Site"
-task :build do
+task :"build-website" do
   Dir["src/**/*.haml"].reject {|item| item.split("/").last =~ /^_/}.each do |haml|
     FileUtils.makedirs(File.dirname("build" + haml[3..-6] + ".html"))
     File.open("build" + haml[3..-6] + ".html","w") do |out|
@@ -17,6 +17,8 @@ task :build do
     end
   end
   %w(css images scripts docs).each do |dir|
-    sh "cp -r src/#{dir}/ build/#{dir}/"
+    if File.exist? "src/#{dir}/"
+      sh "cp -r src/#{dir}/ build/#{dir}/"
+    end
   end
 end

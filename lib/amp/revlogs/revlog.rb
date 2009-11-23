@@ -600,7 +600,7 @@ module Amp
       begin
         start, length = self.data_start_for_index(rev), self[rev].compressed_len
       rescue
-        puts "FAILED AT THIS: #{@index_file}:#{rev}"
+        Amp::UI.debug "Failed get_chunk: #{@index_file}:#{rev}"
         raise
       end
       
@@ -904,14 +904,9 @@ module Amp
           end
           
           if chain == prev
-            begin
-              cdelta = RevlogSupport::Support.compress delta
-              cdeltalen = cdelta[:compression].size + cdelta[:text].size
-              text_len = Diffs::MercurialPatch.patched_size text_len, delta
-            rescue
-              puts "Error patching #{@index_file}"
-              raise
-            end
+            cdelta = RevlogSupport::Support.compress delta
+            cdeltalen = cdelta[:compression].size + cdelta[:text].size
+            text_len = Diffs::MercurialPatch.patched_size text_len, delta
           end
           
           if chain != prev || (endpt - start + cdeltalen) > text_len * 2

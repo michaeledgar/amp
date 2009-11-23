@@ -152,16 +152,16 @@ end
 require      "amp/repository/repository.rb"
 
 module Amp
-  VERSION = '0.2.0'
+  VERSION = '0.5.0'
   VERSION_TITLE = "Charles Hieronymus Pace"
 end
 
 if ENV["TESTING"] == "true"
   paused = Time.now
-  puts "Time taken to load all files: #{paused - $start} seconds"
-  puts "\t\t local files: #{paused - local_start} seconds"
-  puts
-  puts
+  Amp::UI.debug "Time taken to load all files: #{paused - $start} seconds"
+  Amp::UI.debug "\t\t local files: #{paused - local_start} seconds"
+  Amp::UI.debug
+  Amp::UI.debug
 end
 
 # Benchmarking stuff

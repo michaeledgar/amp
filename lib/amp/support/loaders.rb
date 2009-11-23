@@ -78,7 +78,7 @@ private :caller_file
 def amp_c_extension(path_to_c, path_to_alt)
   
   if $USE_RUBY
-    puts "Loading alternative ruby: #{path_to_alt}"
+    Amp::UI.debug "Loading alternative ruby: #{path_to_alt}"
     require File.join(File.dirname(caller_file(1)), path_to_alt)
     return
   end
@@ -87,7 +87,7 @@ def amp_c_extension(path_to_c, path_to_alt)
     offset = RUBY_VERSION < "1.9" ? 1 : 0
     require File.expand_path(File.join(File.dirname(caller_file(offset)), path_to_c))
   rescue LoadError # C Version could not be found, try ruby version
-    puts "Loading alternative ruby: #{path_to_alt}"
+    Amp::UI.debug "Loading alternative ruby: #{path_to_alt}"
     require File.join(File.dirname(caller_file(1)), path_to_alt)
   end
 end

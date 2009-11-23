@@ -6,7 +6,7 @@ release happens, use the next name on the list.
 - √ Ethan Rom
 - √ Danielle Rousseau
 - √ Mr. Eko
-- Charles Hieronymus Pace
+- √ Charles Hieronymus Pace
 - John Locke
 - Christian Shephard
 - The Smoke Monster

@@ -221,12 +221,12 @@ module Kernel
     begin
       yield
     rescue AbortError => e
-      puts "caught a AbortError - debuggers beware!"
+      UI.say "Operation aborted."
       raise
     rescue StandardError => e
-      puts message
-      puts e.to_s
-      e.backtrace.each {|err| puts "\tfrom #{err}" }
+      UI.say message
+      UI.say e.to_s
+      e.backtrace.each {|err| UI.say "\tfrom #{err}" }
       exit
     end
   end

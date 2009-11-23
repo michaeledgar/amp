@@ -41,7 +41,7 @@ module Amp
         @bundle_file = File.open(bundle_name, "r")
         
         @bundle_file.seek(0, IO::SEEK_END)
-        puts "Bundle File Size: #{@bundle_file.tell}"
+        Amp::UI.debug "Bundle File Size: #{@bundle_file.tell}"
         @bundle_file.seek(0, IO::SEEK_SET)
         
         # OK, now for the fun part - check the header to see if we're compressed.

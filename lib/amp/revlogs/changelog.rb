@@ -216,7 +216,7 @@ module Amp
       if @delay_buffer && @delay_buffer.size > 0
         fp1 = @_real_opener.open(@index_file)
         fp2 = @_real_opener.open(@index_file + ".a", "w+")
-        puts "trying to open #{@index_file + ".a"}..."
+        UI.debug "trying to open #{@index_file + ".a"}..."
         fp2.write fp1.read
         fp2.write @delay_buffer.join
         fp2.close

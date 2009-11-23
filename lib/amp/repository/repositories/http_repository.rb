@@ -237,7 +237,7 @@ module Amp
           
           ret += d.lstrip.split_newlines.map {|l| (l && l.split(" ").map{|i| i.unhexlify }) || []}
         end
-        puts "between returns: #{ret.inspect}"
+        Amp::UI.debug "between returns: #{ret.inspect}"
         ret
       end
       

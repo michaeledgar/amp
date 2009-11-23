@@ -1,90 +1,53 @@
-Amp::RevlogSupport::IndexInlineNG
-=================================
+Amp::Patch::Patch
+=================
 
-Amp::RevlogSupport::IndexInlineNG#parse\_file
----------------------------------------------
-  - "not sure what the 0 is for yet or i'd make this a hash" (see code)
+Amp::Patch::Patch#hash\_lines
+-----------------------------
+  - 
 
+Amp::Patch::Patch#hash=
+-----------------------
+  - 
 
-File
-====
+Amp::Patch::Patch#find\_lines
+-----------------------------
+  - 
 
-File.amp\_find\_executable
---------------------------
-  - Add Windows Version.
+Amp::Patch::Patch#hash
+----------------------
+  - 
 
-File.amp\_lookup\_reg
----------------------
-  - Add Windows Version
+Amp::Patch::Patch#hunks=
+------------------------
+  - 
 
-File.amp\_set\_executable
+Amp::Patch::Patch#hunks
+-----------------------
+  - 
+
+Amp::Patch::Patch#offset=
 -------------------------
-  - Windows version
+  - 
+
+Amp::Patch::Patch#lines=
+------------------------
+  - 
+
+Amp::Patch::Patch#offset
+------------------------
+  - 
+
+Amp::Patch::Patch#lines
+-----------------------
+  - 
 
 
-Amp::ChangeLog
-==============
+Amp::Support::Template
+======================
 
-Amp::ChangeLog#add
-------------------
-  - Handle text encodings
-
-Amp::ChangeLog#read
--------------------
-  - Text encodings, I hate you. but i must do them
-
-
-Amp::Revlog
-===========
-
-Amp::Revlog#check\_inline\_size
--------------------------------
-  - FINISH THIS METHOD
-  - FIXME
-
-
-Amp::Repositories::LocalRepository
-==================================
-
-Amp::Repositories::LocalRepository#push\_unbundle
--------------------------------------------------
-  - -- add default values for +opts+
-
-Amp::Repositories::LocalRepository#changegroup\_info
-----------------------------------------------------
-  - add more debug info
-
-Amp::Repositories::LocalRepository#pre\_push
---------------------------------------------
-  - -- add default values for +opts+
-
-Amp::Repositories::Updatable#apply\_updates
--------------------------------------------
-  - add path auditor
-
-Amp::Repositories::Updatable#update
------------------------------------
-  - add lock
-
-Amp::Repositories::LocalRepository#push\_add\_changegroup
----------------------------------------------------------
-  - -- add default values for +opts+
-
-Amp::Repositories::TagManager#read\_tags
-----------------------------------------
-  - encodings, handle local encodings
-
-
-Amp::Repositories::DirState
-===========================
-
-Amp::Repositories::DirState#normalize
--------------------------------------
-  - figure out what this does
-
-Amp::Repositories::DirState#write
----------------------------------
-  - watch memory usage - +si+ could grow unrestrictedly which would
+Amp::Support::Template#render
+-----------------------------
+  - 
 
 
 Amp::Repositories::HTTPRepository
@@ -92,6 +55,95 @@ Amp::Repositories::HTTPRepository
 
 Amp::Repositories::HTTPRepository#changegroup
 ---------------------------------------------
-  - figure out what the +kind+ parameter is for
+  - 
+
+
+Amp::RevlogSupport::IndexInlineNG
+=================================
+
+Amp::RevlogSupport::IndexInlineNG#parse\_file
+---------------------------------------------
+  - 
+
+
+File
+====
+
+File.amp\_find\_executable
+--------------------------
+  - 
+
+File.amp\_set\_executable
+-------------------------
+  - 
+
+File.amp\_lookup\_reg
+---------------------
+  - 
+
+
+Amp::Revlog
+===========
+
+Amp::Revlog#check\_inline\_size
+-------------------------------
+  - 
+  - 
+
+
+Amp::ChangeLog
+==============
+
+Amp::ChangeLog#add
+------------------
+  - 
+
+Amp::ChangeLog#read
+-------------------
+  - 
+
+
+Amp::Repositories::DirState
+===========================
+
+Amp::Repositories::DirState#normalize
+-------------------------------------
+  - 
+
+Amp::Repositories::DirState#write
+---------------------------------
+  - 
+
+
+Amp::Repositories::LocalRepository
+==================================
+
+Amp::Repositories::LocalRepository#push\_add\_changegroup
+---------------------------------------------------------
+  - 
+
+Amp::Repositories::LocalRepository#push\_unbundle
+-------------------------------------------------
+  - 
+
+Amp::Repositories::Updatable#update
+-----------------------------------
+  - 
+
+Amp::Repositories::LocalRepository#changegroup\_info
+----------------------------------------------------
+  - 
+
+Amp::Repositories::TagManager#read\_tags
+----------------------------------------
+  - 
+
+Amp::Repositories::Updatable#apply\_updates
+-------------------------------------------
+  - 
+
+Amp::Repositories::LocalRepository#pre\_push
+--------------------------------------------
+  - 
 
 
