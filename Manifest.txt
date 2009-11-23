@@ -106,6 +106,7 @@ lib/amp/graphs/copies.rb
 lib/amp/merges/merge_state.rb
 lib/amp/merges/merge_ui.rb
 lib/amp/merges/simple_merge.rb
+lib/amp/profiling_hacks.rb
 lib/amp/repository/branch_manager.rb
 lib/amp/repository/dir_state.rb
 lib/amp/repository/journal.rb
@@ -163,11 +164,11 @@ lib/amp/templates/blank.log.erb
 lib/amp/templates/default.commit.erb
 lib/amp/templates/default.log.erb
 lib/amp/templates/template.rb
-lib/profiling_hacks.rb
 site/Rakefile
 site/src/about/ampfile.haml
 site/src/about/commands.haml
 site/src/about/index.haml
+site/src/about/performance.haml
 site/src/about/workflows.haml
 site/src/contribute/index.haml
 site/src/contribute/style.haml

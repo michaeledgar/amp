@@ -40,7 +40,7 @@
             %span.shellscript amp push
             , right before the actual push happens, which will run unit tests. If a test fails, the block returns false, which cancels the push. If the tests pass, the block returns true, and the push happens.
           %h2 
-            = link_to "/learn/docs/", "API Documentation"
+            = link_to "/docs/", "API Documentation"
           %p
-            One of the most important aspects of our code is that it should be highly documented. We're sitting at around 45% comment/LOC ratio, and there's still plenty of places we want more documentation. We use #{yard_link} to document our code. You can find the complete documentation for our code (and the dependencies we've included in the #{blue_amp} source) by clicking "API Documentation" above, or just clicking #{link_to "/learn/docs/", "right here"}.
+            One of the most important aspects of our code is that it should be highly documented. We're sitting at around 45% comment/LOC ratio, and there's still plenty of places we want more documentation. We use #{yard_link} to document our code. You can find the complete documentation for our code (and the dependencies we've included in the #{blue_amp} source) by clicking "API Documentation" above, or just clicking #{link_to "/docs/", "right here"}.
     = render("include/_footer.haml")

@@ -15,10 +15,20 @@ Description:
 
 A ruby interface to Mercurial repositories, from the command line or a program.
 
-Features/Problems:
+Features:
 ------------------
 
 * Supports Mercurial repositories completely!
+* Extremely flexible command system.
+* Ampfiles allow easy command creation/modification.
+* Customizable workflows allow multiple command interfaces to the same operations
+
+Known Issues:
+------------------
+
+* No Windows support.
+* Importing git patches is untested and likely won't run.
+* creating bundles (the `bundle` command) likely fails.
 
 Synopsis:
 ---------
@@ -58,15 +68,16 @@ description of every method we can.
   
 Example:
 ________
-  % amp add file.txt
-  edit...
-  % amp commit -m "leethaxness"
-  % amp push
+
+    % amp add file.txt
+    edit...
+    % amp commit -m "leethaxness"
+    % amp push
   
-  Nothing really changes from using the hg command. There are a few differences
-  here and there (see `amp help [COMMAND]`), but really, it's pretty much the same.
+Nothing really changes from using the hg command. There are a few differences
+here and there (see `amp help [COMMAND]`), but really, it's pretty much the same.
   
-  Using amp as a library:
+Using amp as a library:
   
   require "amp"
   include Amp
@@ -74,31 +85,33 @@ ________
   repo = Repositories::pick "/Users/ari/src/amp.code"
   remote = Repositories::pick "https://user:password@bitbucket.org/carbonica/amp"
   
-  # makes a file...
+make a file...
+
   Dir.chdir "/Users/ari/src/amp.code/"
-  open "testy.txt", "w" {|f| f.puts "hello, world!" }
+  open "test.txt", "w" {|f| f.puts "hello, world!" }
   
-  # and add it to the repo!
-  repo.add "testy.txt"
+and add it to the repo!
+
+  repo.add "test.txt"
   
-  # commit
+commit
+
   repo.commit :message => 'blah'
   
-  # do some more things...
-  
-  # pull and update...
+do some more things, pull and update...
+
   result = repo.pull remote
   result = repo.update if result.success?
   
   (puts "You need to fix things!"; new_irb_session binding) unless result.success?
   # type result[:unresolved] to get a list of conflicts
   
-  # and push!
+and push!
+
   repo.push remote
   
-  Everything here is really straight forward. Plus, if it's not, we've taken
-  the liberty to document the motherfucking shit out of motherfucking everything.
-  Hooray!
+Everything here is really straight forward. Plus, if it's not, we've taken
+the liberty to document as much as possible.
   
 Requirements:
 -------------

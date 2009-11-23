@@ -79,7 +79,7 @@
                 You'll notice the #{symbol :limit} option has #{symbol :type} => #{symbol :integer}. This makes the #{symbol :limit} option require an argument, and forces it into an integer during parsing. Easy, eh?
               %li #{symbol :default} - The default value of the option. If the user doesn't specify the option, it will normally be parsed as #{shellscript "nil"} - you can set a default value here.
           %p
-            For more ways to configure your options, see the documentation for the #{shellscript "opt"} method #{link_to "http://amp.carboni.ca/learn/docs/Amp/Command.html#opt-instance_method", "here"}.
+            For more ways to configure your options, see the documentation for the #{shellscript "opt"} method #{link_to "http://amp.carboni.ca/docs/Amp/Command.html#opt-instance_method", "here"}.
           .floatleft.dark.rounded.codeholder
             :syntaxhighlighter
               c.on_run do |options, args|
@@ -98,9 +98,9 @@
           %p
             Last, but not least, we have the #{shellscript "on_run"} method. This is how we declare what <em>happens</em> when our command is run - which is what we really care about! You specify what the command does in #{shellscript "on_run"}'s block, which takes two arguments: #{shellscript "options"} and #{shellscript "args"}. These are, respectively, the command-line options passed in plus amp's additions, and the arguments provided by the user. For example: #{shellscript "amp log --verbose --limit=3 arg1 arg2"} would provide #{shellscript "{:verbose => true, :limit => 3, :repository => #&lt;LocalRepository repo&gt;}"} as #{shellscript "options"} and #{shellscript "[arg1, arg2]"} as #{shellscript "args"}.
           %p
-            Our command is getting changeset information, so it needs a repository to interact with. Unless told to do otherwise, #{blue_amp} will look for a repository and store it in #{shellscript "options[#{symbol :repository}]"}. This will always be an object of the class #{link_to "http://amp.carboni.ca/learn/docs/Amp/Repositories/LocalRepository.html", "LocalRepository"}.
+            Our command is getting changeset information, so it needs a repository to interact with. Unless told to do otherwise, #{blue_amp} will look for a repository and store it in #{shellscript "options[#{symbol :repository}]"}. This will always be an object of the class #{link_to "http://amp.carboni.ca/docs/Amp/Repositories/LocalRepository.html", "LocalRepository"}.
           %p
-            Once we extract our repository, we decide which changesets to print based on the options. To get a given changeset, we simply use #{shellscript "repo[x]"}, where #{shellscript "x"} can be a revision number, a partial node ID, "tip", and so on. See the documentation for #{link_to "http://amp.carboni.ca/learn/docs/Amp/Repositories/LocalRepository.html#%5B%5D-instance_method", "LocalRepository#[]"} for more details.
+            Once we extract our repository, we decide which changesets to print based on the options. To get a given changeset, we simply use #{shellscript "repo[x]"}, where #{shellscript "x"} can be a revision number, a partial node ID, "tip", and so on. See the documentation for #{link_to "http://amp.carboni.ca/docs/Amp/Repositories/LocalRepository.html#%5B%5D-instance_method", "LocalRepository#[]"} for more details.
           %p
-            This is just a quick once-over of some of the more obvious features of #{blue_amp "Amp's"} command system - there are far more features to discuss. Until those pages are written, take a look at the #{link_to "http://amp.carboni.ca/learn/docs/Amp/Command.html", "Documentation for the Command class"}.
+            This is just a quick once-over of some of the more obvious features of #{blue_amp "Amp's"} command system - there are far more features to discuss. Until those pages are written, take a look at the #{link_to "http://amp.carboni.ca/docs/Amp/Command.html", "Documentation for the Command class"}.
     = render("include/_footer.haml")

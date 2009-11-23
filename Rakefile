@@ -20,8 +20,8 @@ def remove_task(*task_names)
     Rake.application.remove_task(task_name)
   end
 end
-# 
-# 
+ 
+
 Hoe.spec "amp" do
   developer "Michael Edgar", "adgar@carboni.ca"
   developer "Ari Brown", "seydar@carboni.ca"
@@ -32,7 +32,18 @@ Hoe.spec "amp" do
                                       "ext/amp/bz2/extconf.rb"]}
   self.need_rdoc = false
   self.flog_threshold = 50000
+  self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas."
 end
+ 
+# Hoe.spec "amp-pure" do
+#   developer "Michael Edgar", "adgar@carboni.ca"
+#   developer "Ari Brown", "seydar@carboni.ca"
+#   self.url = "http://amp.carboni.ca/"
+#   
+#   self.need_rdoc = false
+#   self.flog_threshold = 50000
+#   self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas. (Pure-Ruby version)"
+# end
 
 
 
