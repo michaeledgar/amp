@@ -82,8 +82,8 @@ def commit_count
     hash[result[0][0..-2]] = result[1].to_i
     hash
   end
-  hash["<a href='mailto:adgar@carboni.ca'>adgar</a>"] = hash.delete("michaeledgar") + 558 # old repo
-  hash["<a href='mailto:seydar@carboni.ca'>seydar</a>"] = hash.delete("seydar") + (hash.delete("ari") || 0) + 251                      # old repo
+  hash["<a href='http://carboni.ca/contact/'>adgar</a>"] = hash.delete("michaeledgar") + 558 # old repo
+  hash["<a href='http://carboni.ca/contact/'>seydar</a>"] = hash.delete("seydar") + (hash.delete("ari") || 0) + 251                      # old repo
   
   hash = hash.sort do |(key1, value1), (key2, value2)|
     value2 <=> value1

@@ -1,0 +1,31 @@
+!!! 1.1
+%html{ :xmlns => "http://www.w3.org/1999/xhtml" }
+  %head
+    %meta{ :content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type" }
+    %title
+      Amp | Version Control Revolution | Ampfiles
+    = stylesheets :reset, :amp, :all_themes
+    = javascripts "jquery-1.3.2.min.js", "jquery.cookie.js"
+  %body.oneColFixCtr
+    = render("include/_header.haml", :selected => "about")
+    .infopage#container
+      .body-width
+        .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
+          %h2 Amp Performance
+          %p
+            We want #{blue_amp} to be fast. Like, as fast as possible. The biggest problem: Ruby isn't very fast. So here's our current goal: <b>we want #{blue_amp} to be as fast as mercurial</b>.
+          %p
+            #{hg_link "Mercurial"} is written in Python, which according to the #{link_to "http://shootout.alioth.debian.org/", "Great Language Shootout"} is #{link_to "http://shootout.alioth.debian.org/u64q/benchmark.php?test=all&lang=python&lang2=ruby&box=1", "3-10 times slower than Python"}. That's for MRI 1.8.6 - here's a link to #{link_to "http://shootout.alioth.debian.org/u64q/benchmark.php?test=all&lang=python&lang2=jruby&box=1", "JRuby"} and #{link_to "http://shootout.alioth.debian.org/u32/benchmark.php?test=all&lang=yarv&lang2=python&box=1", "Ruby 1.9"}, which are similar though an improvement.
+          %h2 So how's that going?
+          %p
+            We hope to have some direct, auto-generated benchmarks up here soon. But for now - many amp operations are <b>only 1.5-2 times slower than Mercurial</b>. That's within the range that the language barrier is the major factor. Of course, we hope to do better.
+          %h2 Measuring Amp Performance
+          %p
+            What's interesting about #{blue_amp} is that most applications concerned with speed are optimizing long-running processes. Servers, web apps, graphics processes come to mind. But #{blue_amp} is completely different - VCS clients are invoked dozens of times a day. We need the process to just end fast. That means it needs to start quickly, run quickly, and clean up quickly.
+          %p
+            We're finding a lot of ways to achieve this, and will be writing some blog posts now that #{blue_amp} is being looked at.
+          %h2 How can I help?
+          %p
+            Head on over the #{contribute_link} page and join us! There's plenty of places where we can optimize code (or even if you want to help get some auto-generated benchmarks on this page, that'd be awesome too!)
+          
+    = render("include/_footer.haml")

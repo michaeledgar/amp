@@ -1,6 +1,6 @@
 command :revert do |c|
   c.workflow :hg
-  c.desc "Add a file to the repository (it will be tracked from here on)"
+  c.desc "Restore individual files or dirs to an earlier state"
   c.opt :include, "include names matching the given patterns", :short => "-I", :type => :string
   c.opt :exclude, "exclude names matching the given patterns", :short => "-X", :type => :string
   c.opt :rev, "The revision to revert to", :short => "-r", :type => :integer
@@ -39,6 +39,8 @@ amp revert [options]+ [FILE]+
   
   Modified files are saved with a .orig suffix before reverting.
   To disable these backups, use --no-backup.
+  
+Options are:
 HELP
   
   c.on_run do |opts, args|

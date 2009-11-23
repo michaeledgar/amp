@@ -13,14 +13,15 @@ module Amp
       #
       # @todo add lock
       # @param [String, Integer] node the revision to which we are updating the repository. Can
-      #   be either a node ID or an integer.
+      #   be either nil, a node ID, or an integer. If it is nil, it will update
+      #   to the latest revision.
       # @param [Boolean] branch_merge whether to merge between branches
       # @param [Boolean] force whether to force branch merging or file overwriting
       # @param [Proc, #call] partial a function to filter file lists (dirstate not updated if this
       #   is passed)
       # @return [Array<Integer>] a set of statistics about the update. In the form:
       #   [updated, merged, removed, unresolved] where each entry is the # of files in that category.
-      def update(node, branch_merge=false, force=false, partial=nil)
+      def update(node=nil, branch_merge=false, force=false, partial=nil)
         # debugger
         self.status(:node_1 => self.dirstate.parents.first, :node_2 => nil)
         working_changeset = self[nil]
@@ -110,6 +111,12 @@ module Amp
         
         return stats
           
+      end
+      
+      ##
+      # Merge two heads
+      def merge(node, force=false)
+        update node, true, force, false
       end
       
       ##

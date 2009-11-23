@@ -42,9 +42,9 @@ module Amp
       ##
       # Standard initializer for a repository. However, "create" is a no-op.
       #
-      # @param path the URL for the repository.
-      # @param create useless
-      # @param config the configuration for Amp right now.
+      # @param [String] path the URL for the repository.
+      # @param [Boolean] create this is useless since we can't create remote repos
+      # @param [Amp::AmpConfig] config the configuration for Amp right now.
       def initialize(path="", create=false, config=nil)
         @url, @config = URI.parse(path), config
         @auth_mode = :none

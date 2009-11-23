@@ -647,12 +647,19 @@ module Amp
           end # end each
         end # end if
         
+        hdz = branch_heads
         # never return 0 here
-        if new_heads < old_heads
-          new_heads - old_heads - 1
-        else
-          new_heads - old_heads + 1
-        end # end if
+        ret = if new_heads < old_heads
+                new_heads - old_heads - 1
+              else
+                new_heads - old_heads + 1
+              end # end if
+        
+        class << ret
+          def success?; self <= 1 || hdz.size == 1; end
+        end
+        
+        ret
       end # end def
       
       ##
@@ -1551,14 +1558,15 @@ module Amp
         dirstate.parents.select {|p| p != NULL_ID }
       end
       
+      ##
+      # There are two ways to push to remote repo:
+      #
+      # addchangegroup assumes local user can lock remote
+      # repo (local filesystem, old ssh servers).
+      #
+      # unbundle assumes local user cannot lock remote repo (new ssh
+      # servers, http servers).
       def push(remote_repo, opts={:force => false, :revs => nil})
-        # there are two ways to push to remote repo:
-        #
-        # addchangegroup assumes local user can lock remote
-        # repo (local filesystem, old ssh servers).
-        #
-        # unbundle assumes local user cannot lock remote repo (new ssh
-        # servers, http servers).
         if remote_repo.capable? "unbundle"
           push_unbundle remote_repo, opts
         else

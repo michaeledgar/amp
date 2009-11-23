@@ -56,7 +56,7 @@ HELP
     
     unless mod_heads.zero?
       if opts[:update]
-        if mod_heads <= 1 || repo.branch_heads.size == 1 or opts[:rev]
+        if mod_heads <= 1 || repo.branch_heads.size == 1 || opts[:rev]
           Amp::Command['update'].run( { :repository => repo } ,
                                       { :rev => opts[:rev]  } )
         else

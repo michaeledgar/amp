@@ -221,12 +221,12 @@ module Kernel
     begin
       yield
     rescue AbortError => e
-      UI.say "Operation aborted."
+      Amp::UI.say "Operation aborted."
       raise
     rescue StandardError => e
-      UI.say message
-      UI.say e.to_s
-      e.backtrace.each {|err| UI.say "\tfrom #{err}" }
+      Amp::UI.say message
+      Amp::UI.say e.to_s
+      e.backtrace.each {|err| Amp::UI.say "\tfrom #{err}" }
       exit
     end
   end

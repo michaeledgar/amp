@@ -153,7 +153,39 @@ require      "amp/repository/repository.rb"
 
 module Amp
   VERSION = '0.5.0'
-  VERSION_TITLE = "Charles Hieronymus Pace"
+  VERSION_TITLE = "John Locke"
+  
+  def self.new_irb_session(bndng)
+    require 'irb'
+    
+    # Alter IRB appropriately
+    # http://jameskilton.com/2009/04/02/embedding-irb-into-your-ruby-application/
+    ::IRB.class_eval do
+      def self.start_session(binding)
+        unless @__initialized
+          args = ARGV
+          ARGV.replace(ARGV.dup)
+          IRB.setup(nil)
+          ARGV.replace(args)
+          @__initialized = true
+        end
+
+        workspace = WorkSpace.new(binding)
+
+        irb = Irb.new(workspace)
+
+        @CONF[:IRB_RC].call(irb.context) if @CONF[:IRB_RC]
+        @CONF[:MAIN_CONTEXT] = irb.context
+
+        catch(:IRB_EXIT) do
+          irb.eval_input
+        end
+      end
+    end
+    
+    IRB::start_session bndng
+  end
+  
 end
 
 if ENV["TESTING"] == "true"
@@ -165,4 +197,4 @@ if ENV["TESTING"] == "true"
 end
 
 # Benchmarking stuff
-need { 'profiling_hacks' }
+#need { 'amp/profiling_hacks' }

@@ -13,7 +13,13 @@
         .floatleft{ :style => "width:90%; padding:8px 0em 6px; margin-left:5%;"}
           %h2 How can I help?
           %p
-            There's a ton you can do! We need people to write nice fancy writeups for the site, and we need developers who can add features. We've got #{link_to "#list", "lots of places you can help"}, and a #{link_to "#features", "good list of features"} we want to develop to reach #{blue_amp}'s goals, and developers will make that easier! We have an account at #{lighthouse_link} - if you see an unclaimed bug, fix it!
+            There's a ton you can do! We need people to write nice fancy writeups for the site, and we need developers who can add features. We've got #{link_to "#list", "lots of places you can help"}, and a #{link_to "#features", "good list of features"} we want to develop to reach #{blue_amp}'s goals, and developers will make that easier! Here's our online resources you can use to help:
+          %ul.bullets{:style => "margin-left:2em;"}
+            %li The #{link_to "http://bitbucket.org/carbonica/amp/", "BitBucket source"}. We accept pull requests!
+            %li Our #{link_to "http://github.com/michaeledgar/amp", "GitHub mirror"}. We accept GitHub pull requests!
+            %li We use #{link_to "http://bitbucket.org/carbonica/amp/issues/?status=new&status=open", "BitBucket's issue tracker."}...
+            %li ... and BitBucket's #{link_to "http://bitbucket.org/carbonica/amp/wiki/Home", "wiki, too."}
+            %li Lastly, we've got a #{link_to "http://groups.google.com/group/amp-vcs/", "Google Group"}.
           %h2 OK, but how do I submit code?
           %p
             #{blue_amp "Amp"} is run on a "commit bit" policy. Get one patch approved, and you have full repo access. Our source is #{link_to "http://bitbucket.org/carbonica/amp/", "hosted at BitBucket"} - just fork us and send a pull request. 

@@ -56,6 +56,50 @@ committed it. These objects will be most relevant to users, but we'll try to mak
 obvious as we refine our documentation. At the very least, we've tried to provide a useful
 description of every method we can.
   
+Example:
+________
+  % amp add file.txt
+  edit...
+  % amp commit -m "leethaxness"
+  % amp push
+  
+  Nothing really changes from using the hg command. There are a few differences
+  here and there (see `amp help [COMMAND]`), but really, it's pretty much the same.
+  
+  Using amp as a library:
+  
+  require "amp"
+  include Amp
+  
+  repo = Repositories::pick "/Users/ari/src/amp.code"
+  remote = Repositories::pick "https://user:password@bitbucket.org/carbonica/amp"
+  
+  # makes a file...
+  Dir.chdir "/Users/ari/src/amp.code/"
+  open "testy.txt", "w" {|f| f.puts "hello, world!" }
+  
+  # and add it to the repo!
+  repo.add "testy.txt"
+  
+  # commit
+  repo.commit :message => 'blah'
+  
+  # do some more things...
+  
+  # pull and update...
+  result = repo.pull remote
+  result = repo.update if result.success?
+  
+  (puts "You need to fix things!"; new_irb_session binding) unless result.success?
+  # type result[:unresolved] to get a list of conflicts
+  
+  # and push!
+  repo.push remote
+  
+  Everything here is really straight forward. Plus, if it's not, we've taken
+  the liberty to document the motherfucking shit out of motherfucking everything.
+  Hooray!
+  
 Requirements:
 -------------
 * Ruby

@@ -225,7 +225,7 @@ EOS
     #
     # @param [String, #to_s] message The debug message to be printed
     def debug(message='')
-      if @config && @config["debug","messages"]
+      if @config && @config["debug","messages", Boolean, false]
         say message
       end
     end

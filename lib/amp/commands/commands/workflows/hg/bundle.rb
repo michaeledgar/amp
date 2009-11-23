@@ -90,9 +90,9 @@ EOS
     # Oh no, bitches! If you thought we were done, you'd be wrong.
     # Nevermind, false alarm. Turns out there's not that much left to do.
     
-    revs ||= [rev]
     cg = if revs
-           repo.changegroup_subset o, revs, 'bundle'
+           p [o, rev]
+           repo.changegroup_subset o, [rev], 'bundle'
          else
            repo.changegroup o, 'bundle'
          end

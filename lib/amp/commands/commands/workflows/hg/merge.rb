@@ -1,8 +1,10 @@
 command :merge do |c|
   c.workflow :hg
+  
   c.desc "merge working directory with another revision"
   c.opt :force, "force a merge with outstanding changes", :short => "-f"
   c.opt :rev, "revision to merge", :type => :integer, :short => "-r"
+  
   c.before do |opts, args|
     repo = opts[:repository]
     if !opts[:rev]
@@ -32,8 +34,10 @@ command :merge do |c|
       end
       opts[:node] = (parent == bheads.first) ? bheads.last : bheads.first
     end
+    
     true
   end
+  
   c.on_run do |opts, args|
     repo = opts[:repository]
     node = opts[:node]

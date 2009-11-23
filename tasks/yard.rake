@@ -43,7 +43,7 @@ namespace :yard do
   end
     
   YARD::Rake::YardocTask.new :doc do |yard|
-    yard.options = ['--no-output', '--private', '--protected', '--use-cache' ]
+    yard.options = ['--no-output', '--private', '--protected', '--use-cache']
   end
     
   

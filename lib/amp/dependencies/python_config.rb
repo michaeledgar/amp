@@ -178,7 +178,7 @@ module PythonConfig
       if type == Integer || type == Fixnum || type == Bignum
         result = str.to_i
       elsif type == Boolean
-        result = !!str
+        result = str.downcase == "true"
       elsif type == Float
         result = str.to_f
       elsif type == Array
