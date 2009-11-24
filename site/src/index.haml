@@ -29,7 +29,7 @@
               %ul.bullets
                 %li== #{hg_link} in #{link_to "http://www.ruby-lang.org/", "Ruby"}. 100% compatible with hg.
                 %li== Uniquely #{link_to "/about/customization.html", "customizable"}
-                %li== Superbly #{link_to "/docs/", "documented"} with #{link_to "http://yard.soen.ca/", "YARD"}
+                %li== Superbly #{link_to "/docs/", "documented"} with #{yard_link "YARD"}
                 %li== Free and Open-Source (#{link_to "http://www.gnu.org/licenses/gpl-2.0.html", "GPLv2"})
                 %li== #{link_to "/about/performance.html", "Performance"} Focused
                 %li Dependency-free (you just need Ruby!)
@@ -100,5 +100,16 @@
                   %span.shellscript hg diff -r rev1 -r rev2 -U 3 > your.patch
                 %li Create ticket on #{lighthouse_link "Lighthouse, attach your patch"}
                 %li Land one patch, you get commit rights
-              %p== Want more details? Check out our #{link_to "/contributing/", "contributing page." } Or join us at #{link_to "irc://irc.freenode.net/#amp", "#amp on freenode" }.
+              %p== Want more details? Check out our #{link_to "/contribute/", "contributing page." } Or join us at #{link_to "irc://irc.freenode.net/#amp", "#amp on freenode" }.
     = render("include/_footer.haml")
+    :plain
+      <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+      </script>
+      <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-11746178-1");
+      pageTracker._setDomainName(".carboni.ca");
+      pageTracker._trackPageview();
+      } catch(err) {}</script>

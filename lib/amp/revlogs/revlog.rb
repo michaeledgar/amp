@@ -81,7 +81,7 @@ module Amp
     # @return [String] the node's ID
     def node_id_for_index(index)
       unless @index[index]
-        raise RevlogSupport::LookupError.new("Couldn't find node for id '#{index}'")
+        raise RevlogSupport::LookupError.new("Couldn't find node for id #{index.inspect}")
       end
       @index[index].node_id
     end
@@ -97,8 +97,7 @@ module Amp
     #   the requested node.
     def revision_index_for_node(id)
       unless @index.node_map[id]
-        p id
-        raise StandardError.new("Couldn't find node for id '#{id}'")
+        raise StandardError.new("Couldn't find node for id #{id.inspect}")
       end
       @index.node_map[id]
     end

@@ -47,7 +47,7 @@ def hg_link(text = "Mercurial")
 end
 
 def yard_link(text = "YARD")
-  link_to "http://yard.soen.ca/", text
+  link_to "http://yardoc.org", text
 end
 
 def lighthouse_link(text = "Lighthouse")

@@ -27,7 +27,7 @@ EOS
 
   c.opt :force, "Run even when remote repository is unrelated",     :short => '-f'
   c.opt :rev,   "A changeset up to which you would like to bundle", :short => '-r', :type => :string
-  c.opt :base,  "A base changeset to specify instead of a destination",             :type => :string
+  c.opt :base,  "A base changeset to specify instead of a destination",             :type => :string, :multi => true
   c.opt :all,   "Bundle all changesets in the repository",          :short => '-a'
   c.opt :type,  "Bundle compression type to use (default: bzip2)",  :short => '-t',                   :default => 'bzip2'
   c.opt :ssh,   "Specify ssh command to use",                       :short => '-e', :type => :string
@@ -41,13 +41,16 @@ EOS
     
     # Type notation!
     # rev :: Amp::Changeset
-    rev  = repo.lookup rev
-    base = repo.lookup(opts[:all] ? nil : opts[:base]) # --all overrides --base
+    rev  &&= repo.lookup rev
+    base   = opts[:all] ? [nil] : (opts[:base] || []) # --all overrides --base
     
-    if base
+    # we want [nil] and ["1", "23"] to be triggered here.
+    if !base.empty?
       if dest
         raise abort("--base is incompatible with specifiying a destination")
       end
+      
+      base = base.map {|b| repo.lookup b }
       
       o   = []
       has = {Amp::RevlogSupport::Node::NULL_ID => nil}
@@ -57,7 +60,7 @@ EOS
         has.update repo.changelog.reachable_nodes_for_node(node_id)
       end
       
-      visit = [rev]
+      visit = rev ? [rev] : repo.changelog.heads
       seen  = {} # {node => Boolean} where node is a string
       add   = proc do |node|
         seen[node] = true
@@ -65,7 +68,7 @@ EOS
       end
       
       until visit.empty?
-        n = visit.pop
+        n = visit.shift
         
         # for those who are lame:
         # rents = 'rents = parents
@@ -84,16 +87,17 @@ EOS
       dest, revs, checkout = *c.parse_url(path, [rev])
       # alio is Esperanto for "other"; it's conveniently the same length as repo
       alio = Amp::Repositories.pick nil, dest
-      o = repo.find_outgoing_roots alio, :force => opts[:force]
+      o    = repo.find_outgoing_roots alio, :force => opts[:force]
     end # end if
     
     # Oh no, bitches! If you thought we were done, you'd be wrong.
     # Nevermind, false alarm. Turns out there's not that much left to do.
     
     cg = if revs
-           p [o, rev]
            repo.changegroup_subset o, [rev], 'bundle'
          else
+           p [">>", o]
+           # !!!!!!!!!!!! The bug is in the following line !!!!!!!!! KILLME
            repo.changegroup o, 'bundle'
          end
     

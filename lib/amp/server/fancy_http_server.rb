@@ -218,6 +218,8 @@ module Amp
             :"c++"
           when ".txt"
             :text
+          when ".md", ".markdown"
+            :markdown
           else
             ext[1..-1].to_sym
           end

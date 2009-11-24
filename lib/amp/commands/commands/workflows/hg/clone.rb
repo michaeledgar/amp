@@ -1,5 +1,6 @@
 command :clone do |c|
   c.workflow :hg
+  
   c.desc "Clone a repository"
   c.opt :pull, "Whether to do a pull from the destination (the alternative is to stream)", :short => '-p'
   c.opt :stream, "stream raw data uncompressed from repository", :short => '-u'
@@ -23,9 +24,10 @@ amp clone [options]+ src dest
   If an exception is raised, the partly cloned/updated destination
   repository will be deleted.
   
-  Where options are:
+Where options are:
 HELP
   
+  c.no_repo
   c.on_run do |opts, args|
     require 'uri'
     

@@ -78,38 +78,38 @@ Nothing really changes from using the hg command. There are a few differences
 here and there (see `amp help [COMMAND]`), but really, it's pretty much the same.
   
 Using amp as a library:
-  
-  require "amp"
-  include Amp
-  
-  repo = Repositories::pick "/Users/ari/src/amp.code"
-  remote = Repositories::pick "https://user:password@bitbucket.org/carbonica/amp"
-  
+    
+    require "amp"
+    include Amp
+    
+    repo = Repositories::pick "/Users/ari/src/amp.code"
+    remote = Repositories::pick "https://user:password@bitbucket.org/carbonica/amp"
+    
 make a file...
-
-  Dir.chdir "/Users/ari/src/amp.code/"
-  open "test.txt", "w" {|f| f.puts "hello, world!" }
-  
+    
+    Dir.chdir "/Users/ari/src/amp.code/"
+    open "test.txt", "w" {|f| f.puts "hello, world!" }
+    
 and add it to the repo!
-
-  repo.add "test.txt"
-  
+    
+    repo.add "test.txt"
+    
 commit
-
-  repo.commit :message => 'blah'
-  
+    
+    repo.commit :message => 'blah'
+    
 do some more things, pull and update...
-
-  result = repo.pull remote
-  result = repo.update if result.success?
-  
-  (puts "You need to fix things!"; new_irb_session binding) unless result.success?
-  # type result[:unresolved] to get a list of conflicts
-  
+    
+    result = repo.pull remote
+    result = repo.update if result.success?
+    
+    (puts "You need to fix things!"; new_irb_session binding) unless result.success?
+    # type result[:unresolved] to get a list of conflicts
+    
 and push!
-
-  repo.push remote
-  
+    
+    repo.push remote
+    
 Everything here is really straight forward. Plus, if it's not, we've taken
 the liberty to document as much as possible.
   

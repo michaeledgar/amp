@@ -63,3 +63,14 @@
                 %span{:style => "width:80px;"}= commits.to_s
                 %span{:style => "width:400px;"}= user
     = render("include/_footer.haml")
+    :plain
+      <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+      </script>
+      <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-11746178-1");
+      pageTracker._setDomainName(".carboni.ca");
+      pageTracker._trackPageview();
+      } catch(err) {}</script>
