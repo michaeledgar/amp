@@ -8,6 +8,9 @@ associated with it.
 2. BZ2 (Ruby License) - Guy Decoux 
 	This code has been copied verbatim into our repository.
 	
+	11/27/2009 - Michael Edgar added Ruby 1.9+ compatibility. This involved adding conditional compilation
+				 due to changes in Ruby (MRI)'s C API.
+	
 	"This extension module is copyrighted free software by Guy Decoux
 
     You can redistribute it and/or modify it under the same term as
