@@ -1,4 +1,4 @@
-Amp Release v0.5.0 (John Locke)
+Amp Release v0.5.1 (John Locke)
 ==============================
 
 **Homepage**:   [http://amp.carboni.ca](http://amp.carboni.ca)   
