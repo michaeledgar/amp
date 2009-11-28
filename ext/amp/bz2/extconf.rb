@@ -3,6 +3,10 @@ ARGV.collect! {|x| x.sub(/^--with-bz2-prefix=/, "--with-bz2-dir=") }
 
 require 'mkmf'
 
+if RUBY_VERSION =~ /1.9/ then  
+    $CPPFLAGS += " -DRUBY_19"  
+end
+
 if unknown = enable_config("unknown")
    libs = if CONFIG.key?("LIBRUBYARG_STATIC")
 	     Config::expand(CONFIG["LIBRUBYARG_STATIC"].dup).sub(/^-l/, '')

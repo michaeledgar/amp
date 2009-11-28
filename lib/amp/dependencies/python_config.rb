@@ -175,6 +175,9 @@ module PythonConfig
       return str if args.size == 1
       
       type = args[1]
+      
+      # really? this needs to be a case-when statement... right after
+      # thanksgiving break
       if type == Integer || type == Fixnum || type == Bignum
         result = str.to_i
       elsif type == Boolean
@@ -185,6 +188,8 @@ module PythonConfig
         result = str.split(",").map {|s| s.strip}
       elsif type == String
         result = str
+      elsif type == Symbol
+        result = str.to_s
       end
       return result if args.size == 2
       

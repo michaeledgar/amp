@@ -52,11 +52,6 @@ module Amp
         global_config["debug", "messages"] = true
       end
       
-      unless global_config["amp"]["workflow"]
-        global_config["amp"]["workflow"] = :hg
-        global_config.save! rescue Errno::EACCES
-      end
-      
       # the options to send to the command
       cmd_opts = {}
       
@@ -83,7 +78,7 @@ module Amp
         cmd_opts[:repository].config && local_config = cmd_opts[:repository].config
       end
       
-      workflow = local_config["amp"]["workflow"]
+      workflow = local_config["amp"]["workflow", Symbol, :hg]
       
       if File.exists?(File.expand_path(File.join(File.dirname(__FILE__), "commands/workflows/#{workflow}/")))
         require_dir { "amp/commands/commands/workflows/#{workflow}/**/*.rb" }
@@ -140,7 +135,7 @@ module Amp
       rock_bottom = false
       begin
         rock_bottom = true if dir == "/" 
-        ["ampfile","Ampfile","ampfile.rb","Ampfile.rb"].each do |pos|
+        ["ampfile", "Ampfile", "ampfile.rb", "Ampfile.rb"].each do |pos|
           file = File.join(dir, pos)
           return file if File.exist? file
         end
@@ -163,7 +158,7 @@ module Amp
     # @param [String] cmd the command to look up
     # @return [Amp::Command] the command object that was found, or nil if none was found.
     def self.pick_command(cmd, config)  
-      my_flow = config["amp"]["workflow"]
+      my_flow = config["amp"]["workflow", Symbol, :hg]
       if c = Amp::Command.all_for_workflow(my_flow).keys.map {|k| k.to_s}.abbrev[cmd]
         Amp::Command.command_for_workflow(c, my_flow)
       else

@@ -111,6 +111,8 @@ module Platform
   
   if RUBY_PLATFORM =~ /(i\d86)/i
      ARCH = :x86
+  elsif RUBY_PLATFORM =~ /(x86_64|amd64)/i
+     ARCH = :x86_64
   elsif RUBY_PLATFORM =~ /ia64/i
      ARCH = :ia64
   elsif RUBY_PLATFORM =~ /powerpc/i

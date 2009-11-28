@@ -655,9 +655,9 @@ module Amp
                 new_heads - old_heads + 1
               end # end if
         
-        class << ret
-          def success?; self <= 1 || hdz.size == 1; end
-        end
+        # class << ret
+        #   def success?; self <= 1 || hdz.size == 1; end
+        # end
         
         ret
       end # end def

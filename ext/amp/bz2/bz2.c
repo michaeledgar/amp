@@ -1,7 +1,11 @@
 #include <ruby.h>
-#include <rubyio.h>
+#ifdef RUBY_19
+    #include <ruby/io.h>
+#else
+    #include <rubyio.h>
+#endif
+
 #include <bzlib.h>
-#include <version.h>
 
 static VALUE bz_cWriter, bz_cReader, bz_cInternal;
 static VALUE bz_eError, bz_eConfigError, bz_eEOZError;
@@ -82,7 +86,7 @@ bz_raise(error)
 	msg = "unknown error";
 	exc = bz_eError;
     }
-    rb_raise(exc, msg);
+    rb_raise(exc, "%s", msg);
 }
     
 static void
@@ -108,25 +112,26 @@ bz_find_struct(obj, ptr, posp)
 {
     struct bz_iv *bziv;
     int i;
-
+    
     for (i = 0; i < RARRAY_LEN(bz_internal_ary); i++) {
-	Data_Get_Struct(RARRAY_PTR(bz_internal_ary)[i], struct bz_iv, bziv);
-	if (ptr) {
-	    if (TYPE(bziv->io) == T_FILE && 
-		RFILE(bziv->io)->fptr == (OpenFile *)ptr) {
-		if (posp) *posp = i;
-		return bziv;
+	    Data_Get_Struct(RARRAY_PTR(bz_internal_ary)[i], struct bz_iv, bziv);
+	    if (ptr) {
+	        if (TYPE(bziv->io) == T_FILE && RFILE(bziv->io)->fptr == ptr) { // ptr is OpenFile * or rb_io_t*
+	    	    if (posp) 
+	    	        *posp = i;
+	    	    return bziv;
+	        } else {
+	            if (TYPE(bziv->io) == T_DATA && DATA_PTR(bziv->io) == ptr) {
+	    	        if (posp) 
+	    	            *posp = i;
+	    	        return bziv;
+	            }
+	        }
+	    } else if (bziv->io == obj) {
+	        if (posp) 
+	            *posp = i;
+	        return bziv;
 	    }
-	    else if (TYPE(bziv->io) == T_DATA &&
-		     DATA_PTR(bziv->io) == ptr) {
-		if (posp) *posp = i;
-		return bziv;
-	    }
-	}
-	else if (bziv->io == obj) {
-	    if (posp) *posp = i;
-	    return bziv;
-	}
     }
     if (posp) *posp = -1;
     return 0;
@@ -214,27 +219,26 @@ bz_internal_finalize(ary, obj)
     int closed, i;
     struct bz_iv *bziv;
     struct bz_file *bzf;
-
-    for (i = 0; i < RARRAY_LEN(bz_internal_ary); i++) {
-	elem = RARRAY_PTR(bz_internal_ary)[i];
-	Data_Get_Struct(elem, struct bz_iv, bziv);
-	if (bziv->bz2) {
-	    RDATA(bziv->bz2)->dfree = ruby_xfree;
-	    if (TYPE(bziv->io) == T_FILE) {
-		RFILE(bziv->io)->fptr->finalize = bziv->finalize;
+    for (i = 0; i < RARRAY_LEN(ary); i++) {
+	    elem = RARRAY_PTR(ary)[i];
+	    Data_Get_Struct(elem, struct bz_iv, bziv);
+	    if (bziv->bz2) {
+	        RDATA(bziv->bz2)->dfree = ruby_xfree;
+	        if (TYPE(bziv->io) == T_FILE) {
+	    	    RFILE(bziv->io)->fptr->finalize = bziv->finalize;
+	        }
+	        else if (TYPE(bziv->io) == T_DATA) {
+	    	    RDATA(bziv->io)->dfree = bziv->finalize;
+	        }
+	        Data_Get_Struct(bziv->bz2, struct bz_file, bzf);
+	        closed = bz_writer_internal_flush(bzf);
+	        if (bzf->flags & BZ2_RB_CLOSE) {
+	    	    bzf->flags &= ~BZ2_RB_CLOSE;
+	    	    if (!closed && rb_respond_to(bzf->io, id_close)) {
+	    	        rb_funcall2(bzf->io, id_close, 0, 0);
+	    	    }
+	        }
 	    }
-	    else if (TYPE(bziv->io) == T_DATA) {
-		RDATA(bziv->io)->dfree = bziv->finalize;
-	    }
-	    Data_Get_Struct(bziv->bz2, struct bz_file, bzf);
-	    closed = bz_writer_internal_flush(bzf);
-	    if (bzf->flags & BZ2_RB_CLOSE) {
-		bzf->flags &= ~BZ2_RB_CLOSE;
-		if (!closed && rb_respond_to(bzf->io, id_close)) {
-		    rb_funcall2(bzf->io, id_close, 0, 0);
-		}
-	    }
-	}
     }
     return Qnil;
 }
@@ -293,24 +297,28 @@ bz_io_data_finalize(ptr)
 
     bziv = bz_find_struct(0, ptr, &pos);
     if (bziv) {
-	rb_ary_delete_at(bz_internal_ary, pos);
-	Data_Get_Struct(bziv->bz2, struct bz_file, bzf);
-	rb_protect(bz_writer_internal_flush, (VALUE)bzf, 0);
-	RDATA(bziv->bz2)->dfree = ruby_xfree;
-	if (bziv->finalize) {
-	    (*bziv->finalize)(ptr);
-	}
-	else if (TYPE(bzf->io) == T_FILE) {
-	    OpenFile *file = (OpenFile *)ptr;
-	    if (file->f) {
-		fclose(file->f);
-		file->f = 0;
+	    rb_ary_delete_at(bz_internal_ary, pos);
+	    Data_Get_Struct(bziv->bz2, struct bz_file, bzf);
+	    rb_protect(bz_writer_internal_flush, (VALUE)bzf, 0);
+	    RDATA(bziv->bz2)->dfree = ruby_xfree;
+	    if (bziv->finalize) {
+	        (*bziv->finalize)(ptr);
+	    } else if (TYPE(bzf->io) == T_FILE) {
+	        // close bzf->io. 
+	        #ifdef RUBY_19
+	            rb_io_close(bzf->io);
+	        #else
+	            OpenFile *file = (OpenFile *)ptr;
+	            if (file->f) {
+	    	        fclose(file->f);
+	    	        file->f = 0;
+	            }
+	            if (file->f2) {
+	    	        fclose(file->f2);
+	    	        file->f2 = 0;
+	            }
+	        #endif
 	    }
-	    if (file->f2) {
-		fclose(file->f2);
-		file->f2 = 0;
-	    }
-	}
     }
 }
 
@@ -436,8 +444,11 @@ bz_writer_init(argc, argv, obj)
     else {
 	VALUE iv;
 	struct bz_iv *bziv;
-	OpenFile *fptr;
-
+	#ifdef RUBY_19
+        rb_io_t *fptr;
+    #else
+	    OpenFile *fptr;
+    #endif
 	rb_io_taint_check(a);
 	if (!rb_respond_to(a, id_write)) {
 	    rb_raise(rb_eArgError, "first argument must respond to #write");
@@ -606,42 +617,42 @@ bz_reader_init(argc, argv, obj)
     int internal = 0;
 
     if (rb_scan_args(argc, argv, "11", &a, &b) == 2) {
-	small = RTEST(b);
+	    small = RTEST(b);
     }
     rb_io_taint_check(a);
     if (OBJ_TAINTED(a)) {
-	OBJ_TAINT(obj);
+	    OBJ_TAINT(obj);
     }
     if (rb_respond_to(a, id_read)) {
-	if (TYPE(a) == T_FILE) {
-	    OpenFile *fptr;
-
-	    GetOpenFile(a, fptr);
-	    rb_io_check_readable(fptr);
-	}
-	else if (rb_respond_to(a, id_closed)) {
-	    VALUE iv = rb_funcall2(a, id_closed, 0, 0);
-	    if (RTEST(iv)) {
-		rb_raise(rb_eArgError, "closed object");
+	    if (TYPE(a) == T_FILE) {
+	        #ifdef RUBY_19
+                rb_io_t *fptr;
+            #else
+	            OpenFile *fptr;
+	        #endif
+	        GetOpenFile(a, fptr);
+	        rb_io_check_readable(fptr);
+	    } else if (rb_respond_to(a, id_closed)) {
+	        VALUE iv = rb_funcall2(a, id_closed, 0, 0);
+	        if (RTEST(iv)) {
+	    	    rb_raise(rb_eArgError, "closed object");
+	        }
 	    }
-	}
-    }
-    else {
-	struct bz_str *bzs;
-	VALUE res;
-
-	if (!rb_respond_to(a, id_str)) {
-	    rb_raise(rb_eArgError, "first argument must respond to #read");
-	}
-	a = rb_funcall2(a, id_str, 0, 0);
-	if (TYPE(a) != T_STRING) {
-	    rb_raise(rb_eArgError, "#to_str must return a String");
-	}
-	res = Data_Make_Struct(bz_cInternal, struct bz_str, 
-			       bz_str_mark, ruby_xfree, bzs);
-	bzs->str = a;
-	a = res;
-	internal = BZ2_RB_INTERNAL;
+    } else {
+	    struct bz_str *bzs;
+	    VALUE res;
+        
+	    if (!rb_respond_to(a, id_str)) {
+	        rb_raise(rb_eArgError, "first argument must respond to #read");
+	    }
+	    a = rb_funcall2(a, id_str, 0, 0);
+	    if (TYPE(a) != T_STRING) {
+	        rb_raise(rb_eArgError, "#to_str must return a String");
+	    }
+	    res = Data_Make_Struct(bz_cInternal, struct bz_str, bz_str_mark, ruby_xfree, bzs);
+	    bzs->str = a;
+	    a = res;
+	    internal = BZ2_RB_INTERNAL;
     }
     Data_Get_Struct(obj, struct bz_file, bzf);
     bzf->io = a;
@@ -1485,14 +1496,14 @@ void Init_bz2()
 	       rb_intern("define_finalizer"), 2, bz_internal_ary,
 	       bz_proc_new(bz_internal_finalize, 0));
 
-    id_new = rb_intern("new");
-    id_write = rb_intern("write");
-    id_open = rb_intern("open");
-    id_flush = rb_intern("flush");
-    id_read = rb_intern("read");
-    id_close = rb_intern("close");
+    id_new    = rb_intern("new");
+    id_write  = rb_intern("write");
+    id_open   = rb_intern("open");
+    id_flush  = rb_intern("flush");
+    id_read   = rb_intern("read");
+    id_close  = rb_intern("close");
+    id_str    = rb_intern("to_str");
     id_closed = rb_intern("closed?");
-    id_str = rb_intern("to_str");
 
     bz_mBZ2 = rb_define_module("BZ2");
     bz_eConfigError = rb_define_class_under(bz_mBZ2, "ConfigError", rb_eFatal);

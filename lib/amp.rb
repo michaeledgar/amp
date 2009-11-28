@@ -152,7 +152,7 @@ end
 require      "amp/repository/repository.rb"
 
 module Amp
-  VERSION = '0.5.0'
+  VERSION = '0.5.1'
   VERSION_TITLE = "John Locke"
   
   def self.new_irb_session(bndng)
