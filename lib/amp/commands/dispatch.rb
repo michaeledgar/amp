@@ -69,7 +69,7 @@ module Amp
       begin
         cmd_opts[:repository] = Repositories.pick(local_config, global_opts[:repository])
       rescue
-        unless Command::NO_REPO_ALLOWED[cmd] || Command::MAYBE_REPO_ALLOWED[cmd]
+        unless Command::NO_REPO_ALLOWED[cmd.to_sym] || Command::MAYBE_REPO_ALLOWED[cmd.to_sym]
           raise
         end
       end
@@ -123,8 +123,6 @@ module Amp
       rescue AbortError => e
         puts e.to_s
       end
-      
-      #Amp::Support::Logger.outdent.info("</#{command.name}>")
     end
     
     ##

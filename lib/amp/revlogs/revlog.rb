@@ -48,6 +48,7 @@ module Amp
         # the use of @index.index is deliberate!
         @index.index << RevlogSupport::IndexEntry.new(0,0,0,-1,-1,-1,-1,NULL_ID)
       end
+      
     end
     alias_method :revlog_initialize, :initialize
     
@@ -718,6 +719,7 @@ module Amp
       data_offset = data_start_for_index trindex
       tr.add @data_file, data_offset
       df = open(@data_file, 'w')
+      
       begin
         calc = @index.entry_size
         self.size.times do |r|
@@ -730,11 +732,23 @@ module Amp
       ensure
         df.close
       end
+      
       fp.close
       
-      ############ TODO
-      # FINISH THIS METHOD
-      ############ TODO
+      open(@index_file, 'w') do |fp| # automatically atomic
+        @version &= ~ RevlogSupport::Support::REVLOG_NG_INLINE_DATA
+        @inline   = false
+        each do |i|
+          # THE FOLLOWING LINE IS NOT CORRECT
+          # IT IS DIRECTLY TRANSLATED PYTHON CODE
+          # I HAVE NO IDEA HOW WE DID THIS BEFORE
+          e = @io.pack_entry @index[i], @node, @version, i
+          fp.write e
+        end
+      end
+      
+      tr.replace @index_file, trindex * calc
+      @chunk_cache = nil # reset the cache
     end
     
     ##
@@ -754,6 +768,7 @@ module Amp
       prev = curr - 1
       base = self[prev].base_rev
       offset = data_end_for_index prev
+      
       if curr > 0
         if d.nil? || d.empty?
           ptext = decompress_revision node_id_for_index(prev)
@@ -763,12 +778,14 @@ module Amp
         len = data[:compression].size + data[:text].size
         dist = len + offset - data_start_for_index(base)
       end
+      
       # Compressed diff > size of actual file
       if curr == 0 || dist > text.size * 2
         data = RevlogSupport::Support.compress text
         len = data[:compression].size + data[:text].size
         base = curr
       end
+      
       entry = RevlogSupport::IndexEntry.new(RevlogSupport::Support.offset_version(offset, 0), 
                 len, text.size, base, link, rev(p1), rev(p2), node)
       @index << entry
@@ -920,10 +937,7 @@ module Amp
             end
             chk = add_revision(text, journal, link, parent1, parent2, 
                                   nil, index_file_handle)
-            # if (! data_file_handle) && (! @index.inline?)
-            #   data_file_handle = open(@data_file, "a")
-            #   index_file_handle = open(@index_file, "a")
-            # end
+            
             if chk != node
               raise RevlogSupport::RevlogError.new("consistency error "+
                         "adding group")

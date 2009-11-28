@@ -91,6 +91,7 @@ HELP
       
       [source, dest_repo]
     rescue
+      p "RESCUE ME"
       FileUtils.remove_entry dest # kill the dir if we've had any problems
     end
   end

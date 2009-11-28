@@ -85,11 +85,11 @@ module Amp
           position = 0
           while position < size
             newposition = position + 2**20
-            p << deflater.deflate(text[position..(newposition-1)], Zlib::NO_FLUSH)
+            parts << deflater.deflate(text[position..(newposition-1)], Zlib::NO_FLUSH)
             position = newposition
           end
-          p << deflater.flush
-          binary = p.join if p.map {|e| e.size}.sum < size # only add it if
+          parts << deflater.flush
+          binary = parts.join if parts.map {|e| e.size}.sum < size # only add it if
                                                  # compression made it smaller
         else #tiny, just compress it
           binary = Zlib::Deflate.deflate text
