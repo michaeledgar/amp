@@ -327,7 +327,7 @@ class TestFunctional < Test::Unit::TestCase
     assert_verify
     
     # Create and compare bundles of ALL revisions
-    assert_amp_hg_bundle_same 'amp_bundle_all.bundle', :all => true
+    assert_amp_hg_bundle_same 'bundle_all.bundle', :all => true
     
     # Now go only up to the 3rd revision.
     assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :rev => 3, :all => true

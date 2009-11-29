@@ -99,4 +99,35 @@ task :test do
   ruby cmd
 end
 
+desc "Compile Site"
+task :"build-website" do
+  require 'site/src/helpers.rb'
+  missing_gems = []
+  requirements = ['haml', 'uv']
+  requirements.each do |requirement|
+    begin
+      require requirement
+    rescue LoadError => e
+      puts "The following gems are required to build the amp website: #{requirements.join(", ")}"
+      puts "Install them as follows: gem install #{requirements.join(" ")}"
+      exit
+    end
+  end
+  
+  Dir["site/src/**/*.haml"].reject {|item| item.split("/").last =~ /^_/}.each do |haml|
+    file_path = haml[8..-6]
+    FileUtils.makedirs(File.dirname("site/build" + file_path + ".html"))
+    File.open("site/build" + file_path + ".html","w") do |out|
+      puts "Building #{file_path}"
+      out.write render(haml)
+    end
+  end
+  %w(css images scripts docs).each do |dir|
+    src = "site/src/#{dir}/"
+    if File.exist? src
+      sh "cp -r #{src} site/build/#{dir}/"
+    end
+  end
+end
+
 # vim: syntax=Ruby

@@ -1,37 +1,28 @@
 have_library: checking for BZ2_bzWriteOpen() in -lbz2... -------------------- yes
 
-"gcc -o conftest -I/usr/local/include/ruby1.9-1.9.1/i386-darwin10.0.0 -I/usr/local/include/ruby1.9-1.9.1/ruby/backward -I/usr/local/include/ruby1.9-1.9.1 -I/Users/michaeledgar/mygems/amp/ext/amp/bz2  -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE   -DRUBY_19  -O2 -g -Wall -Wno-parentheses -pipe -fno-common conftest.c  -L. -L/usr/local/lib -L. -L/usr/local/lib     -lruby1.9-static  -lpthread -ldl -lobjc  "
+"gcc -o conftest -I. -I/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/lib/ruby/1.8/universal-darwin10.0 -I/Users/michaeledgar/mygems/amp/ext/amp/bz2  -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE   -arch i386 -arch x86_64 -g -Os -pipe -fno-common -DENABLE_DTRACE  -fno-common  -pipe -fno-common   conftest.c  -L. -L/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/lib -L. -arch i386 -arch x86_64      -lruby -lbz2  -lpthread -ldl  "
+conftest.c: In function ‘t’:
+conftest.c:3: error: ‘BZ2_bzWriteOpen’ undeclared (first use in this function)
+conftest.c:3: error: (Each undeclared identifier is reported only once
+conftest.c:3: error: for each function it appears in.)
+conftest.c: In function ‘t’:
+conftest.c:3: error: ‘BZ2_bzWriteOpen’ undeclared (first use in this function)
+conftest.c:3: error: (Each undeclared identifier is reported only once
+conftest.c:3: error: for each function it appears in.)
+lipo: can't figure out the architecture type of: /var/folders/zy/zyqc-SWsGjeyuLdp+7qPO++++TI/-Tmp-//cczltxYY.out
 checked program was:
 /* begin */
-1: #include "ruby.h"
-2: 
-3: int main() {return 0;}
+1: /*top*/
+2: int main() { return 0; }
+3: int t() { void ((*volatile p)()); p = (void ((*)()))BZ2_bzWriteOpen; return 0; }
 /* end */
 
-"gcc -o conftest -I/usr/local/include/ruby1.9-1.9.1/i386-darwin10.0.0 -I/usr/local/include/ruby1.9-1.9.1/ruby/backward -I/usr/local/include/ruby1.9-1.9.1 -I/Users/michaeledgar/mygems/amp/ext/amp/bz2  -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE   -DRUBY_19  -O2 -g -Wall -Wno-parentheses -pipe -fno-common conftest.c  -L. -L/usr/local/lib -L. -L/usr/local/lib     -lruby1.9-static -lbz2  -lpthread -ldl -lobjc  "
-conftest.c: In function ‘t’:
-conftest.c:5: error: ‘BZ2_bzWriteOpen’ undeclared (first use in this function)
-conftest.c:5: error: (Each undeclared identifier is reported only once
-conftest.c:5: error: for each function it appears in.)
+"gcc -o conftest -I. -I/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/lib/ruby/1.8/universal-darwin10.0 -I/Users/michaeledgar/mygems/amp/ext/amp/bz2  -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE   -arch i386 -arch x86_64 -g -Os -pipe -fno-common -DENABLE_DTRACE  -fno-common  -pipe -fno-common   conftest.c  -L. -L/System/Library/Frameworks/Ruby.framework/Versions/1.8/usr/lib -L. -arch i386 -arch x86_64      -lruby -lbz2  -lpthread -ldl  "
 checked program was:
 /* begin */
-1: #include "ruby.h"
-2: 
-3: /*top*/
-4: int main() {return 0;}
-5: int t() { void ((*volatile p)()); p = (void ((*)()))BZ2_bzWriteOpen; return 0; }
-/* end */
-
-"gcc -o conftest -I/usr/local/include/ruby1.9-1.9.1/i386-darwin10.0.0 -I/usr/local/include/ruby1.9-1.9.1/ruby/backward -I/usr/local/include/ruby1.9-1.9.1 -I/Users/michaeledgar/mygems/amp/ext/amp/bz2  -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE   -DRUBY_19  -O2 -g -Wall -Wno-parentheses -pipe -fno-common conftest.c  -L. -L/usr/local/lib -L. -L/usr/local/lib     -lruby1.9-static -lbz2  -lpthread -ldl -lobjc  "
-conftest.c: In function ‘t’:
-conftest.c:5: warning: implicit declaration of function ‘BZ2_bzWriteOpen’
-checked program was:
-/* begin */
-1: #include "ruby.h"
-2: 
-3: /*top*/
-4: int main() {return 0;}
-5: int t() { BZ2_bzWriteOpen(); return 0; }
+1: /*top*/
+2: int main() { return 0; }
+3: int t() { BZ2_bzWriteOpen(); return 0; }
 /* end */
 
 --------------------

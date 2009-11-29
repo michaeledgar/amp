@@ -19,8 +19,9 @@ module Amp
     # @return [UIMenu] the new menu
     def initialize
       @choices = []
-      @prompt = "Pick an option, please."
-      @index = :number
+      @prompt  = "Pick an option, please."
+      @index   = :number
+      @config  = nil
     end
     
     ##

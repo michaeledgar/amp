@@ -149,7 +149,11 @@ module Amp
     ##
     # Returns the offset where the data begins for the revision at _index_.
     def data_start_for_index(index)
-      RevlogSupport::Support.get_offset self[index].offset_flags
+      result = RevlogSupport::Support.get_offset self[index].offset_flags
+      if Amp::Support::SYSTEM[:endian] == :big
+        result = result.byte_swap_64
+      end
+      result
     end
     
     ##
@@ -739,10 +743,7 @@ module Amp
         @version &= ~ RevlogSupport::Support::REVLOG_NG_INLINE_DATA
         @inline   = false
         each do |i|
-          # THE FOLLOWING LINE IS NOT CORRECT
-          # IT IS DIRECTLY TRANSLATED PYTHON CODE
-          # I HAVE NO IDEA HOW WE DID THIS BEFORE
-          e = @io.pack_entry @index[i], @node, @version, i
+          e = @index.pack_entry @index[i], @version
           fp.write e
         end
       end
@@ -761,7 +762,7 @@ module Amp
     # @param [String] p2 the parent nodeids of the revision
     # @param d an optional precomputed delta
     # @return [String] the digest ID referring to the node in the log
-    def add_revision(text, transaction, link, p1, p2, d=nil, index_file_handle=nil)
+    def add_revision(text, journal, link, p1, p2, d=nil, index_file_handle=nil)
       node = RevlogSupport::Support.history_hash(text, p1, p2)
       return node if @index.node_map[node]
       curr = index_size
@@ -788,9 +789,13 @@ module Amp
       
       entry = RevlogSupport::IndexEntry.new(RevlogSupport::Support.offset_version(offset, 0), 
                 len, text.size, base, link, rev(p1), rev(p2), node)
+                
+      offset += curr * @index.entry_size
+      journal << [@index_file, offset, curr]
+                
       @index << entry
       @index.node_map[node] = curr
-      @index.write_entry(@index_file, entry, transaction, data, index_file_handle)
+      @index.write_entry(@index_file, entry, journal, data, index_file_handle)
       @index.cache = [node, curr, text]
       node
     end

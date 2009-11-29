@@ -21,6 +21,8 @@ module Amp
       if block_given?
         begin
           yield journal
+        rescue
+          journal.delete
         ensure
           journal.close
         end
@@ -39,7 +41,7 @@ module Amp
     #   of the journal file we'll be using
     # @param [Proc] after_close A proc to call (with no args) after we
     #   close (finish) the transaction.
-    def initialize(reporter=StandardErrorReporter, journal="journal#{rand(10000)}", createmode=nil, &after_close)      
+    def initialize(reporter=StandardErrorReporter, journal="journal#{rand(10000)}", createmode=nil, &after_close)   
       @count = 1
       @reporter = reporter
       @after_close = after_close
@@ -139,6 +141,7 @@ module Amp
     # Closes up the journal. Will call the after_close proc passed
     # during instantiation.
     def close
+      UI::status "closing journal"
       @count -= 1
       return if @count != 0
       @file.close
@@ -155,6 +158,7 @@ module Amp
     # Abort, abort! abandon ship! This rolls back any changes we've made
     # during the current journalling session.
     def abort
+      UI::status "aborting journal"
       return unless @entries && @entries.any?
       @reporter.report "transaction abort!\n"
       @entries.each do |hash|

@@ -2317,19 +2317,12 @@ module Amp
         removed.select {|f| m1[f]}.each do |f|
           m1.delete f
           removed_1 << f
-          #Amp::Logger.info("Removed: #{f}")
         end
         
         fresh = fresh.map {|k, v| (v) ? k : nil}.reject {|k| k.nil? }
         man_entry = manifest.add(m1, journal, link_rev, c1[0], c2[0],
                                 [fresh, removed_1])
-        #Amp::Logger.info("Adding/modifying: #{fresh.inspect}")
-        #Amp::Logger.info("Removing: #{removed_1.inspect}")
-        #Amp::Logger.section("New Manifest") do
-          #manifest.read(:tip).each do |file, _|
-            #Amp::Logger.info(file)
-          #end
-        #end
+
         if !opts[:empty_ok] && !text
           template_opts = {:added => added, :updated => updated,
                            :removed => removed, :template_type => :commit }
@@ -2346,20 +2339,9 @@ module Amp
         changelog.delay_update
         n = changelog.add(man_entry, changed + removed_1, text, journal, p1, p2, user,
                           changeset.date, extra)
-        #Amp::Logger.section("changelog") do
-          #Amp::Logger.info("manifest entry: #{man_entry.inspect}")
-          #Amp::Logger.info("files: #{(changed + removed_1).inspect}")
-          #Amp::Logger.info("text: #{text.inspect}")
-          #Amp::Logger.info("p1: #{p1.inspect}")
-          #Amp::Logger.info("p2: #{p2.inspect}")
-          #Amp::Logger.info("user: #{user.inspect}")
-          #Amp::Logger.info("date: #{changeset.date.inspect}")
-          #Amp::Logger.info("extra: #{extra.inspect}")
-        #end
+
         self.changelog.write_pending()
         changelog.finalize(journal)
-        #Amp::Logger.outdent.info("</changeset commit>")
-        # branchtags
         
         if opts[:use_dirstate] || opts[:update_dirstate]
           dirstate.parents = n
@@ -2369,6 +2351,7 @@ module Amp
         
         valid = true
         journal.close
+        journal = nil
         run_hook :post_commit, :added => added, :modified => updated,        :removed => removed, 
                                :user  => user,  :date     => changeset.date, :text    => text,
                                :revision => changelog.index_size

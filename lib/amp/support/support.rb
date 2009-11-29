@@ -1081,11 +1081,9 @@ module Amp
     # architecture, and upates the SYSTEM[] hash in the Support module.
     def self.determine_endianness
       num = 0x12345678
-      little = '78563412'
-      big    = '12345678'
       native = [num].pack('l')
-      netunpack = native.unpack('N')
-      if native == netunpack
+      netunpack = native.unpack('N')[0]
+      if num == netunpack
         SYSTEM[:endian] = :big
       else
         SYSTEM[:endian] = :little

@@ -10,3 +10,7 @@ release happens, use the next name on the list.
 - John Locke
 - Christian Shephard
 - The Smoke Monster
+- Suomen
+- The word representing how some languages don't distinguish between blue and green
+- Magyar
+- Eagle Scout
