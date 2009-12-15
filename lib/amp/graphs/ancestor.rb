@@ -1,6 +1,6 @@
 module Amp
   module Graphs
-    
+      
     ##
     # = AncestorGenerator
     # A generator class that will allow us to only calculate one ancestor
@@ -143,5 +143,6 @@ module Amp
         return nil
       end
     end
+
   end
 end

@@ -66,20 +66,22 @@ Module.new do
           end
           Amp::UI.edit_file(filename) if filename
         when TEMPLATE_ADD_MODE
+          type = Amp::UI.ask("What VCS would you like your template to be associated with?", String)
           filename = Amp::UI.ask("What would you like to name your template? ", String)
           type = Amp::UI.ask("What kind of template? (log, commit) ", String) {|q| q.in = ["log","commit"]}
-          old_file = Amp::Support::Template["blank-#{type}"].file
-          new_file = File.join(template_directory, filename + ".erb")
+          old_file = Amp::Support::Template[type, "blank-#{type}"].file
+          new_file = File.join(template_directory, type, filename + ".erb")
           File.copy(old_file, new_file)
           Amp::UI.edit_file new_file
-          Amp::Support::FileTemplate.new(filename, new_file)
+          Amp::Support::FileTemplate.new(type, filename, new_file)
         when TEMPLATE_DELETE_MODE
           filename = nil
           Amp::UI.choose do |menu|
+            type = Amp::UI.ask("Which VCS's templates are we modifying?", String)
             menu.prompt = "Which template would you like to delete?"
             templates_for_scope(scope, repo).each do |template|
               menu.choice(template.name) do 
-                Amp::Support::Template.unregister template.name
+                Amp::Support::Template.unregister type, template.name
                 filename = template.file
               end
             end

@@ -7,7 +7,7 @@ module Amp
     # Class representing a template in the amp system
     class Template
       
-      @all_templates = {}
+      @all_templates = Hash.new {|h, k| h[k] = {} }
       class << self
         attr_accessor :all_templates
         
@@ -16,9 +16,9 @@ module Amp
         #
         # @param [String, Symbol, #to_sym] template the name of the template to retrieve
         # @return [Template] the template with the given name
-        def [](template)
+        def [](type, template)
           ensure_templates_loaded
-          return all_templates[template.to_sym]
+          return all_templates[type.to_sym][template.to_sym]
         end
         
         ##
@@ -26,8 +26,8 @@ module Amp
         #
         # @param [String, Symbol, #to_sym] name the name of the template. Should be unique.
         # @param [Template] template the template to register.
-        def register(name, template)
-          all_templates[name.to_sym] = template
+        def register(type, name, template)
+          all_templates[type.to_sym][name.to_sym] = template
         end
         
         ##
@@ -36,9 +36,9 @@ module Amp
         #
         # @param [String, Symbol, #to_sym] name the name of the template to remove from
         #   the system.
-        def unregister(name)
-          raise ArgumentError.new("Unknown template: #{name}") unless all_templates[name.to_sym]
-          all_templates.delete name.to_sym
+        def unregister(type, name)
+          raise ArgumentError.new("Unknown template: #{name}") unless all_templates[type.to_sym][name.to_sym]
+          all_templates[type.to_sym].delete name.to_sym
         end
         
         ##
@@ -53,9 +53,10 @@ module Amp
         # Registers the default templates. Separated into a method (instead of automatically
         # run) because templates aren't used enough to justify the IO hit from loading them in.
         def load_default_templates
-          Dir[File.expand_path(File.join(File.dirname(__FILE__), "*.erb"))].each do |f|
+          Dir[File.expand_path(File.join(File.dirname(__FILE__), "**/*.erb"))].each do |f|
             name = f.split('/').last.chomp('.erb').sub('.','-')
-            FileTemplate.new(name, f)
+            type = f.split('/')[-2]
+            FileTemplate.new(type, name, f)
           end
         end
         
@@ -83,9 +84,9 @@ module Amp
       # @param [Symbol] type the type of the template. Indicates the renderer used.
       # @param [String] text the text of the template, which presumably has some templating
       #   code to substitute in local variables and make a nice output system.
-      def initialize(name, renderer = :erb, text = "")
+      def initialize(type, name, renderer = :erb, text = "")
         @name, @renderer, @text = name, renderer, text
-        Template.register(name, self)
+        Template.register(type, name, self)
       end
       
       ##
@@ -128,17 +129,17 @@ module Amp
     class FileTemplate < Template
       KNOWN_EXTENSIONS = ["erb", "haml"]
     
-      attr_accessor :file        
+      attr_accessor :file
       
       ##
       # Initializes a new FileTemplate with different 
-      def initialize(name, file, renderer = nil)
+      def initialize(type, name, file, renderer = nil)
         if renderer.nil?
           renderer = KNOWN_EXTENSIONS.select {|ext| file.end_with? ext}.first
         end
         raise ArgumentError.new("No renderer specified for #{file.inspect}") if renderer.nil?
         @file = file
-        super(name, renderer, File.read(file))
+        super(type, name, renderer, File.read(file))
       end
       
       def save!

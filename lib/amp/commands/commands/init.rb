@@ -4,7 +4,7 @@ command :init do |c|
   c.on_run do |options, args|
     path = args.first ? args.first : '.'
     
-    Amp::Repositories::LocalRepository.new(path, true, options[:global_config])
+    Amp::Repositories::Mercurial::LocalRepository.new(path, true, options[:global_config])
     puts "New repository initialized."
   end
 end

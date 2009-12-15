@@ -59,6 +59,7 @@ module PythonConfig
   # through this class. See the README for tons of examples.
   class ConfigParser
     attr_reader :sections
+    COMMENT_REGEX  = /^[;#]/
     SECTION_REGEXP = /\[([^\[\]]*)\]/
     ASSIGNMENT_REGEXP = /([^:=\s]+)\s*[:=]\s*([^\n]*?)$/
     LONG_HEADER_REGEXP = /^([ \t]+)([^\n]+)$/
@@ -81,7 +82,7 @@ module PythonConfig
     alias_method :dup, :clone
     
     def parse_line(line) #:nodoc:
-    
+      next if line =~ COMMENT_REGEX
       if line =~ SECTION_REGEXP
         section_name = $1
         @cursection = add_section section_name

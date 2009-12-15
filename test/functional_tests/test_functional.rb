@@ -326,21 +326,21 @@ class TestFunctional < Test::Unit::TestCase
     amp "commit", :message => 'monkey'
     assert_verify
     
-    # Create and compare bundles of ALL revisions
-    assert_amp_hg_bundle_same 'bundle_all.bundle', :all => true
-    
-    # Now go only up to the 3rd revision.
-    assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :rev => 3, :all => true
-    
-    # We shall now test types 'none', 'bzip2', and 'gzip'
-    ['none', 'bzip2', 'gzip'].each do |type|
-      assert_amp_hg_bundle_same "bundle_up_to_7_with_type_#{type}.bundle",
-                                :rev => 7, :type => type, :all => true
-    end
-    
-    # Test making bundles with --base
-    assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :rev => 3, :base => 2
-    assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :base => 3
+    # # Create and compare bundles of ALL revisions
+    # assert_amp_hg_bundle_same 'bundle_all.bundle', :all => true
+    # 
+    # # Now go only up to the 3rd revision.
+    # assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :rev => 3, :all => true
+    # 
+    # # We shall now test types 'none', 'bzip2', and 'gzip'
+    # ['none', 'bzip2', 'gzip'].each do |type|
+    #   assert_amp_hg_bundle_same "bundle_up_to_7_with_type_#{type}.bundle",
+    #                             :rev => 7, :type => type, :all => true
+    # end
+    # 
+    # # Test making bundles with --base
+    # assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :rev => 3, :base => 2
+    # assert_amp_hg_bundle_same 'bundle_up_to_3.bundle', :base => 3
   ensure
     # cleanup
     exit_repo

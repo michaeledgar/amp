@@ -23,6 +23,7 @@ command :copy do |c|
     sources = args[0..-2]
     destination = args.last
     sources.each do |source|
+      Amp::UI.say "#{source} => #{destination}"
       repo.copy source, destination, opts
     end
   end

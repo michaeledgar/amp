@@ -2,17 +2,16 @@ require 'delegate'
 require 'logger'
 module Amp
   module Support
+    LOGGER_LEVELS = [:warn, :info, :fatal, :error, :debug]
     module SingletonLogger
       attr_accessor :singleton_object
       def global_logger
         singleton_object
       end
       
-      def warn(*args);  global_logger.warn(*args);  end
-      def info(*args);  global_logger.info(*args);  end
-      def fatal(*args); global_logger.fatal(*args); end
-      def error(*args); global_logger.error(*args); end
-      def debug(*args); global_logger.debug(*args); end
+      LOGGER_LEVELS.each do |message|
+        define_method(message) { |*args| global_logger.send(message, *args) }
+      end
       
       def method_missing(meth, *args, &block)
         if global_logger.respond_to?(meth)
@@ -28,11 +27,9 @@ module Amp
         @output = output
       end
       
-      def warn(input); @output.puts(input); end
-      def info(input); @output.puts(input); end
-      def fatal(input); @output.puts(input); end
-      def error(input); @output.puts(input); end
-      def debug(input); @output.puts(input); end
+      LOGGER_LEVELS.each do |message|
+        define_method(message) {|input| @output.puts(input) }
+      end
     end
     
     class Logger < DelegateClass(::Logger)
@@ -72,12 +69,9 @@ module Amp
         self
       end
       
-      def warn(input);  @source.warn( "\t\t"*@indent + input); self; end
-      def info(input);  @source.info( "\t\t"*@indent + input); self; end
-      def fatal(input); @source.fatal("\t\t"*@indent + input); self; end
-      def error(input); @source.error("\t\t"*@indent + input); self; end
-      def debug(input); @source.debug("\t\t"*@indent + input); self; end
-      
+      LOGGER_LEVELS.each do |message|
+        define_method(message) { |input| @source.send(message, "\t\t"*@indent + input); self }
+      end
       
       def level=(level)
         receiver = @source

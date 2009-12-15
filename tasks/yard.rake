@@ -35,7 +35,7 @@ end
 namespace :yard do
   
   desc 'Force a rebuild of the documentation'
-  task :full_doc => [ :todo ] do
+  task :full_doc do
     text_files = ["SCHEDULE.markdown", "AUTHORS", "STYLE", "TODO.markdown", "LICENSE"]
     options    = ["--private", "--protected", "-q", "-r README.md"]
     ruby_files = ["lib/**/**/**/*.rb", "lib/**/**/*.rb", "lib/**/*.rb", "lib/*.rb"]
@@ -52,55 +52,6 @@ namespace :yard do
     undocd = klass.meths.select {|m| m.docstring.empty? }.size.to_f
     
     undocd.zero? ? 0.0 : (undocd / total)
-  end
-  
-  desc 'Generate a TODO file by searching for @todo tags'
-  task :todo => [ :doc ] do
-    File.open("TODO.markdown","w") do |out|
-      classes = YARD::Registry.all(:class)
-      classes.each do |klass|
-        need_todo_section = false 
-        klass_todo = []
-        
-        klass.tags.each do |tag| 
-          if tag.tag_name.to_s == "todo"
-            need_todo_section = true
-            klass_todo << tag.text
-          end
-        end
-        
-        method_todo_section = false
-        method_todos = {}
-        klass.meths(:inherited => false).each do |meth|
-          meth.tags.each do |tag|
-            if tag.tag_name.to_s == "todo"
-              need_todo_section = true
-              method_todo_section = true
-              (method_todos[meth] ||= []) << tag.name # @todo puts info in #name, not #text
-            end
-          end
-        end
-        
-        if need_todo_section
-          klassname = klass.path.gsub(/\_/,"\\_")
-          out << klassname << "\n"
-          out << ("=" * klassname.size) << "\n"
-          klass_todo.each {|todo| out << "  - #{todo}\n"}
-          out << "\n"
-          method_todos.each do |meth, todos|
-            methname = meth.path.gsub(/\_/,"\\_")
-            out << methname << "\n"
-            out << ("-" * methname.size) << "\n"
-            todos.each do |todo|
-              out << "  - " << todo << "\n"
-            end
-            out << "\n"
-          end
-          out << "\n"
-        end
-        
-      end
-    end
   end
   
   # rake yard:search[ranks]

@@ -8,7 +8,7 @@ class TestManifest < Test::Unit::TestCase
   def setup
     opener = Amp::Opener.new(File.dirname(__FILE__))
     opener.default = :open_file
-    @manifest = Amp::Manifest.new(opener)
+    @manifest = Amp::Mercurial::Manifest.new(opener)
   end
   
   def test_load_manifest

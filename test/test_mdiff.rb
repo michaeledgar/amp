@@ -2,7 +2,7 @@ require "test/unit"
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
 class TestMdiff < Test::Unit::TestCase
-  include Amp::Diffs
+  include Amp::Diffs::Mercurial
 
   def test_default_whitespace_clean
     opts = MercurialDiff::DEFAULT_OPTIONS.dup

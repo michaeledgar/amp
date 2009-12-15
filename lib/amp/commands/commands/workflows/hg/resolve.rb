@@ -34,7 +34,7 @@ command :resolve do |c|
     parse_args = lambda {|os| [:all, :mark, :unmark, :list].map {|i| os[i] } }
     
     all, mark, unmark, list = *parse_args[opts]
-    merge_state = Amp::Merges::MergeState.new(repo)
+    merge_state = Amp::Merges::Mercurial::MergeState.new(repo)
     
     if opts[:all]
       # the block means "default to true" - so basically ignore all other input

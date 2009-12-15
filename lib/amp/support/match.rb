@@ -10,7 +10,7 @@ module Amp
   # their Match class, because we needed access to three things from this
   # one object: the explicit files passed, the includes, and the excludes.
   class Match
-    extend Ignore
+    extend Mercurial::Ignore
     
     attr_reader :block
     attr_reader :files

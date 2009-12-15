@@ -65,7 +65,7 @@ HELP
       bundle_type = (remote.local? && "HG10GZ") || "HG10UN" # ???
       require 'tempfile'
       file = Tempfile.new("hg-incoming-bundle", Dir.pwd)
-      Amp::RevlogSupport::ChangeGroup.write_bundle(cg, bundle_type, file)
+      Amp::Mercurial::RevlogSupport::ChangeGroup.write_bundle(cg, bundle_type, file)
       cleanup = file.path
       unless remote.local?
         remote = Amp::Repositories::BundleRepository.new(repo.root, opts[:global_config], cleanup)

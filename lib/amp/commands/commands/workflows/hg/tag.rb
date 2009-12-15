@@ -42,7 +42,7 @@ command :tag do |c|
           raise abort("tag #{name} is not a #{expected_type} tag")
         end
       end
-      rev = Amp::RevlogSupport::Node::NULL_ID
+      rev = Amp::Mercurial::RevlogSupport::Node::NULL_ID
       message ||= "Removed tag #{names.join(", ")}"
     elsif !opts[:force]
       names.each do |name|
@@ -53,7 +53,7 @@ command :tag do |c|
       end
     end
     
-    if !rev && repo.dirstate.parents[1] != Amp::RevlogSupport::Node::NULL_ID
+    if !rev && repo.dirstate.parents[1] != Amp::Mercurial::RevlogSupport::Node::NULL_ID
       raise abort("uncommited merge - please provide" +
                                          " a specific revision")
     end

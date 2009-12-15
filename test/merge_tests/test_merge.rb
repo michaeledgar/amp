@@ -14,7 +14,7 @@ class TestMerge < Test::Unit::TestCase
     
     # kill the error output...
     old, $stderr = $stderr, StringIO.new
-    Amp::Merges::ThreeWayMerger.three_way_merge(TEST_LOCAL, TEST_BASE, TEST_REMOTE,
+    Amp::Merges::Mercurial::ThreeWayMerger.three_way_merge(TEST_LOCAL, TEST_BASE, TEST_REMOTE,
                                                 :labels => ["local","other"])
     $stderr = old # and reassign
     

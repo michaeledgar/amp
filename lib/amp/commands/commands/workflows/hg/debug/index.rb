@@ -13,7 +13,7 @@ namespace :debug do
         Amp::UI.say "|---------|------------|------------|----------|-----------|--------------|--------------|--------------|"
         Amp::UI.say "|   rev   |   offset   |   length   |   base   |  linkrev  |   nodeid     |    parent1   |    parent2   |"
         Amp::UI.say "|---------|------------|------------|----------|-----------|--------------|--------------|--------------|"
-        revlog = Amp::Revlog.new(opener, index_file)
+        revlog = Amp::Mercurial::Revlog.new(opener, index_file)
         idx = 0
         revlog.each do |entry|
           node    = entry.node_id

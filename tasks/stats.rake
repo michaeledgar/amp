@@ -1,12 +1,3 @@
-require 'flay'
-require 'flay_task'
-
-
-FlayTask.new(:flay, 400) do |t|
-  t.dirs = %w(lib/amp)
-  t.verbose = true
-end
-
 desc 'Statistics of Code'
 task :stats do
   MINIMUM_LOC = 15

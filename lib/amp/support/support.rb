@@ -41,12 +41,6 @@ class AbortError < StandardError
   end
 end
 
-module Kernel
-  def abort(str)
-    AbortError.new str
-  end
-end
-
 class LockError < StandardError
   attr_reader :errno, :filename, :desc
   def initialize(errno, strerror, filename, desc)
@@ -216,16 +210,16 @@ module Kernel
   #
   # @yield The block is run, and any exceptions raised print their full backtrace.
   def full_backtrace_please
-    message = ["***** Left engine failure *****",
-               "***** Ejection system error *****",
-               "***** Vaccuum in booster engine *****"
-              ][rand(3)]
     begin
       yield
     rescue AbortError => e
       Amp::UI.say "Operation aborted."
       raise
     rescue StandardError => e
+      message = ["***** Left engine failure *****",
+                 "***** Ejection system error *****",
+                 "***** Vaccuum in booster engine *****"
+                ][rand(3)]
       Amp::UI.say message
       Amp::UI.say e.to_s
       e.backtrace.each {|err| Amp::UI.say "\tfrom #{err}" }
@@ -233,6 +227,15 @@ module Kernel
     end
   end
   
+  def amp_pause
+    Amp::UI.say "Amp is paused. Type 'go' and hit enter to continue"
+    until gets.strip == 'go'
+    end
+  end
+  
+  def abort(str)
+    AbortError.new str
+  end
 end
 
 class Dir
@@ -677,12 +680,12 @@ class String
   
   # Am I equal to the NULL_ID used in revision logs?
   def null?
-    self == Amp::RevlogSupport::Node::NULL_ID
+    self == Amp::Mercurial::RevlogSupport::Node::NULL_ID
   end
   
   # Am I not equal to the NULL_ID used in revision logs?
   def not_null?
-    !(null?)
+    !null?
   end
   
   ##

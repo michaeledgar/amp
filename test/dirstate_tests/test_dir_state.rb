@@ -14,7 +14,7 @@ class TestDirState < Test::Unit::TestCase
     @config = PythonConfig::ConfigParser.new f
     opener = Amp::Opener.new File.expand_path(File.dirname(__FILE__))
     opener.default = :open_file
-    @state = Amp::Repositories::DirState.new File.expand_path(File.dirname(__FILE__)), @config, opener
+    @state = Amp::Repositories::Mercurial::DirState.new File.expand_path(File.dirname(__FILE__)), @config, opener
     @files = []
   end
   
@@ -33,17 +33,17 @@ class TestDirState < Test::Unit::TestCase
   end
   
   def test_parents_equals
-    @state.parents = ["asdfasdf", Amp::RevlogSupport::Node::NULL_ID]
+    @state.parents = ["asdfasdf", Amp::Mercurial::RevlogSupport::Node::NULL_ID]
     
-    assert_equal ["asdfasdf", Amp::RevlogSupport::Node::NULL_ID], @state.parents
+    assert_equal ["asdfasdf", Amp::Mercurial::RevlogSupport::Node::NULL_ID], @state.parents
     
     @state.parents = "asdfasdf"
     
-    assert_equal ["asdfasdf", Amp::RevlogSupport::Node::NULL_ID], @state.parents
+    assert_equal ["asdfasdf", Amp::Mercurial::RevlogSupport::Node::NULL_ID], @state.parents
   end
   
   def test_dirty?
-    @state.parents = ["asdfasdf", Amp::RevlogSupport::Node::NULL_ID] # something to dirty it up
+    @state.parents = ["asdfasdf", Amp::Mercurial::RevlogSupport::Node::NULL_ID] # something to dirty it up
     
     assert @state.dirty?
   end
@@ -174,7 +174,7 @@ class TestDirState < Test::Unit::TestCase
     
     @state.send :read!
     
-    assert_equal({"oh_nuit" => Amp::Repositories::DirStateEntry.new(:added, 0, -1, -1)}, @state.files)
+    assert_equal({"oh_nuit" => Amp::Repositories::Mercurial::DirStateEntry.new(:added, 0, -1, -1)}, @state.files)
     assert_equal({}, @state.copy_map)
   end
 

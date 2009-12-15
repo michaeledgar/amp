@@ -53,7 +53,7 @@ EOS
       base = base.map {|b| repo.lookup b }
       
       o   = []
-      has = {Amp::RevlogSupport::Node::NULL_ID => nil}
+      has = {Amp::Mercurial::RevlogSupport::Node::NULL_ID => nil}
       
       # iterates over each file node id
       base.each do |filename, node_id|
@@ -108,12 +108,12 @@ EOS
     
     # some error checking
     # yes, this calls Array#include, but the array is only 3 elements
-    unless Amp::RevlogSupport::ChangeGroup::BUNDLE_TYPES.include? bundle_type
+    unless Amp::Mercurial::RevlogSupport::ChangeGroup::BUNDLE_TYPES.include? bundle_type
       raise abort('unknown bundle type specified with --type')
     end
     
     File.open fname, 'w' do |file|
-      Amp::RevlogSupport::ChangeGroup.write_bundle cg, bundle_type, file
+      Amp::Mercurial::RevlogSupport::ChangeGroup.write_bundle cg, bundle_type, file
     end
   end  # end on_run
 end

@@ -19,7 +19,7 @@ end
 
 dir_config('bz2')
 if !have_library('bz2', 'BZ2_bzWriteOpen')
-   raise "libz2 not found"
+   raise "bzip2 headers not found. If you are on Linux, install the libbz2-dev package. If you are on Mac OS X, you should not see this error."
 end
 
 if enable_config("shared", true)

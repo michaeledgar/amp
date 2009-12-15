@@ -144,7 +144,7 @@ module Sinatra
     def amp_get_capabilities(amp_repo)
       caps = ["lookup", "changegroupsubset"]
       # uncompressed for streaming?
-      caps << "unbundle=#{Amp::RevlogSupport::ChangeGroup::FORMAT_PRIORITIES.join(',')}"
+      caps << "unbundle=#{Amp::Mercurial::RevlogSupport::ChangeGroup::FORMAT_PRIORITIES.join(',')}"
       caps.join ' '
     end
     
@@ -380,11 +380,11 @@ module Sinatra
         header = fp.read(6)
         if header.start_with?("HG") && !header.start_with?("HG10")
           raise ArgumentError.new("unknown bundle version")
-        elsif !Amp::RevlogSupport::ChangeGroup::BUNDLE_HEADERS.include?(header)
+        elsif !Amp::Mercurial::RevlogSupport::ChangeGroup::BUNDLE_HEADERS.include?(header)
           raise ArgumentError.new("unknown bundle compression type")
         end
         
-        stream = Amp::RevlogSupport::ChangeGroup.unbundle(header, fp)
+        stream = Amp::Mercurial::RevlogSupport::ChangeGroup.unbundle(header, fp)
         
       end
       

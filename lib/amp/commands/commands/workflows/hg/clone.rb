@@ -54,10 +54,10 @@ HELP
         
         if source.local? && copy # then we're copying
           FileUtils.copy_entry src, dest # copy everything, pray it's pristine
-          dest_repo = Amp::Repositories::LocalRepository.new dest, false, opts[:global_config]
+          dest_repo = Amp::Repositories::Mercurial::LocalRepository.new dest, false, opts[:global_config]
         else # we have to pull
           # make the directory, cd into it, pull, and maaaaaaybe update
-          dest_repo = Amp::Repositories::LocalRepository.new dest, true, opts[:global_config]
+          dest_repo = Amp::Repositories::Mercurial::LocalRepository.new dest, true, opts[:global_config]
           dest_repo.clone source, :revs   => (rev ? rev.map {|r| source.lookup r } : []),
                                   :stream => opts[:stream] # the actual cloning which pulls
         end

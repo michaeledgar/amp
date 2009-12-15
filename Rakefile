@@ -31,7 +31,6 @@ Hoe.spec "amp" do
                                       "ext/amp/support/extconf.rb",
                                       "ext/amp/bz2/extconf.rb"]}
   self.need_rdoc = false
-  self.flog_threshold = 50000
   self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas."
 end
  
@@ -48,7 +47,7 @@ end
 
 
 remove_task 'test_deps', 'publish_docs', 'post_blog', 
-            'deps:fetch', 'deps:list', 'deps:email', 'flay', 'clean', 'test'
+            'deps:fetch', 'deps:list', 'deps:email', 'flay', 'clean', 'test', 'flog'
 
 load 'tasks/yard.rake'
 load 'tasks/stats.rake'

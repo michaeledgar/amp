@@ -61,7 +61,6 @@ module Amp
   
   module UI
     extend self
-    extend Amp::Merges::MergeUI
     
     class << self
       attr_accessor :config
@@ -73,7 +72,7 @@ module Amp
     #
     # @param [#to_s] warning the warning to print to standard output
     def warn(warning)
-      if !@config || @config["ui","amp-show-warnings",Boolean,true]
+      if !@config || @config["ui", "amp-show-warnings", Boolean, true]
         err "warning: #{warning}"
       end
     end

@@ -84,7 +84,7 @@ EOS
           if opts[:exact]
             raise abort('not a mercurial patch') unless data[:node_id] && data[:p1]
             p1 = repo.lookup data[:p1]
-            p2 = repo.lookup data[:p2] || Amp::RevlogSupport::Node::NULL_ID.hexlify
+            p2 = repo.lookup data[:p2] || Amp::Mercurial::RevlogSupport::Node::NULL_ID.hexlify
             
             repo.update(p1, false, true, nil).success? if p1 != wp.first.node
             repo.dirstate.parents = [p1, p2]

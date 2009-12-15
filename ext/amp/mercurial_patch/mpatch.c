@@ -33,7 +33,7 @@ static uint32_t ntohl(uint32_t x)
 #endif
 
 
-VALUE rb_mAmp, rb_mDiffs, rb_mMercurialPatch;
+VALUE rb_mAmp, rb_mMercurial, rb_mDiffs, rb_mMercurialPatch;
 
 
 struct frag {
@@ -398,7 +398,8 @@ void Init_MercurialPatch() {
     
     rb_mAmp = rb_define_module("Amp");
     rb_mDiffs = rb_define_module_under(rb_mAmp, "Diffs");
-    rb_mMercurialPatch = rb_define_module_under(rb_mDiffs, "MercurialPatch");
+    rb_mMercurial = rb_define_module_under(rb_mDiffs, "Mercurial");
+    rb_mMercurialPatch = rb_define_module_under(rb_mMercurial, "MercurialPatch");
     
     rb_define_singleton_method(rb_mMercurialPatch, "patched_size", amp_mpatch_patched_size, 2);
     rb_define_singleton_method(rb_mMercurialPatch, "apply_patches", amp_mpatch_apply_patches, 2);

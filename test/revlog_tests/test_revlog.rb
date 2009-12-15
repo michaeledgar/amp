@@ -9,7 +9,7 @@ class TestRevlog < Test::Unit::TestCase
   def setup
     opener = Amp::Opener.new(File.expand_path(File.dirname(__FILE__)))
     opener.default = :open_file # for testing purposes!
-    @revlog = Amp::Revlog.new(opener, TEST_REVLOG_INDEX)
+    @revlog = Amp::Mercurial::Revlog.new(opener, TEST_REVLOG_INDEX)
   end
   
   def test_load_revlog
@@ -297,8 +297,8 @@ class TestRevlog < Test::Unit::TestCase
     new_file = "./test/revlog_tests/test_adding_index.i"
     opener = Amp::Opener.new(".")
     opener.default = :open_file
-    newrevlog = Amp::Revlog.new(opener, new_file)
-    Amp::Journal.start("sillymonkey.tx") do |j|
+    newrevlog = Amp::Mercurial::Revlog.new(opener, new_file)
+    Amp::Mercurial::Journal.start("sillymonkey.tx") do |j|
       newrevlog.add_revision("silly", j, 50, "|\x03\xfe\x149\x81+\xcc5\xa3\x97\x94*I\xe2\xb9T\xa9\xac\x02", "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
     end
     new_str = ""

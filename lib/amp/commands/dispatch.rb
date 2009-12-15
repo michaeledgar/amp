@@ -41,12 +41,10 @@ module Amp
         $USE_RUBY = true
       end
       
-      global_config = Amp::AmpConfig.new
+      global_config  = Amp::AmpConfig.new
       Amp::UI.config = global_config
-      cmd = ARGV.shift # get the subcommand
-      cmd ||= "default"
-      
-      opts_as_arr = ARGV.dup
+      cmd            = ARGV.shift || "default" # get the subcommand
+      opts_as_arr    = ARGV.dup
       
       if global_opts[:debug_opts]
         global_config["debug", "messages"] = true

@@ -147,8 +147,8 @@ module Amp
     attr_accessor :name
     # Short, 1-line description of the command
     attr_accessor :description
-    # The Trollop parser
-    attr_accessor :parser
+    # The Trollop parser.
+    attr_reader   :parser
     
     ##
     # Creates a command in the Amp system. Simply instantiating a new
@@ -177,7 +177,7 @@ module Amp
       full_name = (self.class.current_namespaces + [name]).join(":")
       name = full_name.to_sym
       if self.class.all_commands[name]
-        yield self.class.all_commands[name] if block_given?
+        yield  self.class.all_commands[name] if block_given?
         return self.class.all_commands[name]
       end
       
@@ -228,7 +228,7 @@ module Amp
     # @param value the new default value for the option
     def default(opt, value)
       opt = opt.to_sym
-      the_opt = @options.select {|o| o[:name] == opt}.first
+      the_opt = @options.find {|o| o[:name] == opt }
       if the_opt
         the_opt[:options][:default] = value
       end
@@ -307,7 +307,8 @@ module Amp
       
       @before << block if block
       @before
-    end    
+    end
+    
     ##
     # This returns the list of actions to run after the command, in order (first
     # ones are run first). You can modify this array in any way you choose, and
