@@ -111,6 +111,8 @@ task :"build-website" do
     rescue LoadError => e
       puts "The following gems are required to build the amp website: #{requirements.join(", ")}"
       puts "Install them as follows: gem install #{requirements_install.join(" ")}"
+      puts "You will need oniguruma. Here's a helpful explanation of how to install it if"
+      puts "you need some help: http://snippets.aktagon.com/snippets/61-Installing-Ultraviolet-and-Onigurama"
       exit
     end
   end
