@@ -221,7 +221,7 @@ static VALUE amp_string_unhexlify(VALUE self) {
  * this function is run. All we need to do is add the new methods, and look up the
  * symbols for to_dirstate_symbol.
  */
-void Init_Support() {
+void Init_CSupport() {
     if (little_endian == -1) little_endian = (ntohl(8) != 8);
 
     // methods added to String class

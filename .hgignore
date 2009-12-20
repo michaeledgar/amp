@@ -22,5 +22,6 @@ amp_serve_users.db
 pkg/*
 site/build/*
 site/src/doc*
+ext/amp/bz2/mkmf.log
 syntax: regexp
 \.DS_Store

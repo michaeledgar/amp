@@ -1,1 +1,12 @@
 .hg/*
+ext/amp/*/*.bundle
+ext/amp/*/*.o
+ext/amp/*/Makefile
+test/localrepo_tests/testrepo/
+test/merge_tests/local.txt.out
+test/store_tests/store/
+doc/
+ext/amp/bz2/mkmf.log
+pkg/
+site/build/
+.yardoc

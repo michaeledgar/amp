@@ -6,6 +6,15 @@ module Amp
     # left as an exercise for the reader.
 
     class AbstractLocalRepository
+      include CommonLocalRepoMethods
+      ##
+      # Returns the root of the repository (not the .hg/.git root)
+      #
+      # @return [String]
+      def root
+        raise NotImplementedError.new("root() must be implemented by subclasses of AbstractLocalRepository.")
+      end
+      
       ##
       # Returns the staging area for the repository, which provides the ability to add/remove
       # files in the next commit.
@@ -85,6 +94,7 @@ module Amp
       def mark_resolved(*filenames)
         raise NotImplementedError.new("mark_resolved() must be implemented by subclasses of AbstractLocalRepository.")
       end
+      
     end
   end
 end

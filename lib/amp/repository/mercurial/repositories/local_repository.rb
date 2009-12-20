@@ -67,16 +67,10 @@ module Amp
           
           @store = Stores.pick requirements, @hg, Amp::Opener
           @config = Amp::AmpConfig.new :parent_config => config
-          @config.read_file File.join(@hg,"hgrc")
+          @config.read_file join("hgrc")
         end
         
         def local?; true; end
-        
-        def relative_join(file, cur_dir=FileUtils.pwd)
-          @root_pathname ||= Pathname.new(@root)
-          Pathname.new(File.expand_path(File.join(cur_dir, file))).relative_path_from(@root_pathname).to_s
-        end
-        
         
         def inspect; "#<LocalRepository @root=#{@root.inspect}>"; end
         
@@ -103,7 +97,6 @@ module Amp
             make_changelog
           end
           
-        
           # write the requires file
           write_requires requirements
         end
@@ -123,26 +116,6 @@ module Amp
         def changed?; !pristine?; end
         
         ##
-        # Effectively FileUtils.pwd
-        # 
-        # @return [String] the current location
-        def cwd
-          dirstate.cwd
-        end
-        alias_method :pwd, :cwd
-        
-        ##
-        # Returns the relative path from +src+ to +dest+.
-        # 
-        # @param [String] src This is a directory! If this is relative,
-        #                     it is assumed to be relative to the root.
-        # @param [String] dest This MUST be within root! It also is a file.
-        # @return [String] the relative path
-        def path_to(src, dest)
-          dirstate.path_to src, dest
-        end
-        
-        ##
         # Gets the changeset at the given revision.
         # 
         # @param [String, Integer] rev the revision index (Integer) or
@@ -158,15 +131,6 @@ module Amp
           end
           rev = rev.to_i if rev.to_i.to_s == rev
           return Amp::Mercurial::Changeset.new(self, rev)
-        end
-        
-        ##
-        # Iterates over each changeset in the repository, from oldest to newest.
-        # 
-        # @yield each changeset in the repository is yielded to the caller, in order
-        #   from oldest to newest. (Actually, lowest revision # to highest revision #)
-        def each(&block)
-          0.upto(size - 1) { |i| yield self[i]}
         end
         
         ##
@@ -221,14 +185,14 @@ module Amp
         end
         
         ##
-        # Locks the repository's .hg/store directory. Returns the lock, or if a block is given,
+        # Locks the repository's working directory. Returns the lock, or if a block is given,
         # runs the block with the lock, and clears the lock afterward.
         #
         # @yield When a block is given, that block is executed under locked
         #  conditions. That code can be guaranteed it is the only code running on the
         #  working directory in a destructive manner.
         # @param [Boolean] wait (true) wait for the lock to expire?
-        # @return [Lock] the lock on the .hg/store directory
+        # @return [Lock] the lock on the working directory
         def lock_working(wait = true)
           return @working_lock_ref if @working_lock_ref && @working_lock_ref.weakref_alive?
           
@@ -390,6 +354,7 @@ module Amp
           @dirstate = DirState.new(@root, @config, opener)
           @dirstate.read!
         end
+        alias_method :staging_area, :dirstate
         
         ##
         # Returns the URL of this repository. Uses the "file:" scheme as such.
@@ -401,15 +366,6 @@ module Amp
         # Opens a file using our opener. Can only access files in .hg/
         def open(*args, &block)
           @hg_opener.open(*args, &block)
-        end
-        
-        ##
-        # Joins the path to the repo's root (not .hg, the working dir root)
-        # 
-        # @param path the path we're joining
-        # @return [String] the path joined to the working directory's root
-        def working_join(path)
-          File.join(@root, path)
         end
     
         ##
@@ -1401,15 +1357,6 @@ module Amp
         end
         
         ##
-        # Call the hooks that run under +call+
-        # 
-        # @param [Symbol] call the location in the system where the hooks
-        #   are to be called
-        def run_hook(call, opts={:throw => false})
-          Hook.run_hook(call, opts)
-        end
-        
-        ##
         # Adds a list of file paths to the repository for the next commit.
         # 
         # @param [String, Array<String>] paths the paths of the files we need to
@@ -1454,7 +1401,6 @@ module Amp
               else
                 # else add it
                 dirstate.add file
-                #Amp::Logger.info("added #{file}")
               end
             end
             
@@ -1849,7 +1795,7 @@ module Amp
         #   and executables, here
         def add_file(file_name, data, flags)
           data = filter "decode", file_name, data
-          path = "#{@root}/#{file_name}"
+          path = working_join file_name
           
           File.unlink path rescue nil
           

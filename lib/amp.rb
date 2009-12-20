@@ -90,6 +90,9 @@ module Amp
     autoload :GenericRepoPicker,         "amp/repository/generic_repo_picker.rb"
     autoload :AbstractLocalRepository,   "amp/repository/abstract/abstract_local_repo.rb"
     autoload :AbstractStagingArea,       "amp/repository/abstract/abstract_staging_area.rb"
+    autoload :AbstractChangeset,         "amp/repository/abstract/abstract_changeset.rb"
+    autoload :AbstractVersionedFile,     "amp/repository/abstract/abstract_versioned_file.rb"
+    autoload :CommonLocalRepoMethods,    "amp/repository/abstract/local_repo/common_methods.rb"
     module Mercurial
       autoload :BranchManager,           "amp/repository/mercurial/repo_format/branch_manager.rb"
       autoload :BundleRepository,        "amp/repository/mercurial/repositories/bundle_repository.rb"

@@ -5,7 +5,7 @@ module Amp
     # This class allows you to access a file at a given revision in the repo's
     # history. You can compare them, sort them, access the changeset, and
     # all sorts of stuff.
-    class VersionedFile
+    class VersionedFile < Amp::Repositories::AbstractVersionedFile
       include Mercurial::RevlogSupport::Node
       
       attr_accessor :file_id

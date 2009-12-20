@@ -51,7 +51,7 @@ module Amp
       #   signed  :fname_size , 32, "filename size"
       #
       # end
-      class DirState
+      class DirState < AbstractStagingArea
         include Amp::Mercurial::Ignore
         include Amp::Mercurial::RevlogSupport::Node
       
@@ -217,12 +217,14 @@ module Amp
         # 
         # @param [String] file the path of the file to add
         # @return [Boolean] a success marker
-        def add(file)
-          add_path file, true
+        def add(*files)
+          files.each do |file|
+            add_path file, true
         
-          @dirty = true
-          @files[file] = DirStateEntry.new(:added, 0, -1, -1)
-          @copy_map.delete file
+            @dirty = true
+            @files[file] = DirStateEntry.new(:added, 0, -1, -1)
+            @copy_map.delete file
+          end
           true # success
         end
       
@@ -496,56 +498,6 @@ module Amp
           end
         
           true # success
-        end
-      
-        ##
-        # The current directory from where the command is being called, with
-        # the path shortened if it's within the repo.
-        # 
-        # @return [String] effectively Dir.pwd
-        def cwd
-          path = Dir.pwd
-          return '' if path == @root
-        
-          # return a more local path if possible...
-          return path[@root.length..-1] if path.start_with? @root
-          path # else we're outside the repo
-        end
-        alias_method :pwd, :cwd
-      
-        ##
-        # Returns the relative path from +src+ to +dest+.
-        # 
-        # @param [String] src This is a directory! If this is relative,
-        #                     it is assumed to be relative to the root.
-        # @param [String] dest This MUST be within root! It also is a file.
-        # @return [String] the relative path
-        def path_to(src, dest)
-          # first, make both paths absolute, for ease of use.
-          # @root is guarenteed to be absolute, so we're leethax here
-          src  = File.join @root, src
-          dest = File.join @root, dest
-        
-          # lil' bit of error checking...
-          [src, dest].map do |f|
-            unless File.exist? f # does both files and directories...
-              raise FileNotInRootError, "#{f} is not in the root, #{@root}"
-            end
-          end
-        
-          # now we find the differences
-          # these both are now arrays!!!
-          src  = src.split '/'
-          dest = dest.split '/' 
-        
-          while src.first == dest.first
-            src.shift and dest.shift
-          end
-        
-          # now, src and dest are just where they differ
-          path = ['..'] * src.size # we want to go back this many directories
-          path += dest
-          path.join '/' # tadah!
         end
       
         ##

@@ -394,7 +394,7 @@ static VALUE amp_mpatch_patched_size(VALUE self, VALUE orig_r, VALUE bin_r)
 }
 
 
-void Init_MercurialPatch() {
+void Init_CMercurialPatch() {
     
     rb_mAmp = rb_define_module("Amp");
     rb_mDiffs = rb_define_module_under(rb_mAmp, "Diffs");
