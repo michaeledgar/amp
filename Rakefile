@@ -101,14 +101,16 @@ end
 desc "Compile Site"
 task :"build-website" do
   require 'site/src/helpers.rb'
+  load 'lib/amp.rb' # get the version
   missing_gems = []
   requirements = ['haml', 'uv']
+  requirements_install = ['haml', 'ultraviolet']
   requirements.each do |requirement|
     begin
       require requirement
     rescue LoadError => e
       puts "The following gems are required to build the amp website: #{requirements.join(", ")}"
-      puts "Install them as follows: gem install #{requirements.join(" ")}"
+      puts "Install them as follows: gem install #{requirements_install.join(" ")}"
       exit
     end
   end
