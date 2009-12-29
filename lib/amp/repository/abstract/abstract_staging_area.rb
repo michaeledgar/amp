@@ -12,7 +12,9 @@ module Amp
       end
       
       ##
-      # Marks a file to be removed from the repository upon the next commit.
+      # Marks a file to be removed from the repository upon the next commit. Last argument
+      # can be a hash, which can take an :unlink key, specifying whether the files should actually
+      # be removed or not.
       # 
       # @param [[String]] filenames a list of files to remove in the next commit
       # @return [Boolean] true for success, false for failure

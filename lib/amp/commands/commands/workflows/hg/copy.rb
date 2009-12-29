@@ -24,7 +24,7 @@ command :copy do |c|
     destination = args.last
     sources.each do |source|
       Amp::UI.say "#{source} => #{destination}"
-      repo.copy source, destination, opts
+      repo.staging_area.copy source, destination, opts
     end
   end
 end

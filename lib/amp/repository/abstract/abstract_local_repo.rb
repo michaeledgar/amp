@@ -105,6 +105,19 @@ module Amp
         raise NotImplementedError.new("try_resolve_conflict() must be implemented by subclasses of AbstractLocalRepository.")
       end
       
+      ##
+      # Returns all files that have not been merged. In other words, if we're 
+      # waiting for the user to fix up their merge, then return the list of files
+      # we need to be correct before merging.
+      #
+      # @todo think up a better name
+      #
+      # @return [Array<Array<String, Symbol>>] an array of String-Symbol pairs - the
+      #   filename is the first entry, the status of the merge is the second.
+      def uncommitted_merge_files
+        merge_state.uncommitted_merge_files
+      end
+      
     end
   end
 end

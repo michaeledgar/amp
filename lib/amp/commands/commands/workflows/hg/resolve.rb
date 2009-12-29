@@ -43,7 +43,7 @@ command :resolve do |c|
     end                        
                           
     # iterate over each entry in the merge state file
-    repo.merge_state.each do |file, status|
+    repo.uncommitted_merge_files.each do |file, status|
       # check to see if our user wants this file
       if match.call(file)
         if list

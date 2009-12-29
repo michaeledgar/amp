@@ -69,6 +69,17 @@ module Amp
         end
         
         ##
+        # Returns all uncommitted merge files - everything tracked by the merge state.
+        #
+        # @todo come up with a better method name
+        #
+        # @return [Array<Array<String, Symbol>>] an array of String-Symbol pairs - the
+        #   filename is the first entry, the status of the merge is the second.
+        def uncommitted_merge_files
+          @state.map {|k, _| key, status(key)}
+        end
+        
+        ##
         # Iterates over all the files that are involved in the current
         # merging transaction.
         #
@@ -76,10 +87,8 @@ module Amp
         # @yieldparam file the filename that needs (or has been) merged.
         # @yieldparam state all the information about the current merge with
         #   this file.
-        def each
-          @state.keys.sort.each do |key|
-            yield(key, @state[key])
-          end
+        def each(&block)
+          @state.each(&block)
         end
         
         ##

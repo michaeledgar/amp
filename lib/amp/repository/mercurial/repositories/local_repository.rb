@@ -340,6 +340,19 @@ module Amp
         end
         
         ##
+        # Returns all files that have not been merged. In other words, if we're 
+        # waiting for the user to fix up their merge, then return the list of files
+        # we need to be correct before merging.
+        #
+        # @todo think up a better name
+        #
+        # @return [Array<Array<String, Symbol>>] an array of String-Symbol pairs - the
+        #   filename is the first entry, the status of the merge is the second.
+        def uncommitted_merge_files
+          merge_state.uncommitted_merge_files
+        end
+        
+        ##
         # Attempts to resolve the given file, according to how mercurial manages
         # merges. Needed for api compliance.
         #
@@ -1568,128 +1581,6 @@ module Amp
           end
           
           branches
-        end
-        
-        ##
-        # Copies a file from +source+ to +destination+, while being careful of the
-        # specified options. This method will perform all necessary file manipulation
-        # and dirstate changes and so forth. Just give 'er a source and a destination.
-        #
-        # @param [String] source the path to the source file
-        # @param [String] destination the path to the destination file
-        # @param [Hash] opts the options for the copy
-        # @option [Boolean] opts :after (false) should the file be deleted?
-        # @return [Boolean] success?
-        def copy(source, destination, opts)
-          # Traverse repository subdirectories
-          src    = relative_join source
-          target = relative_join destination
-          
-          # Is there a tracked file at our destination? If so, get its state.
-          state = dirstate[target].status
-          # abstarget is the full path to the target. Needed for system calls
-          # (just to be safe)
-          abstarget = working_join target
-          
-          # If true, we're copying into a directory, so be smart about it.
-          if File.directory? abstarget
-            abstarget = File.join abstarget, File.basename(src)
-            target = File.join target, File.basename(src)
-          end
-          abssrc = working_join(src)
-          
-          
-          exists = File.exist? abstarget
-          # If the file's there, and we aren't forcing the copy, then we should let
-          # the user know they might overwrite an existing file in the repo.
-          if (!opts[:after] && exists || opts[:after] && [:merged, :normal].include?(state))
-            unless opts[:force]
-              Amp::UI.warn "#{target} not overwriting, file exists"
-              return false
-            end
-          end
-          
-          return if opts[:after] && !exists
-          unless opts[:"dry-run"]
-            # Performs actual file copy from one locatino to another.
-            # Overwrites file if it's there.
-            begin
-              File.safe_unlink(abstarget) if exists
-              
-              target_dir = File.dirname abstarget
-              File.makedirs target_dir unless File.directory? target_dir
-              File.copy(abssrc, abstarget)
-            rescue Errno::ENOENT
-              # This happens if the file has been deleted between the check up above
-              # (exists = File.exist? abstarget) and the call to File.safe_unlink.
-              Amp::UI.warn("#{target}: deleted in working copy in the last 2 microseconds")
-            rescue StandardError => e
-              Amp::UI.warn("#{target} - cannot copy: #{e}")
-              return false
-            end
-          end
-          
-          # Be nice and give the user some output
-          if opts[:verbose] || opts[:"dry-run"]
-            action = opts[:rename] ? "moving" : "copying"
-            Amp::UI.status("#{action} #{src} to #{target}")
-          end
-          return false if opts[:"dry-run"]
-          
-          # in case the source of the copy is marked as the destination of a 
-          # different copy (that hasn't yet been committed either), we should
-          # do some extra handling
-          origsrc = dirstate.copy_map[src] || src
-          if target == origsrc
-            # We're copying back to our original location! D'oh.
-            unless [:merged, :normal].include?(state)
-              dirstate.maybe_dirty target
-            end
-          else
-            if dirstate[origsrc].added? && origsrc == src
-              # we copying an added (but uncommitted) file?
-              UI.warn("#{origsrc} has not been committed yet, so no copy data" +
-                      "will be stored for #{target}")
-              if [:untracked, :removed].include?(dirstate[target].status)
-                add target
-              end
-            else
-              dirstate_copy src, target
-            end
-          end
-          
-          # Clean up if we're doing a move, and not a copy.
-          remove([src], :unlink => !(opts[:after])) if opts[:rename]
-        end
-        
-        ##
-        # Copy a file from +source+ to +dest+. Really simple, peeps.
-        # The reason this shit is even *slightly* complicated because
-        # it deals with file types. Otherwise I could write this
-        # in, what, 3 lines?
-        # 
-        # @param [String] source the from
-        # @param [String] dest the to
-        def dirstate_copy(source, dest)
-          path = working_join dest
-          
-          if !File.exist?(path) || File.ftype(path) == 'link'
-            UI::warn "#{dest} doesn't exist!"
-          elsif not (File.ftype(path) == 'file' || File.ftype(path) == 'link')
-            UI::warn "copy failed: #{dest} is neither a file nor a symlink"
-          else
-            lock_working do
-              # HOME FREE!!!!!!! i love getting out of school before noon :-D
-              # add it if it makes sense (like it was previously removed or untracked)
-              # and then copy da hoe
-              state  = dirstate[dest].status
-              dirstate.add dest if [:untracked, :removed].include?(state)
-              dirstate.copy source => dest
-              dirstate.write
-              
-              #Amp::Logger.info("copy #{source} -> #{dest}")
-            end
-          end
         end
         
         ##
