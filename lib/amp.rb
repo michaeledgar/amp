@@ -42,10 +42,10 @@ module Amp
     autoload :Revlog,                    "amp/repository/mercurial/revlogs/revlog.rb"      
     autoload :Manifest,                  "amp/repository/mercurial/revlogs/manifest.rb"
     autoload :FileLog,                   "amp/repository/mercurial/revlogs/file_log.rb"
-    autoload :Changeset,                 "amp/repository/mercurial/revlogs/changeset.rb"
-    autoload :WorkingDirectoryChangeset, "amp/repository/mercurial/revlogs/changeset.rb"
-    autoload :ChangeGroup,               "amp/repository/mercurial/revlogs/changegroup.rb"
     autoload :ChangeLog,                 "amp/repository/mercurial/revlogs/changelog.rb"
+    autoload :ChangeGroup,               "amp/repository/mercurial/revlogs/changegroup.rb"
+    autoload :Changeset,                 "amp/repository/mercurial/repo_format/changeset.rb"
+    autoload :WorkingDirectoryChangeset, "amp/repository/mercurial/repo_format/changeset.rb"
   end
   
   module Bundles
@@ -103,6 +103,7 @@ module Amp
       autoload :Lock,                    "amp/repository/mercurial/repo_format/lock.rb"
       autoload :MercurialPicker,         "amp/repository/mercurial/repository.rb"
       autoload :Repository,              "amp/repository/mercurial/repository.rb"
+      autoload :StagingArea,             "amp/repository/mercurial/repo_format/staging_area.rb"
       autoload :Stores,                  "amp/repository/mercurial/repo_format/store.rb"
       autoload :TagManager,              "amp/repository/mercurial/repo_format/tag_manager.rb"
       autoload :Updatable,               "amp/repository/mercurial/repo_format/updatable.rb"

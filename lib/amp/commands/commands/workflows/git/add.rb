@@ -54,7 +54,7 @@ HELP
       end
     end
     
-    rejected = repo.add names unless opts[:"dry-run"]
+    rejected = repo.staging_area.add names unless opts[:"dry-run"]
     
     if names.size == 1
       Amp::UI.say "File #{names.first.blue} has been added at #{Time.now}"

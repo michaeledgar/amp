@@ -9,10 +9,8 @@ command :resolve do |c|
   c.opt :exclude, "Specify patterns of files to exclude in the operation", :short => "-E", :type => :string
   
   c.before do |opts, args|
-    parse_args = lambda {|os| [:all, :mark, :unmark, :list].map {|i| os[i] } }
-    
     # Checks to make sure user input is valid
-    all, mark, unmark, list = *parse_args[ opts ]
+    all, mark, unmark, list = [:all, :mark, :unmark, :list].map {|i| opts[i] }
     
     if (list && (mark || unmark)) || (mark && unmark)
       raise abort("too many options specified")
@@ -31,10 +29,8 @@ command :resolve do |c|
   
   c.on_run do |opts, args|
     repo = opts[:repository]
-    parse_args = lambda {|os| [:all, :mark, :unmark, :list].map {|i| os[i] } }
     
-    all, mark, unmark, list = *parse_args[opts]
-    merge_state = Amp::Merges::Mercurial::MergeState.new(repo)
+    all, mark, unmark, list = [:all, :mark, :unmark, :list].map {|i| opts[i] }
     
     if opts[:all]
       # the block means "default to true" - so basically ignore all other input
@@ -47,34 +43,21 @@ command :resolve do |c|
     end                        
                           
     # iterate over each entry in the merge state file
-    merge_state.each do |file, status|
+    repo.merge_state.each do |file, status|
       # check to see if our user wants this file
       if match.call(file)
         if list
           Amp::UI.say "#{status.first} #{file}"
         elsif mark
           # the "r" means resolved
-          merge_state.mark(file, "r")
+          repo.mark_resolved(file)
           Amp::UI.say "#{file} marked as #{"resolved".blue}"
         elsif unmark
           # the "u" means unresolved
-          merge_state.mark(file, "u")
+          repo.mark_conflicted(file)
           Amp::UI.say "#{file} marked as #{"unresolved".red}"
         else
-          # retry the merge
-          working_changeset = repo[nil]
-          merge_changeset = working_changeset.parents.last
-          
-          # backup the current file to a .resolve file (but retain the extension
-          # so editors that rely on extensions won't bug out)
-          path = repo.working_join file
-          File.copy(path, path + ".resolve"  + File.extname(path))
-          
-          # try to merge the files!
-          merge_state.resolve(file, working_changeset, merge_changeset)
-          
-          # restore the backup to .orig (overwriting the old one)
-          File.move(path + ".resolve"  + File.extname(path), path + ".orig" + File.extname(path))
+          repo.try_resolve_conflict(file)
         end
       end
     end

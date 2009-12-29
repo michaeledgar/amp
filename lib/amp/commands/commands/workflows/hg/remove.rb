@@ -31,7 +31,7 @@ command :remove do |c|
       (remove + forget).sort.each {|f| Amp::UI.status "removing #{f}..." }
     end
     
-    repo.remove(remove, :unlink => ! opts[:after]) # forgetting occurs here
+    repo.staging_area.remove(remove, :unlink => ! opts[:after]) # forgetting occurs here
     repo.forget(forget)
     
     remove += forget

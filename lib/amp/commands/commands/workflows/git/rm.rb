@@ -46,7 +46,7 @@ command :rm do |c|
       (remove + forget).sort.each {|f| Amp::UI.say "removing #{f}" }
     end
     
-    repo.remove remove, :unlink => ! opts[:after] unless opts[:"dry-run"] # forgetting occurs here
+    repo.staging_area.remove remove, :unlink => ! opts[:after] unless opts[:"dry-run"] # forgetting occurs here
     repo.forget forget unless opts[:"dry-run"]
     
     remove += forget

@@ -38,6 +38,14 @@ module Amp
       def changed_files
         raise NotImplementedError.new("changed_files() must be implemented by subclasses of AbstractChangeset.")
       end
+      
+      ##
+      # Returns a list of all files that are tracked at this current revision.
+      #
+      # @return [Array<String>] the files tracked at the given revision
+      def tracked_files
+        raise NotImplementedError.new("changed_files() must be implemented by subclasses of AbstractChangeset.")
+      end
     end
   end
 end

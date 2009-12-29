@@ -96,6 +96,8 @@ class TestDirState < Test::Unit::TestCase
   # the same quirks
   def test_remove
     add_file "monkey" # make sure it's in @files
+    # pretend the file is normal
+    @state.normal "monkey"
     @state.remove "monkey"
     
     assert @state["monkey"].removed?

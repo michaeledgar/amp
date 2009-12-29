@@ -94,6 +94,59 @@ module Amp
         end
         
         ##
+        # Marks the given file as unresolved. Helper method to hide details of
+        # how the mergestate works. Silly leaky abstractions...
+        #
+        # @param [String] filename the file to mark unresolved
+        def mark_conflicted(filename)
+          mark(filename, "u")
+        end
+        
+        ##
+        # Marks the given file as resolved. Helper method to hide details of
+        # how the mergestate works. Silly leaky abstractions...
+        #
+        # @param [String] filename the file to mark unresolved
+        def mark_resolved(filename)
+          mark(filename, "r")
+        end
+        
+        ##
+        # Returns the status of a given file, or nil otherwise. Used for making this
+        # class more friendly to the outside world. It came to us from mercurial as
+        # one leaky fucking abstraction. Every class that used it had to know that "u"
+        # returned meant unresolved... ugh.
+        #
+        # @param [String] filename the file to inspect
+        # @return [Symbol] a symbol representing the status of the file, either
+        #   :untracked, :resolved, or :unresolved
+        def status(filename)
+          return :untracked unless filename
+          case self[filename]
+          when "r"
+            :resolved
+          when "u"
+            :unresolved
+          end
+        end
+        
+        ##
+        # Is the given file unresolved?
+        #
+        # @param [String] filename
+        def unresolved?(filename)
+          status_filename == :unresolved
+        end
+        
+        ##
+        # Is the given file resolved?
+        #
+        # @param [String] filename
+        def resolved?(filename)
+          status(filename) == :resolved
+        end
+        
+        ##
         # Resolves the given file for a merge between 2 changesets.
         #
         # @param dirty_file the path to the file for merging
@@ -101,7 +154,7 @@ module Amp
         #   of the merge
         # @param other_changeset the newer changeset, which we're merging to
         def resolve(dirty_file, working_changeset, other_changeset)
-          return 0 if self[dirty_file] == "r"
+          return 0 if resolved?(dirty_file)
           state, hash, lfile, afile, anode, ofile, flags = @state[dirty_file]
           r = true
           @repo.open("merge/#{hash}") do |file|
@@ -112,7 +165,7 @@ module Amp
             r = MergeUI.file_merge(@repo, @local, lfile, working_file, other_file, ancestor_file)
           end
           
-          mark(dirty_file, "r") if r.nil? || r == false
+          mark_resolved(dirty_file) if r.nil? || r == false
           return r
         end
         

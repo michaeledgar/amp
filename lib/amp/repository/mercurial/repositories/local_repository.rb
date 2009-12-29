@@ -25,6 +25,7 @@ module Amp
         attr_reader :branch_manager
         attr_reader :store_opener
         attr_reader :store
+        attr_reader :staging_area
         
         ##
         # Initializes a new directory to the given path, and with the current
@@ -48,6 +49,7 @@ module Amp
           @changelog   = nil
           @manifest    = nil
           @dirstate    = nil
+          @staging_area = StagingArea.new(self)
           requirements = []
         
           # make a repo if necessary
@@ -318,6 +320,49 @@ module Amp
         end
         
         ##
+        # Marks a file as resolved according to the merge state. Basic form of
+        # merge conflict resolution that all repositories must support.
+        #
+        # @api
+        # @param [String] filename the file to mark resolved
+        def mark_resolved(filename)
+          merge_stage.mark_resolved
+        end
+        
+        ##
+        # Marks a file as conflicted according to the merge state. Basic form of
+        # merge conflict resolution that all repositories must support.
+        #
+        # @api
+        # @param [String] filename the file to mark as conflicted
+        def mark_conflicted(filename)
+          merge_state.mark_conflicted
+        end
+        
+        ##
+        # Attempts to resolve the given file, according to how mercurial manages
+        # merges. Needed for api compliance.
+        #
+        # @api
+        # @param [String] filename the file to attempt to resolve
+        def try_resolve_conflict
+          # retry the merge
+          working_changeset = self[nil]
+          merge_changeset = working_changeset.parents.last
+          
+          # backup the current file to a .resolve file (but retain the extension
+          # so editors that rely on extensions won't bug out)
+          path = working_join file
+          File.copy(path, path + ".resolve"  + File.extname(path))
+          
+          # try to merge the files!
+          merge_state.resolve(file, working_changeset, merge_changeset)
+          
+          # restore the backup to .orig (overwriting the old one)
+          File.move(path + ".resolve"  + File.extname(path), path + ".orig" + File.extname(path))
+        end
+        
+        ##
         # Returns the merge state for this repository. The merge state keeps track
         # of what files need to be merged for an update to be successfully completed.
         # 
@@ -346,15 +391,8 @@ module Amp
         # 
         # @return [DirState] the dirstate for this local repository.
         def dirstate
-          return @dirstate if @dirstate
-          
-          opener = Amp::Opener.new @root
-          opener.default = :open_hg
-          
-          @dirstate = DirState.new(@root, @config, opener)
-          @dirstate.read!
+          staging_area.dirstate
         end
-        alias_method :staging_area, :dirstate
         
         ##
         # Returns the URL of this repository. Uses the "file:" scheme as such.
@@ -1357,59 +1395,6 @@ module Amp
         end
         
         ##
-        # Adds a list of file paths to the repository for the next commit.
-        # 
-        # @param [String, Array<String>] paths the paths of the files we need to
-        #   add to the next commit
-        # @return [Array<String>] which files WEREN'T added
-        def add(*paths)
-          lock_working do
-            rejected = []
-            paths.flatten!
-            
-            paths.each do |file|
-              path = working_join file
-              
-              st = File.lstat(path) rescue nil
-              
-              unless st
-                UI.warn "#{file} does not exist!"
-                rejected << file
-                next
-              end
-              
-              if st.size > 10.mb
-                UI.warn "#{file}: files over 10MB may cause memory and" +
-                            "performance problems\n" +
-                            "(use 'amp revert #{file}' to unadd the file)\n"
-              end
-              
-              
-              state = dirstate[file]
-              
-              
-              if File.ftype(path) != 'file' && File.ftype(path) != 'link'
-                # fail if it's not a file or link
-                UI.warn "#{file} not added: only files and symlinks supported. Type is #{File.ftype path}"
-                rejected << path
-              elsif state.added? || state.modified? || state.normal?
-                # fail if it's being tracked
-                UI.warn "#{file} already tracked!"
-              elsif state.removed?
-                # check back on it if it's being removed
-                dirstate.normal_lookup file
-              else
-                # else add it
-                dirstate.add file
-              end
-            end
-            
-            dirstate.write unless rejected.size == paths.size
-            return rejected
-          end
-        end
-        
-        ##
         # Returns the number of revisions the repository is tracking.
         # 
         # @return [Integer] how many revisions there have been
@@ -1438,61 +1423,6 @@ module Amp
               end
             end
             
-            dirstate.write if successful
-          end
-          
-          true
-        end
-        
-        ##
-        # Removes the file (or files) from the repository. Marks them as removed
-        # in the DirState, and if the :unlink option is provided, the files are
-        # deleted from the filesystem.
-        #
-        # @param list the list of files. Could also just be 1 file as a string.
-        #   should be paths.
-        # @param opts the options for this removal.
-        # @option [Boolean] opts :unlink (false) whether or not to delete the
-        #   files from the filesystem after marking them as removed from the
-        #   DirState.
-        # @return [Boolean] success?
-        def remove(list, opts={})
-          list = [*list]
-          
-          # Should we delete the filez?
-          if opts[:unlink]
-            list.each do |f|
-              ignore_missing_files do
-                FileUtils.safe_unlink working_join(f)
-              end
-            end
-          end
-          
-          lock_working do
-            # Save ourselves a dirstate write
-            successful = list.any? do |f|
-              if opts[:unlink] && File.exists?(working_join(f))
-                # Uh, why is the file still there? Don't remove it from the dirstate
-                UI.warn("#{f} still exists!")
-                false # no success
-              elsif dirstate[f].added?
-                # Is it already added? if so, forgettaboutit
-                dirstate.forget f
-                #Amp::Logger.info("forgot #{f}")
-                true # success!
-              elsif !dirstate.tracking?(f)
-                # Are we not even tracking this file? dumbass
-                UI.warn("#{f} not being tracked!")
-                false # no success
-              else
-                # Woooo we can delete it
-                dirstate.remove f
-                #Amp::Logger.info("removed #{f}")
-                true
-              end
-            end
-            
-            # Write 'em out boss
             dirstate.write if successful
           end
           
@@ -1721,7 +1651,7 @@ module Amp
               UI.warn("#{origsrc} has not been committed yet, so no copy data" +
                       "will be stored for #{target}")
               if [:untracked, :removed].include?(dirstate[target].status)
-                add [target]
+                add target
               end
             else
               dirstate_copy src, target
@@ -2132,10 +2062,10 @@ module Amp
             end
             
             
-            merge_state = Amp::Merges::Mercurial::MergeState.new self # merge state!
+            merge_state = self.merge_state
             
             changes[:modified].each do |file|
-              if merge_state[file] && merge_state[file] == "u"
+              if merge_state.unresolved?(file)
                 raise StandardError.new("unresolved merge conflicts (see `amp resolve`)")
               end
             end

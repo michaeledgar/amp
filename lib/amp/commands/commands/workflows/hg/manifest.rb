@@ -6,7 +6,7 @@ command :manifest do |c|
     revision = options[:rev] || "tip"
     repo = options[:repository]
         
-    repo[revision].each do |k, _|
+    repo[revision].all_files.sort.each do |k|
       puts "#{k}"
     end
   end

@@ -152,6 +152,15 @@ module Amp
       end
       
       ##
+      # Provides access to all the tracked files in the changeset. Needed
+      # for API compatibility.
+      #
+      # @return [Array<String>] all the files tracked in this changeset.
+      def all_files
+        return manifest.files
+      end
+      
+      ##
       # Returns the change in the manifest at this revision. I don't entirely
       # know what this is yet.
       def manifest_delta

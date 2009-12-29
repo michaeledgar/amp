@@ -110,6 +110,21 @@ module Amp
     end
     
     ##
+    # Filters a list of filenames, weeding out ones that do not match at all.
+    # 
+    # @param [Array<String>] list a list of filenames to run against the matcher
+    # @param [Hash] opts options for filtering. See below.
+    # @option opts [Boolean] :precision (false) returns the list not as a list of
+    #    filenames, but as a list of hashes, with a key :filename for the file, and
+    #    a key :exact with a boolean value specifying if the match was exact or not.
+    # @return [Array<String>] the filtered list of filenames
+    def filter_list(list, opts={})
+      result = list.select {|filename| self.call(filename)}
+      result.map! {|k| {:filename => k, :exact => exact?(k)}} if opts[:precision]
+      result
+    end
+    
+    ##
     # Is it an exact match or an approximate match and not
     # a file to be excluded?
     # 
@@ -119,11 +134,10 @@ module Amp
     # @param [String] file the file to test
     # @return [Boolean] does it pass?
     def call(file)
-      if exact? file and failure? file
+      if exact?(file) && failure?(file)
         raise StandardError.new("File #{file.inspect} is to be both included and excluded")
       end
-      # `and` because it's loosely binding
-      exact?(file) || included?(file) || approximate?(file) and !failure?(file)
+      (exact?(file) || included?(file) || approximate?(file)) && !failure?(file)
     end
     alias_method :[], :call
     

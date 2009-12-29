@@ -7,7 +7,6 @@ amp root
   Prints the path to the current repository's root.
 EOF
   c.on_run do |opts, args|
-    repo = opts[:repository]
-    puts repo.root
+    puts opts[:repository].root
   end
 end

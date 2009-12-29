@@ -51,7 +51,7 @@ module Amp
       #   signed  :fname_size , 32, "filename size"
       #
       # end
-      class DirState < AbstractStagingArea
+      class DirState
         include Amp::Mercurial::Ignore
         include Amp::Mercurial::RevlogSupport::Node
       
@@ -219,11 +219,21 @@ module Amp
         # @return [Boolean] a success marker
         def add(*files)
           files.each do |file|
-            add_path file, true
-        
-            @dirty = true
-            @files[file] = DirStateEntry.new(:added, 0, -1, -1)
-            @copy_map.delete file
+            state = self[file]
+            if state.added? || state.modified? || state.normal?
+              # fail if it's being tracked
+              UI.warn "#{file} already tracked!"
+            elsif state.removed?
+              # check back on it if it's being removed
+              normal_lookup file
+            else
+              # else add it
+              add_path file, true
+
+              @dirty = true
+              @files[file] = DirStateEntry.new(:added, 0, -1, -1)
+              @copy_map.delete file
+            end
           end
           true # success
         end
@@ -338,20 +348,35 @@ module Amp
         # @param [String] file the path of the file to remove
         # @return [Boolean] a success marker
         def remove(file)
-          @dirty = true
-          drop_path file
-        
-          size = 0
-          if @parents.last.null? && (info = @files[file])
-            if info.merged?
-             size = -1
-            elsif info.normal? && info.size == -2
-             size = -2
+          File.open("/silly.txt","a") { |f| f.puts "REMOVING #{file}"}
+          if self[file].added?
+            File.open("/silly.txt","a") { |f| f.puts "added!"}
+            # Is it already added? if so, forgettaboutit
+            forget file
+            true # success!
+          elsif !tracking?(file)
+            File.open("/silly.txt","a") { |f| f.puts "Not tracking... #{file} #{@files.inspect}"}
+            # Are we not even tracking this file? dumbass
+            UI.warn("#{file} not being tracked!")
+            false # no success
+          else
+            File.open("/silly.txt","a") { |f| f.puts  "DELETING" }
+            # Woooo we can delete it
+            @dirty = true
+            drop_path file
+
+            size = 0
+            if @parents.last.null? && (info = @files[file])
+              if info.merged?
+               size = -1
+              elsif info.normal? && info.size == -2
+               size = -2
+              end
             end
+            @files[file] = DirStateEntry.new(:removed, 0, size, 0)
+            @copy_map.delete file if size.zero?
+            true
           end
-          @files[file] = DirStateEntry.new(:removed, 0, size, 0)
-          @copy_map.delete file if size.zero?
-          true # success
         end
       
         ##

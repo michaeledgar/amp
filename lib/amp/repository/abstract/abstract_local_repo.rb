@@ -95,6 +95,16 @@ module Amp
         raise NotImplementedError.new("mark_resolved() must be implemented by subclasses of AbstractLocalRepository.")
       end
       
+      ##
+      # Attempts to resolve the given file, according to how mercurial manages
+      # merges. Needed for api compliance.
+      #
+      # @api
+      # @param [String] filename the file to attempt to resolve
+      def try_resolve_conflict
+        raise NotImplementedError.new("try_resolve_conflict() must be implemented by subclasses of AbstractLocalRepository.")
+      end
+      
     end
   end
 end

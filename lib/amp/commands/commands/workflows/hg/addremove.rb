@@ -61,7 +61,7 @@ EOS
       results[:unknown].each {|file| Amp::UI.say "Adding #{file.relative_path repo.root}" }
       to_add = results[:unknown]
     end
-    repo.add(to_add) unless opts[:"dry-run"]
+    repo.staging_area.add(to_add) unless opts[:"dry-run"]
     
     Amp::UI.say
     # Prettified, add check later if user disables colors
@@ -80,7 +80,7 @@ EOS
       results[:deleted].each {|file| Amp::UI.say "Removing #{file.relative_path repo.root}" }
       to_del = results[:deleted]
     end
-    repo.remove to_del unless opts[:"dry-run"]
+    repo.staging_area.remove to_del unless opts[:"dry-run"]
     
   end
 end

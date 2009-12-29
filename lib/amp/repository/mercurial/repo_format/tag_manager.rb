@@ -164,7 +164,7 @@ module Amp
           write_tags(file, node, names, prev_tags)
           file.close
           if use_dirstate && dirstate[".hgtags"].status == :untracked
-            self.add([".hgtags"])
+            staging_area.add(".hgtags")
           end
           
           tag_node = commit :files => [".hgtags"], 

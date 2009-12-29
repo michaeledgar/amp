@@ -41,7 +41,7 @@ HELP
       end
     end
     
-    rejected = repo.add names unless opts[:"dry-run"]
+    rejected = repo.staging_area.add names unless opts[:"dry-run"]
     
     
     if names.size == 1
