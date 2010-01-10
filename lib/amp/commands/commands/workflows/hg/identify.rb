@@ -9,13 +9,13 @@ command :identify do |c|
   c.on_run do |opts, args|
     repo = opts[:repository]
     opts[:id] = opts[:num] = true unless opts[:num] || opts[:id] || opts[:branch] || opts[:tags]
-    working_changeset = repo[nil]
-    parent_changeset = working_changeset.parents.first
     
-    Amp::UI.tell parent_changeset.node_id.short_hex + " " if opts[:id]
-    Amp::UI.tell parent_changeset.revision.to_s + " " if opts[:num]
-    Amp::UI.tell parent_changeset.branch + " " if opts[:branch]
-    Amp::UI.tell parent_changeset.tags.join(" ") + " " if opts[:tags]
+    changeset = repo[opts[:rev] || nil]
+    
+    Amp::UI.tell changeset.node_id.short_hex + " " if opts[:id]
+    Amp::UI.tell changeset.revision.to_s + " " if opts[:num]
+    Amp::UI.tell changeset.branch + " " if opts[:branch]
+    Amp::UI.tell changeset.tags.join(" ") + " " if opts[:tags]
     
     Amp::UI.say
     

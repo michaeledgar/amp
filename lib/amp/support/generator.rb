@@ -43,7 +43,7 @@ class Generator
     # return to its caller.
     callcc do |here|
       @current_context = here
-      if @yield_context
+      if (@yield_context ||= nil)
         # Run next iteration of the running loop
         @yield_context.call
       else

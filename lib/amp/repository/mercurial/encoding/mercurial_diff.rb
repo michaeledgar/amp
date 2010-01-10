@@ -120,6 +120,7 @@ module Amp
         #   see the descriptions for {whitespace_clean} and {date_tag}.
         def unified_diff(a, ad, b, bd, fn1, fn2, r=nil, options=DEFAULT_OPTIONS)
           return "" if (a.nil? || a.empty?) && (b.nil? || b.empty?)
+          options = DEFAULT_OPTIONS.merge(options) # overlay the defaults with the supplied opts
           epoch = Time.at(0)
           if !options[:text] && (!a.nil? && a.binary? || !b.nil? && b.binary?)
             return "" if a.any? && b.any? && a.size == b.size && a == b #DERR

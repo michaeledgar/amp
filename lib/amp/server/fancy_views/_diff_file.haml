@@ -1,13 +1,6 @@
 - vf_cur = changeset.get_file file
-- new_rev = vf_cur.file_rev
-- parents = vf_cur.parents
 - vf_parent = parents.first
-- parent_rev = vf_parent && vf_parent.file_rev
-- old_date = vf_parent && vf_parent.changeset.easy_date
-- new_date = changeset.easy_date
-- new_path = vf_cur.path
-- old_path = vf_parent ? vf_parent.path : "/dev/null"
 %li
   %h2= vf_cur.path
   %ul.diff
-    = parse_diff(vf_cur.file_log.unified_revision_diff(parent_rev, old_date, new_rev, new_date, old_path, new_path))
+    = parse_diff(vf_cur.unified_diff_with(vf_parent))

@@ -1,3 +1,4 @@
+p "LOADING RUBY AMP SUPPORT"
 ##
 # Ruby versions of slow functions we've implemented in C
 class Integer

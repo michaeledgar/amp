@@ -1,51 +1,77 @@
 module Amp
   module Repositories
     class AbstractChangeset
-
+      include CommonChangesetMethods
       ##
-      # Returns Array of AbstractChangesets ( [AbstractChangeset] )
+      # the nodes that this node inherits from
+      # 
+      # @return [Array<Abstract Changeset>]
       def parents
         raise NotImplementedError.new("parents() must be implemented by subclasses of AbstractChangeset.")
       end
 
       ##
-      # Returns AbstractVersionedFile
+      # Retrieve +filename+
+      #
+      # @return [AbstractVersionedFile]
       def get_file(filename)
         raise NotImplementedError.new("get_file() must be implemented by subclasses of AbstractChangeset.")
       end
       alias_method :[], :get_file
 
       ##
-      # Returns Date object
+      # When was the changeset made?
+      # 
+      # @return [Time]
       def date
         raise NotImplementedError.new("date() must be implemented by subclasses of AbstractChangeset.")
       end
 
       ##
-      # Returns String
+      # The user who made the changeset
+      # 
+      # @return [String] the user who made the changeset
       def user
         raise NotImplementedError.new("user() must be implemented by subclasses of AbstractChangeset.")
       end
-
+      
       ##
-      # Returns String
-      def description
-        raise NotImplementedError.new("description() must be implemented by subclasses of AbstractChangeset.")
+      # Which branch this changeset belongs to
+      # 
+      # @return [String] the user who made the changeset
+      def branch
+        raise NotImplementedError.new("branch() must be implemented by subclasses of AbstractChangeset.")
       end
 
       ##
-      # Returns Array of String ( [String] )
-      def changed_files
-        raise NotImplementedError.new("changed_files() must be implemented by subclasses of AbstractChangeset.")
+      # @return [String]
+      def description
+        raise NotImplementedError.new("description() must be implemented by subclasses of AbstractChangeset.")
+      end
+      
+      ##
+      # What files have been altered in this changeset?
+      # 
+      # @return [Array<String>]
+      def altered_files
+        raise NotImplementedError.new("altered_files() must be implemented by subclasses of AbstractChangeset.")
       end
       
       ##
       # Returns a list of all files that are tracked at this current revision.
       #
       # @return [Array<String>] the files tracked at the given revision
-      def tracked_files
-        raise NotImplementedError.new("changed_files() must be implemented by subclasses of AbstractChangeset.")
+      def all_files
+        raise NotImplementedError.new("all_files() must be implemented by subclasses of AbstractChangeset.")
       end
+      
+      # Is this changeset a working changeset?
+      #
+      # @return [Boolean] is the changeset representing the working directory?
+      def working?
+        raise NotImplementedError.new("working() must be implemented by subclasses of AbstractChangeset.")
+      end
+      
     end
   end
 end

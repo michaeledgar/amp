@@ -88,12 +88,11 @@ module Amp
       
       ##
       # Returns whether or not the file at _node_ has been renamed or
-      # copied.
+      # copied in the immediate revision.
       # 
       # @param [String] node the node_id of the revision
-      # @return [Boolean] has the file been renamed or copied at this
-      #   revision?
-      def renamed(node)
+      # @return [Array<String, String>] [new_path, flags]
+      def renamed?(node)
         return false if parents_for_node(node).first != NULL_ID
         
         m = read_meta node
@@ -104,31 +103,18 @@ module Amp
         
         false
       end
-      alias_method :renamed?, :renamed
       
       ##
       # Yields a block for every revision, while being sure to follow copies.
       def each(&block)
         if @index[0].parent_one_rev == NULL_REV
-          meta_info = renamed(@index[0].node_id)
+          meta_info = renamed?(@index[0].node_id)
           if meta_info
             copied_log = FileLog.new(@opener, meta_info.first)
             copied_log.each(&block)
           end
         end
         super(&block)
-      end
-      
-      ##
-      # Unified diffs 2 revisions, based on their indices. They are returned in a sexified
-      # unified diff format.
-      def unified_revision_diff(rev1, old_date, rev2, new_date, path1, path2, opts={})
-        opts = Diffs::Mercurial::MercurialDiff::DEFAULT_OPTIONS.merge(opts)
-        version_1 = rev1 ? read(self.node_id_for_index(rev1)) : nil
-        version_2 = rev2 ? read(self.node_id_for_index(rev2)) : nil
-        
-        Diffs::Mercurial::MercurialDiff.unified_diff( version_1, old_date, version_2, new_date,
-                                        path1, path2, false, opts)
       end
       
       ##

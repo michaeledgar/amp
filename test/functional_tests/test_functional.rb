@@ -1,7 +1,8 @@
+require 'stringio'
 require 'test/unit'
 require File.expand_path(File.join(File.dirname(__FILE__), "../test_helper"))
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
-
+include Amp::KernelMethods
 # easyness
 class String
   def fun_local; File.join($current_basedir, self); end
@@ -27,9 +28,18 @@ class TestFunctional < Test::Unit::TestCase
   # order is followed. So it all goes in one method. Sorry.
   def test_init
     
-    # Create the mainline repository! Woo!
-    run_amp_command "init", "testrepo".fun_local
+    require       "amp/commands/command.rb"
+    require_dir { "amp/commands/*.rb"              }
+    require_dir { "amp/commands/commands/*.rb"     }
     
+    assert_command_match(/#{Amp::VERSION_TITLE}/, "version")
+    assert_command_match(/#{Amp::VERSION}/, "version")
+    
+    
+    # Create the mainline repository! Woo!
+    amp "init", "testrepo".fun_local
+    
+    File.safe_unlink "testrepo/ampfile.rb".fun_local
     # Make sure we've correctly initialized the repository
     assert_file 'testrepo'
     assert_file 'testrepo/.hg'
@@ -115,7 +125,7 @@ class TestFunctional < Test::Unit::TestCase
     exit_repo
     
     # Clone testrepo to create "newrepo".
-    run_amp_command "clone #{"testrepo".fun_local} #{"newrepo".fun_local}"
+    amp "clone", ["testrepo".fun_local,"newrepo".fun_local]
     # Enter the newrepo repository.
     enter_repo "newrepo"
     
@@ -135,9 +145,11 @@ class TestFunctional < Test::Unit::TestCase
     # Make sure that the custom user is still peachy
     assert_command_match(/user\: +seydar/, "log", nil, :limit => 1)
     
-    # Push upstream to testrepo
-    run_amp_command "push"
+    assert_command_match(/demonic infestation/, amp("outgoing"))
+    assert_command_match(/experimental branch/, amp("outgoing"))
     
+    # Push upstream to testrepo
+    amp "push"
     # Switch to testrepo
     exit_repo
     enter_repo "testrepo"
@@ -168,7 +180,7 @@ class TestFunctional < Test::Unit::TestCase
     # the date. So just hand-parse the input string and see if the result is in the changelog.
     require 'time'
     t = Time.parse("1/1/2009")
-    assert_command_match(/#{t.to_s}/, "log -l 1")
+    assert_command_match(/#{t.to_s}/, "log", ["-l", "1"])
     
     # Over-zealous verification never hurt anyone
     assert_verify
@@ -180,7 +192,7 @@ class TestFunctional < Test::Unit::TestCase
     # Pull! wooooo!
     assert_command_match(/added 1 changesets/, "pull")
     # Update it
-    update_result = run_amp_command "update"
+    update_result = amp "update"
     # And check to see if the 2 things we did were both in the update
     assert_match(/1 files updated/, update_result)
     assert_match(/1 files removed/, update_result)
@@ -191,12 +203,12 @@ class TestFunctional < Test::Unit::TestCase
     # ok, so right now, newrepo is the same as testrepo.
     # now to generate a conflict, so we can test merging. we'll need a second child repo.
     exit_repo
-    run_amp_command "clone #{"testrepo".fun_local} #{"conflictrepo".fun_local}"
+    amp "clone", ["testrepo".fun_local, "conflictrepo".fun_local]
     
     # create one branch in conflictrepo
     enter_repo "conflictrepo"
     replace_resources_with_version "version5_1"
-    run_amp_command "status"
+    amp "status"
     commit :message => "conflict, part 1"
     exit_repo
     
@@ -206,14 +218,14 @@ class TestFunctional < Test::Unit::TestCase
     replace_resources_with_version "version5_2"
     
     # test addremove, while we're at it!
-    addremove_result = run_amp_command "addremove"
+    addremove_result = amp "addremove"
     assert_match(/Adding commands\/newz.rb/, addremove_result)
     assert_match(/Removing commands\/heads.rb/, addremove_result)
-    run_amp_command "status"
+    amp "status"
     commit :message => "conflict, part 2"
     
     # push our conflicting commit to testrepo from the "newrepo" child.
-    push_results = run_amp_command "push"
+    push_results = amp "push"
     assert_match(/1 changeset/, push_results)
     assert_match(/2 changes/, push_results)
     assert_match(/2 files/, push_results)
@@ -229,7 +241,7 @@ class TestFunctional < Test::Unit::TestCase
     # pull in newrepo's conflicting commit (it will yell at us for the extra head)
     assert_command_match(/\+1 heads?/, "pull")
     # Try to merge the 2 changesets
-    result = run_amp_command("merge")
+    result = amp("merge")
     
     # Expected results from the merge
     assert_match(/1 files? unresolved/, result)
@@ -243,7 +255,7 @@ class TestFunctional < Test::Unit::TestCase
     File.open("STYLE.txt","w") {|f| f.write vers1_groups.first}
     
     # mark STYLE.txt as resolved, and make sure it successfully was marked
-    resolve_result = run_amp_command("resolve", ["--mark", "STYLE.txt"])
+    resolve_result = amp("resolve", ["--mark", "STYLE.txt"])
     assert_match(/STYLE.txt marked/, resolve_result)
     assert_match(/resolved/, resolve_result)
     
@@ -251,7 +263,7 @@ class TestFunctional < Test::Unit::TestCase
     commit :message => "conflict resolved!"
     
     # push to testrepo
-    run_amp_command "push"
+    amp "push"
     assert_verify
     # make sure we're still intact in conflictrepo
     
@@ -263,12 +275,12 @@ class TestFunctional < Test::Unit::TestCase
     assert_verify
     
     # Test the copy command
-    run_amp_command("copy", ["-v", "STYLE.txt", "STYLE_copied.txt"])
+    amp("copy", ["-v", "STYLE.txt", "STYLE_copied.txt"])
     assert_file_has_status "STYLE_copied.txt", :added
     assert_equal File.read("STYLE.txt"), File.read("STYLE_copied.txt")
     
     # Test the move command
-    run_amp_command("move", ["command.rb", "command_moved.rb"])
+    amp("move", ["command.rb", "command_moved.rb"])
     assert_false File.exist?("command.rb")
     assert       File.exist?("command_moved.rb")
     assert_file_has_status "command.rb", :removed
@@ -285,16 +297,16 @@ class TestFunctional < Test::Unit::TestCase
     assert_command_match(/newbranch/, "branch")
     
     # Only 1 tag, which is the tip
-    result = run_amp_command("tags").split("\n")
+    result = amp("tags").split("\n")
     result = result.select {|entry| entry =~ /[0-9a-f]{10}/}
     assert_equal 1, result.size
     assert_match(/tip/, result.first)
     
     # Tag revision 3 as "noobsauce", by "medgar", with commit message "silly commit!"
-    run_amp_command("tag", ["noobsauce"], {:rev => 3, :user => "medgar", :message => "silly commit!"})
+    amp("tag", ["noobsauce"], {:rev => 3, :user => "medgar", :message => "silly commit!"})
     
     # Let's make sure our tag went in smoothly.
-    result = run_amp_command("tags").split("\n")
+    result = amp("tags").split("\n")
     result = result.select {|entry| entry =~ /[0-9a-f]{10}/}
     assert_equal 2, result.size
     
@@ -310,7 +322,7 @@ class TestFunctional < Test::Unit::TestCase
     assert_match(/9/, result[tip])
     
     # And we should make sure the options were passed into the commit correctly.
-    head_result = run_amp_command("head")
+    head_result = amp("head")
     assert_match(/medgar/, head_result)
     assert_match(/silly commit!/, head_result)
     
@@ -321,11 +333,36 @@ class TestFunctional < Test::Unit::TestCase
     exit_repo
     enter_repo 'testrepo'
     
+    assert_equal get_resource("command.rb", "version3"), amp("view", ["command.rb"], :rev => 3)
+    
+    # annotate_output = amp("annotate", ["STYLE.txt"], :user => true, :number => true).strip
+    # correct_annotation = read_supporting_file("annotate.out").strip
+    # assert_equal correct_annotation, annotate_output
+    
     # Create a dummy commit
     File.open('used_in_bundle', 'w') {|f| f.write "monkay" }
-    amp "commit", :message => 'monkey'
+    amp "commit", [], :message => 'monkey'
     assert_verify
     
+    # test that the commands work if we go into a subdir
+    Dir.chdir("commands")
+    assert_command_runs "status"
+    Dir.chdir("..")
+    
+    assert_command_match(/monkey/, "info", "11")
+    assert_command_match(/conflict resolved/, "info", ["11", "8"])
+    
+    assert_command_match(/10/, "identify", [], :rev => "10", :num => true)
+    
+    diff_out = amp("diff", ["command.rb", "--rev", "2", "--rev", "3", "--no-color"])
+    assert_match(/\+\s+def silly_namespace\(name\)/, diff_out)
+    assert_match(/\-\s+def volt_namespace\(name\)/, diff_out)
+    
+    # needs two args
+    assert_command_fails "move", ["STYLE.txt"]
+    # last argument must be directory if moving multiple files
+    assert_command_fails "move", ["STYLE.txt", "command.rb", "STYLE.txt"]
+    assert_command_fails "c"
     # # Create and compare bundles of ALL revisions
     # assert_amp_hg_bundle_same 'bundle_all.bundle', :all => true
     # 
@@ -351,6 +388,15 @@ class TestFunctional < Test::Unit::TestCase
   
   private ##################################
   
+  def assert_command_runs(command, args=[], opts = {})
+    assert run_amp_command_with_code(command, args, opts)[1]
+  end
+  
+  def assert_command_fails(command, args = [], opts = {})
+    assert_false run_amp_command_with_code(command, args, opts)[1]
+  end
+    
+  
   def assert_amp_hg_bundle_same(fname, opts={})
     amp "bundle", ["amp_#{fname}"], opts
     hg  "bundle", ["hg_#{fname}"],  opts
@@ -369,7 +415,7 @@ class TestFunctional < Test::Unit::TestCase
   ##
   # 
   def confirm_head_is_first_commit
-    heads_result = run_amp_command("heads")
+    heads_result = amp("heads")
     assert_match(/changeset\: +0\:/, heads_result)
     assert_match(/First commit\./, heads_result)
   end
@@ -378,14 +424,14 @@ class TestFunctional < Test::Unit::TestCase
   # Asserts that a) heads returns the most recent revision, b) log -l 1 returns only
   # one revision.
   def confirm_head_equals_log_limit_one
-    assert_equal run_amp_command("heads").strip, run_amp_command("log -l 1").strip
+    assert_equal amp("heads").strip, amp("log", ["-l","1"]).strip
   end
   
   ##
   # Asserts that a) heads returns the most recent revision, b) tip returns the correct
   # revision.
   def confirm_head_equals_tip
-    assert_equal run_amp_command("heads").strip, run_amp_command("tip").strip
+    assert_equal amp("heads").strip, amp("tip").strip
   end
   
   ##########################################
@@ -395,17 +441,17 @@ class TestFunctional < Test::Unit::TestCase
   def add_file_ensure_added(source, dest=source)
     copy_resource(source, dest)
     assert_file "#{@current_repo}/#{dest}"
-    run_amp_command "add", dest
+    amp "add", dest
     
     assert_file_is_added dest
   end
   
   def remove_file(source)
-    run_amp_command "remove", source
+    amp "remove", source
   end
   
   def assert_files_in_manifest(*files)
-    manifest_result = run_amp_command("manifest")
+    manifest_result = amp("manifest")
     [*files].each do |file|
       assert_match(/#{file}/, manifest_result)
     end
@@ -430,22 +476,22 @@ class TestFunctional < Test::Unit::TestCase
   end
   
   def assert_command_match(regex, command, args=[], opts={})
-    result = run_amp_command command, args, opts
+    result = amp command, args, opts
     assert_match regex, result
   end
   
   def assert_command_no_match(regex, command, args=[], opts={})
-    result = run_amp_command command, args, opts
+    result = amp command, args, opts
     assert_no_match regex, result
   end
   
   def assert_hg_command_match(regex, command, args=[], opts={})
-    result = run_hg_command command, args, opts
+    result = hg command, args, opts
     assert_match regex, result
   end
   
   def assert_hg_command_no_match(regex, command, args=[], opts={})
-    result = run_hg_command command, args, opts
+    result = hg command, args, opts
     assert_no_match regex, result
   end
   
@@ -464,17 +510,22 @@ class TestFunctional < Test::Unit::TestCase
                   when :modified
                     "M"
                   end
-    status_result = run_amp_command "status", nil, status.to_sym => true, :hg => true, :"no-color" => true
-    assert_match(/#{stat_letter} #{file}/, status_result)
+    result = amp("status", nil, status.to_sym => true, :hg => true, :"no-color" => true)
+    
+    assert_match(/#{stat_letter} #{file}/, result)
   end
   
   def commit(options = {})
-    run_amp_command "commit", [], options
+    amp "commit", [], options
   end
   
   ###########################################
   #      OTHER HELPER METHODS
   ##########################################
+  
+  def read_supporting_file(filename)
+    File.read(File.join($current_basedir, filename))
+  end
   
   def get_resource(file_name, version="")
     File.read(File.join($current_basedir, "resources", version, file_name)) 
@@ -496,6 +547,10 @@ class TestFunctional < Test::Unit::TestCase
   end
   
   def options_hash_to_string(options = {})
+    options_hash_to_array(options).join(" ")
+  end
+  
+  def options_hash_to_array(options = {})
     opt_arr = []
     options.each do |k, v|
       case v
@@ -504,10 +559,10 @@ class TestFunctional < Test::Unit::TestCase
       when TrueClass
         opt_arr << "--#{k}"
       else
-        opt_arr << "--#{k}=\"#{v}\""
+        opt_arr << "--#{k}" << v
       end
     end
-    opt_arr.join(" ")
+    opt_arr
   end
   
   ##
@@ -531,7 +586,7 @@ class TestFunctional < Test::Unit::TestCase
   # Executes the given command using the amp binary. Backbone of the functional tests.
   #
   # @example
-  #   run_amp_command(:commit, "STYLE.txt", :user => "seydar", :date => "1/1/2001")
+  #   amp(:commit, "STYLE.txt", :user => "seydar", :date => "1/1/2001")
   #   will run
   #   `amp commit --user="seydar" --date="1/1/2001" STYLE.txt`
   #
@@ -539,9 +594,37 @@ class TestFunctional < Test::Unit::TestCase
   # @param [Array<String>] args the arguments to supply to the command.
   # @param [Hash<#to_s => #to_s>] opts the options to pass to the command, such as :user => "seydar"
   #   for a commit command.
+  def run_amp_command_with_code(command, args = [], opts = {})
+    out = $stdout
+    argv = ARGV.dup
+    ARGV.clear.concat([command])
+    ARGV.concat([*args]) if args
+    ARGV.concat(options_hash_to_array(opts)) if opts
+    s = StringIO.new
+    $display = true
+    $stdout = s
+    result = ""
+    success = false
+    begin
+      success = Amp::Dispatch.run
+    rescue StandardError => err
+      $stdout = out
+      puts
+      puts s.string
+      raise
+    ensure
+      ARGV.clear.concat(argv)
+      $stdout = out
+      result = s.string
+    end
+    
+    [result, success]
+  end
+  
   def run_amp_command(command, args = [], opts = {})
-    args = [args] unless args.kind_of?(Array)
-    %x(TESTING='true' && #{AMP_BINARY} #{command} #{options_hash_to_string(opts)} #{args.join(" ")})
+    result, success = *run_amp_command_with_code(command, args, opts)
+    
+    result
   end
   alias_method :amp, :run_amp_command
   

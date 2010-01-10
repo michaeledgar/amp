@@ -1,0 +1,6 @@
+These are the following commands available:
+
+<% Amp::Command.all_for_workflow(options[:global_config]["amp"]["workflow", Symbol, :hg], false).sort {|k1, k2| k1.to_s <=> k2.to_s}.each do |k, v| -%>
+<%= k.to_s.ljust(30, " ")%><%= v.desc %>
+<%- end %>
+Run "amp help [command]" for more information.

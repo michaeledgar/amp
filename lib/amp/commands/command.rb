@@ -193,6 +193,7 @@ module Amp
       yield(self) if block_given?
       workflow :all if @workflows.empty?
       @options += GLOBAL_OPTIONS
+      Amp::Help::CommandHelpEntry.new(full_name, self)
     end
     
     ##
@@ -457,14 +458,14 @@ module Amp
     # @return [Amp::Command] the command being run
     def run(options={}, args=[])
       # run the before commands
-      @before.each {|cmd| result = cmd.run options, args; return if !result || $break }
+      @before.each {|cmd| result = cmd.run options, args; return false if !result || $break }
       
       @code[options, args] # and of course the actual command...
       
       # top it off with the after commands
-      @after.each  {|cmd| result = cmd.run options, args; return if !result || $break }
+      @after.each  {|cmd| result = cmd.run options, args; return false if !result || $break }
       
-      self
+      true
     end
     
     NO_REPO_ALLOWED = {}

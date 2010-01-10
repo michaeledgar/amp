@@ -59,19 +59,19 @@ module Amp
                                      " 'hg heads')")
               end
             end
-            if !force && (working_changeset.files.any? || working_changeset.deleted.any?)
+            if !force && (working_changeset.changed_files.any? || working_changeset.deleted.any?)
               raise abort("oustanding uncommitted changes")
             end
           elsif !overwrite
             if parent_ancestor == parent1 || parent_ancestor == parent2
               # do nothing
             elsif parent1.branch == parent2.branch
-              if working_changeset.files.any? || working_changeset.deleted.any?
+              if working_changeset.changed_files.any? || working_changeset.deleted.any?
                 raise abort("crosses branches (use 'hg merge' or "+
                                      "'hg update -C' to discard changes)")
               end
               raise abort("crosses branches (use 'hg merge' or 'hg update -C')")
-            elsif working_changeset.files.any? || working_changeset.deleted.any?
+            elsif working_changeset.changed_files.any? || working_changeset.deleted.any?
               raise abort("crosses named branches (use 'hg update -C'"+
                                    " to discard changes)")
             else
@@ -89,7 +89,7 @@ module Amp
           actions += forget_removed(working_changeset, parent2, branch_merge)
           actions += manifest_merge(working_changeset, parent2, parent_ancestor, 
                                     overwrite, partial)
-          p [working_changeset, parent2, parent_ancestor]                          
+          #p [working_changeset, parent2, parent_ancestor] # KILLME
           ## Apply phase - apply the changes we just generated.
           unless branch_merge # just jump to the new revision
             fp1, fp2, xp1, xp2 = fp2, NULL_ID, xp2, ''
@@ -222,9 +222,9 @@ module Amp
           UI::debug(" overwrite #{overwrite} partial #{partial}")
           UI::debug(" ancestor #{ancestor} local #{local} remote #{remote}")
           
-          local_manifest = local.manifest
-          remote_manifest = remote.manifest
-          ancestor_manifest = ancestor.manifest
+          local_manifest = local.manifest_entry
+          remote_manifest = remote.manifest_entry
+          ancestor_manifest = ancestor.manifest_entry
           backwards = (ancestor == remote)
           action_list = []
           copy, copied, diverge = {}, {}, {}

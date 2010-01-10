@@ -72,7 +72,7 @@ module Amp
     #
     # @param [#to_s] warning the warning to print to standard output
     def warn(warning)
-      if !@config || @config["ui", "amp-show-warnings", Boolean, true]
+      if !config || config["ui", "amp-show-warnings", Boolean, true]
         err "warning: #{warning}"
       end
     end
@@ -112,7 +112,7 @@ module Amp
     # @return [NilClass]
     def status(update='')
       return unless $display
-      if !@config || @config["ui", "amp-show-status", Boolean, true]
+      if !config || config["ui", "amp-show-status", Boolean, true]
         say "status: #{update}"
       end
     end
@@ -124,7 +124,7 @@ module Amp
     # @return [NilClass]
     def note(note='')
       return unless $display
-      if !@config || @config["ui", "amp-show-notes", Boolean, false]
+      if !config || config["ui", "amp-show-notes", Boolean, false]
         say "note: #{note}"
       end
     end
@@ -165,8 +165,8 @@ module Amp
     def ask(question='', type=String)
       type = type.to_s.downcase.to_sym
       
-      print question.to_s
-      result = gets.chomp unless type == :password
+      tell question.to_s
+      result = $stdin.gets.chomp unless type == :password
       
       # type conversion
       case type
@@ -174,6 +174,8 @@ module Amp
         result
       when :integer, :fixnum, :bignum, :numeric
         result.to_i
+      when :float
+        result.to_f
       when :array
         result.split(',').map {|e| e.strip }
       when :password
@@ -225,7 +227,7 @@ EOS
     #
     # @param [String, #to_s] message The debug message to be printed
     def debug(message='')
-      if @config && @config["debug","messages", Boolean, false]
+      if config && config["debug","messages", Boolean, false]
         say message
       end
     end
@@ -255,24 +257,6 @@ EOS
       text.gsub!(/^AMP:.*\n/,"")
       text
     end
-    
-    ##
-    # Asks the user something.
-    # 
-    # @deprecated
-    # @param [#to_s] message the message to send
-    # @param [Class, lambda] type anything to force a type. If you supply
-    #   a class, then the answer will be parsed into that class. If you
-    #   supply a lambda, the string will be provided, and you do the conversion
-    # @param [] default Whatever the default answer is, if they fail to provide
-    #   a valid answer.
-    # @return [String] their response with whitespace removed, or the default value
-    def prompt(message='', type=String, default=nil)
-      say message.to_s
-      response = STDIN.gets.strip
-      response = default if response == ""
-      return response
-    end
       
     ##
     # Gets the editor for the current system using environment variables or 
@@ -280,7 +264,7 @@ EOS
     #
     # @return [String] the name of the editor command to execute
     def get_editor
-      return ENV["AMPEDITOR"] || ENV["HGEDITOR"] || (@config && @config["ui","editor"]) ||
+      return ENV["AMPEDITOR"] || ENV["HGEDITOR"] || (config && config["ui","editor"]) ||
              ENV["VISUAL"] || ENV["EDITOR"] || "vi"
     end
   end

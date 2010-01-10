@@ -1,5 +1,6 @@
 Here are the things we'd like to do. If you're looking to help out, read on.
-We put them into several categories to trick^H^H^H^H^Hencourage you to help.
+We have put them into several categories to trick^H^H^H^H^Hencourage you into
+helping.
 
 == Maintenance
 
@@ -50,17 +51,40 @@ We'd like it to be more like BitBucket and GitHub. Go crazy. One thing you
 could do is implement other methods for storing users besides memory. There
 are incomplete frameworks for Sequel and DataMapper storage that need TLC.
 
+== Help
+
+= Pages of info
+We need to have specific pages explaining amp-specific features, and helping
+users get started using amp. Anything put into lib/amp/help/entries will be
+loaded with its filename as the help entry's name. So, if you create a file
+called "ampfiles.md", then "amp help ampfiles" will present the file you created.
+
+= Markdown to Terminal
+ANSI bold/underline output. Word. Consider hacking Maruku for this one.
+
+= Markdown to HTML
+Generate a temporary HTML file, use system("open #{filename}") to open in the user's
+browser. Should work like a charm and be pretty sexy to boot.
+
+== Insects (low-low-low-priority bugs)
+
+= Test Reloading
+Files get double-loaded when we run tests. Fix this. Killer the fucking insect.
+
 == Documentation
 
 = User guide
 We need a guide that will tell new users how to install and use amp. It should
-explain what to do if you get a bug.
+explain what to do if you get a bug. Add this into the help system so it can be
+CLI-accessible and browser-accessible.
 
 = Inline documentation
 Go through to big ugly methods (or any method, no matter how dumb) and add
 inline comments explaining what the method does and HOW IT INTERACTS WITH
 THE REST OF THE SYSTEM. Comments should be formatted according to YARD
-documentation format (http://yardoc.org).
+documentation format (http://yardoc.org). Key questions to ask and answer:
+Who (uses this), What (is passed in), and Why (this exists), and How (this
+interacts with the rest of the system).
 
 = Wiki
-We need to expand out BitBucket wiki so that it is more appeasing and useful
+We need to expand out BitBucket wiki so that it is more appeasing and useful.

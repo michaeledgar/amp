@@ -23,6 +23,15 @@ class TestRevlog < Test::Unit::TestCase
     assert_equal expected, result
   end
   
+  
+  def test_node_raises
+    assert_raise(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.node_id_for_index(12345) }
+  end
+  
+  def test_rev_raises
+    assert_raise(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.revision_index_for_node("abcdefghijkl") }
+  end
+  
   def test_revlog_size
     result = @revlog.size
     expected = 51

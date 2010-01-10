@@ -49,7 +49,7 @@ HELP
     o.each do |node_id|
       # get the parents of the node so that we can check if it's a merge
       # (merges have two parents)
-      parents = repo.changelog.parents(node_id).select {|p| p.not_null? }
+      parents = repo[node_id].parents
     
       # We skip printing this if it's a merge (parents.size == 2)
       # and we're NOT printing merges (opts[:"no-merges"])

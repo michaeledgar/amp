@@ -53,9 +53,9 @@ module Amp
           end
           
           limit = find_limit(repo, changeset_local.revision, changeset_remote.revision)
-          man_local    = changeset_local.manifest
-          man_remote   = changeset_remote.manifest
-          man_ancestor = changeset_ancestor.manifest
+          man_local    = changeset_local.manifest_entry
+          man_remote   = changeset_remote.manifest_entry
+          man_ancestor = changeset_ancestor.manifest_entry
           
           # gets the versioned_file for a given file and node ID
           easy_file_lookup = proc do |file, node|

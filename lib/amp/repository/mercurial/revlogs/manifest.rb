@@ -93,6 +93,10 @@ module Amp
         super(opener, "00manifest.i")
       end
       
+      def inspect
+        "#<HG Manifest: size=#{size} tip=#{tip.inspect}>"
+      end
+      
       ##
       # Reads the difference between the given node and the revision
       # before that.
@@ -142,6 +146,7 @@ module Amp
         mapping = read(node)
         return [mapping[f],  (mapping.flags[f] || "")]
       end
+      
       ##
       # Checks the list for files invalid characters that aren't allowed in
       # filenames.

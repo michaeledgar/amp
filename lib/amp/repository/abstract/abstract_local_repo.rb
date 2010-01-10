@@ -7,6 +7,7 @@ module Amp
 
     class AbstractLocalRepository
       include CommonLocalRepoMethods
+      
       ##
       # Returns the root of the repository (not the .hg/.git root)
       #
@@ -25,27 +26,64 @@ module Amp
       end
   
       ##
-      # Creates a local changeset.
+      # Commits a changeset or set of files to the repository. You will quite often
+      # use this method since it's basically the basis of version control systems.
       #
-      # @return [Boolean] for success/failure
-      def commit(options = {})
+      # @api
+      # @param [Hash] opts the options to this method are all optional, so it's a very
+      #   flexible method. Options listed below.
+      # @option opts [Array] :modified ([]) which files have been added or modified
+      #   that you want to be added as a changeset.
+      # @option opts [Array] :removed ([]) which files should be removed in this
+      #   commit?
+      # @option opts [Hash] :extra ({}) any extra data, such as "close" => true
+      #   will close the active branch.
+      # @option opts [String] :message ("") the message for the commit. An editor
+      #   will be opened if this is not provided.
+      # @option opts [Boolean] :force (false) Forces the commit, ignoring minor details
+      #   like when you try to commit when no files have been changed.
+      # @option opts [Match] :match (nil) A match object to specify how to pick files
+      #   to commit. These are useful so you don't accidentally commit ignored files,
+      #   for example.
+      # @option opts [Array<String>] :parents (nil) the node IDs of the parents under
+      #   which this changeset will be committed. No more than 2 for mercurial.
+      # @option opts [Boolean] :empty_ok (false) Is an empty commit message a-ok?
+      # @option opts [Boolean] :force_editor (false) Do we force the editor to be
+      #   opened, even if :message is provided?
+      # @option opts [String] :user (ENV["HGUSER"]) the username to associate with the commit.
+      #   Defaults to AmpConfig#username.
+      # @option opts [DateTime, Time, Date] :date (Time.now) the date to mark with
+      #   the commit. Useful if you miss a deadline and want to pretend that you actually
+      #   made it!
+      # @return [String] the digest referring to this entry in the changelog
+      def commit(opts={})
         raise NotImplementedError.new("commit() must be implemented by subclasses of AbstractLocalRepository.")
       end
   
       ##
       # Pushes changesets to a remote repository.
       #
+      # @param [Repository] remote_repo the remote repository object to push to
+      # @param [Hash] options extra options for pushing
+      # @option options [Boolean] :force (false) Force pushing, even if it would create
+      #   new heads (or some other error arises)
+      # @option options [Array<Fixnum, String>] :revs ([]) specify which revisions to push
       # @return [Boolean] for success/failure
-      def push(options = {})
+      def push(remote_repo, options = {})
         raise NotImplementedError.new("push() must be implemented by subclasses of AbstractLocalRepository.")
       end
-  
+
       ##
       # Pulls changesets from a remote repository 
       # Does *not* apply them to the working directory.
       #
+      # @param [Repository] remote_repo the remote repository object to pull from
+      # @param [Hash] options extra options for pulling
+      # @option [Array<String, Fixnum>] :heads ([]) which repository heads to pull, such as
+      #   a branch name or a sha-1 identifier
+      # @option [Boolean] :force (false) force the pull, ignoring any errors or warnings
       # @return [Boolean] for success/failure
-      def pull(options = {})
+      def pull(remote_repo, options = {})
         raise NotImplementedError.new("pull() must be implemented by subclasses of AbstractLocalRepository.")
       end
   
@@ -115,7 +153,7 @@ module Amp
       # @return [Array<Array<String, Symbol>>] an array of String-Symbol pairs - the
       #   filename is the first entry, the status of the merge is the second.
       def uncommitted_merge_files
-        merge_state.uncommitted_merge_files
+        raise NotImplementedError.new("uncommitted_merge_files() must be implemented by subclasses of AbstractLocalRepository.")
       end
       
     end

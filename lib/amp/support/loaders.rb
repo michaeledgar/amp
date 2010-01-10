@@ -76,7 +76,6 @@ private :caller_file
 # @param [String] path_to_alt the path to the pure ruby version of the C library. Will
 #   be loaded relative to the caller's file
 def amp_c_extension(path_to_c, path_to_alt)
-  
   if $USE_RUBY
     Amp::UI.debug "Loading alternative ruby: #{path_to_alt}"
     require File.join(File.dirname(caller_file(1)), path_to_alt)

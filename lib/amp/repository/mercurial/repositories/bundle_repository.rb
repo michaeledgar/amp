@@ -104,7 +104,7 @@ module Amp
         #
         # @return [BundleChangeLog] the changelog for this repository.
         def changelog
-          @changelog      ||= Bundles::BundleChangeLog.new(@store.opener, @bundle_file)
+          @changelog      ||= Bundles::Mercurial::BundleChangeLog.new(@store.opener, @bundle_file)
           @manifest_start ||= @bundle_file.tell
           @changelog
         end

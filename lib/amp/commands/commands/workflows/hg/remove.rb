@@ -1,7 +1,7 @@
 command :remove do |c|
   c.workflow :hg
   c.desc "Removes files from the repository on next commit"
-  c.opt :after, "record as delete for missing files (whether or not to actually delete files)", :short => "-A", :default => false
+  c.opt :"no-unlink", "Don't unlink the files", :short => "-A", :default => false
   c.opt :force, "Forces removal of files", :short => "-f", :default => false
   c.opt :include, "include names matching the given patterns", :short => "-I", :type => :string
   c.opt :exclude, "exclude names matching the given patterns", :short => "-X", :type => :string
@@ -31,7 +31,7 @@ command :remove do |c|
       (remove + forget).sort.each {|f| Amp::UI.status "removing #{f}..." }
     end
     
-    repo.staging_area.remove(remove, :unlink => ! opts[:after]) # forgetting occurs here
+    repo.staging_area.remove(remove, :unlink => ! opts[:"no-unlink"]) # forgetting occurs here
     repo.forget(forget)
     
     remove += forget

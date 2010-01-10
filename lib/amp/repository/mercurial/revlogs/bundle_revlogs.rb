@@ -9,7 +9,7 @@ module Amp
       # and we might need to get stuff from both. It's kind of like the
       # DelayedOpener/FakeAppender for changelogs.
       module BundleRevlog
-        include RevlogSupport::Node
+        include Amp::Mercurial::RevlogSupport::Node
         BUNDLED_INDEX_ENTRY_SIZE = 80
         
         ##
@@ -65,9 +65,9 @@ module Amp
             link_rev = (link_mapper && link_mapper[changeset]) || num_revs
             previous ||= parent_1
             
-            @index << [RevlogSupport::Support.offset_version(start, 0), chunk_size, -1, -1, link_rev,
-                       revision_index_for_node(parent_1), revision_index_for_node(parent_2),
-                       node]
+            @index << [Amp::Mercurial::RevlogSupport::Support.offset_version(start, 0),
+                       chunk_size, -1, -1, link_rev, revision_index_for_node(parent_1),
+                       revision_index_for_node(parent_2), node]
             
             @index.node_map[node] = num_revs
             @base_map[num_revs] = previous
@@ -169,12 +169,12 @@ module Amp
           
           while chain.any?
             delta = get_chunk(chain.pop)
-            text = Diffs::MercurialPatch.apply_patches(text, [delta])
+            text = Diffs::Mercurial::MercurialPatch.apply_patches(text, [delta])
           end
           p1, p2 = parents_for_node node
           
-          if node != RevlogSupport::Support.history_hash(text, p1, p2)
-            raise RevlogSupport::RevlogError.new("integrity check failed on %s:%d, data:%s" % 
+          if node != Amp::Mercurial::RevlogSupport::Support.history_hash(text, p1, p2)
+            raise Amp::Mercurial::RevlogSupport::RevlogError.new("integrity check failed on %s:%d, data:%s" % 
                                                  [(@index.inline? ? @index_file : @data_file), rev(node), text.inspect])
           end
           
@@ -199,7 +199,7 @@ module Amp
         
         def all_chunk_positions
           results = []
-          RevlogSupport::ChangeGroup.each_chunk(@bundle_file) do |chunk|
+          Amp::Mercurial::RevlogSupport::ChangeGroup.each_chunk(@bundle_file) do |chunk|
             if block_given?
               yield(chunk, @bundle_file.tell - chunk.size)
             else
@@ -210,7 +210,7 @@ module Amp
         end
       end
       
-      class BundleChangeLog < ChangeLog
+      class BundleChangeLog < Amp::Mercurial::ChangeLog
         include BundleRevlog
         def initialize(opener, bundle_file)
           # This is the changelog initializer
@@ -220,7 +220,7 @@ module Amp
         end
       end
       
-      class BundleManifest < Manifest
+      class BundleManifest < Amp::Mercurial::Manifest
         include BundleRevlog
         
         def initialize(opener, bundle_file, link_mapper)
@@ -232,7 +232,7 @@ module Amp
         
       end
       
-      class BundleFileLog < FileLog
+      class BundleFileLog < Amp::Mercurial::FileLog
         include BundleRevlog
         
         def initialize(opener, path, bundle_file, link_mapper)

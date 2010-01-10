@@ -76,7 +76,7 @@ module Amp
         # @return [Array<Array<String, Symbol>>] an array of String-Symbol pairs - the
         #   filename is the first entry, the status of the merge is the second.
         def uncommitted_merge_files
-          @state.map {|k, _| key, status(key)}
+          @state.map {|k, _| [k, status(k)] }
         end
         
         ##
@@ -144,7 +144,7 @@ module Amp
         #
         # @param [String] filename
         def unresolved?(filename)
-          status_filename == :unresolved
+          status(filename) == :unresolved
         end
         
         ##

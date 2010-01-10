@@ -27,12 +27,39 @@ module Amp
         end
         
         ##
+        # Accesses specific branch head data from the repository. All arguments
+        # are optional.
+        #
+        # @param [Hash] opts the options for the branch head loading
+        # @option opts [Boolean] :branch (self[nil].branch) The branch to look up
+        # @option opts [Fixnum] :start (0) the revision to start frmo
+        # @option opts [Boolean] :closed return closed branches if true
+        # @return 
+        def branch_heads(opts = {})
+          opts[:branch] ||= self[nil].branch
+          
+          all_heads = load_branch_heads
+          branch_heads = all_heads[opts[:branch]] or return []
+          branch_heads.reverse!
+          
+          if opts[:start]
+            branch_heads = changelog.nodes_between([opts[:start]], branch_heads)[2] # TODO: untested
+          end
+          if !opts[:closed]
+            branch_heads.reject! {|head| changelog.read(head)[5].include?("close")}
+          end
+          branch_heads
+        end
+        
+        ##
         # Loads the head revisions for each branch. Each branch has at least one, but
         # possible more than one, head.
         #
         # @return [Hash] a map, where the branch names are keys and the values
         #   are the heads of the branch
-        def branch_heads
+        def load_branch_heads
+          @branch_cache ||= nil
+          @branch_cache_tip ||= nil
           # Gets the mapping of branch names to branch heads, but uses caching to avoid
           # doing IO and tedious computation over and over. As long as our tip doesn't
           # change, the cache will remain valid.
@@ -77,7 +104,7 @@ module Amp
         # the branch, open heads come before closed
         def branch_tags
           tags = {}
-          branch_heads.each do |branch_node, local_heads|
+          load_branch_heads.each do |branch_node, local_heads|
             head = nil
             local_heads.reverse_each do |h| # get the tip if its a closed
               if !(changelog.read(h)[5].include?("close"))
@@ -140,16 +167,17 @@ module Amp
             return {}, NULL_ID, NULL_REV
           end
           # use catch, not exceptions (exceptions are more costly)
-          valid = catch(:invalid) do
-            # Read in the tip node and tip revision #
-            last, last_rev = lines.shift.split(" ", 2)
-            last, last_rev = last.unhexlify, last_rev.to_i
-            
-            # if we aren't matching up with the current repo, then invalidate the cache
-            if last_rev > self.size || self[last_rev].node != last
-              throw :invalid, false
-            end
-            
+          valid = false
+
+          # Read in the tip node and tip revision #
+          last, last_rev = lines.shift.split(" ", 2)
+          last, last_rev = last.unhexlify, last_rev.to_i
+          
+          # if we aren't matching up with the current repo, then invalidate the cache
+          if last_rev > self.size || self[last_rev].node != last
+            valid = false
+          else
+          
             # Go through each next line and read in a head-branch pair
             lines.each do |line|
               # empty = useless line
@@ -160,6 +188,7 @@ module Amp
               partial[_label.strip] ||= []
               partial[_label.strip] << node.unhexlify
             end
+            valid = true
           end
           
           # if invalid was thrown.... bail

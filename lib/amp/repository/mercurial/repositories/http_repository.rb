@@ -22,7 +22,7 @@ module Amp
       # The protocol's pretty simple - just ?cmd="command", and any other
       # args you need. Should be pretty easy.
       class HTTPRepository < Repository
-        include Mercurial::RevlogSupport::Node
+        include Amp::Mercurial::RevlogSupport::Node
         
         DEFAULT_HEADERS = {"User-agent" => "Amp-#{Amp::VERSION}",
                            "Accept" => "Application/Mercurial-0.1"}
@@ -163,7 +163,7 @@ module Amp
           #require_capability 'changegroupsubset', 'look up remote changes'
           base_list = bases.map {|n| n.hexlify }.join ' '
           head_list = heads.map {|n| n.hexlify }.join ' '
-          response  = *do_read("changegroupsubset", :bases => base_list, :heads => head_list)
+          response  = do_read("changegroupsubset", :bases => base_list, :heads => head_list)
           
           s = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
           s.write Zlib::Inflate.inflate(response[:body])
@@ -235,7 +235,7 @@ module Amp
           
           (0..(pairs.size)).step(batch) do |i|
             n = pairs[i..(i+batch-1)].map {|p| p.map {|k| k.hexlify }.join("-") }.join(" ")
-            resp = *do_read("between", :pairs => n)
+            resp = do_read("between", :pairs => n)
             
             raise RepoError.new("unexpected code: #{code}") unless resp[:code] == 200
             

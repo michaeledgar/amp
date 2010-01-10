@@ -9,14 +9,25 @@ module Amp
       include Mercurial::RevlogSupport::Node
       
       attr_accessor :file_id
-      attr_writer   :path
-      attr_writer   :change_id
+      attr_accessor :change_id
+      attr_accessor :path
+      attr_accessor :repo
       
       ##
       # Creates a new {VersionedFile}. You need to pass in the repo and the path
       # to the file, as well as one of the following: a revision index/ID, the
       # node_id of the file's revision in the filelog, or a changeset at a given
       # index.
+      # 
+      # Oh, and just FYI because it might interest you, there are three ways to
+      # specify the revision of a VFile: change_id (revision in changelog),
+      # file_id (revision in file_log), and an actual changeset. Instead of
+      # sticking with one way, favoring one way, or converting everything
+      # to a single form, they do everything
+      # three different ways. It's not particularly difficult to deal with, per se,
+      # but it's just fucking stupid. like seriously wtf. with that said, mad props
+      # to the mercurial team because they put out a rock solid piece of code that
+      # has inspired me.
       # 
       # @param [Repository] repo The repo we're working with
       # @param [String] path the path to the file
@@ -33,19 +44,136 @@ module Amp
         raise StandardError.new("specify a revision!") unless opts[:change_id] ||
                                                               opts[:file_id]   ||
                                                               opts[:changeset]
-        @file_log  = opts[:file_log]  if opts[:file_log]
-        @change_id = opts[:change_id] if opts[:change_id]
-        @changeset = opts[:changeset] if opts[:changeset]
-        @file_id   = opts[:file_id]   if opts[:file_id]
+        @file_log  = opts[:file_log]  || nil
+        @change_id = opts[:change_id] || nil
+        @changeset = opts[:changeset] || nil
+        @file_id   = opts[:file_id]   || nil
+      end
+      
+      ##
+      # Commit this {VersionedFile} as part of a larger transaction. This will
+      # not commit anything if the file hasn't actually been changed.
+      # 
+      #  commit_file:
+      #    if file_has_been_copied:
+      #      get_new_file_pointers # for the old file_log, since it needs to be transfered
+      #    elsif file_has_been_merged:
+      #      deal_with_merges
+      #    end
+      #    
+      #    add_file_log_entry
+      # 
+      # @param [Hash] opts
+      # @option opts [Array<Amp::Mercurial::ManifestEntry>] manifests the manifests of
+      #   the parents
+      # @option opts [String] link_revision the revision index we'll be adding
+      #   this under
+      # @option opts [Amp::Mercurial::Journal] journal the journal for aborting
+      #   failed commits
+      # @option opts [Array<String>] changed the running tally of changed files
+      # @return [String] the file_id (where this revision is in its file log)
+      def commit(opts={})
+        f_log     = repo.file @path # :: FileLog
+        copied    = renamed? # [ path,  ]
+        meta_data = {}
         
+        fp1 = opts[:manifests][0][path] || NULL_ID # :: String (file_id)
+        fp2 = opts[:manifests][1][path] || NULL_ID # :: String (file_id)
+        
+        # DEALIN' WITH MERGES AN' COPIES!
+        if copied && copied[0] != @path
+          # COPIES!!!
+          # 
+          # we need new pointers because when we deal with merges, we need
+          # to know if we have more work to do. If fp1 is NULL_ID, then it means
+          # we need to look up the copy data so we can get the old file log data.
+          fp1, fp2, meta_data = *determine_new_file_pointers(fp1, fp2, copied[0], opts)
+        elsif fp2 != NULL_ID
+          # MERGES
+          fpa = f_log.ancestor fp1, fp2
+          
+          fp1, fp2 = fp2, NULL_ID if fpa == fp1
+          fp2 = NULL_ID           if fpa != fp2 && fpa == fp2
+        end
+        
+        # Else, if there is no second parent and the file hasn't been copied
+        # and nothing has changed in the file (that's the last little
+        # comparison), then we just return fp1 because there's nothing to write.
+        if fp2 == NULL_ID && meta_data.empty? && !(f_log.cmp(fp1, data))
+          return fp1
+        end
+        
+        # Add it to the list of CHANGED files. If we've made it this far,
+        # we have a file that has changed.
+        opts[:changed] << @path
+        
+        # Add the motherfucking file log entry. Have a nice day.
+        f_log.add data, meta_data, opts[:journal], opts[:link_revision], fp1, fp2
       end
       
+      ##
+      # Determine the new file indices of the {FileLog} for this
+      # {VersionedFile}. This deals with merges and copies and anything else
+      # that might stymie the standard process.
+      # 
+      # @param [String] fp1 the file index of the first parent
+      # @param [String] fp2 the file index of the second parent
+      # @param [Hash<Symbol => Object>] opts
+      # @option opts [Array<ManifestEntry>] :manifests the manifests of the
+      #   first and second parents, respectively.
+      # @return [(String, String, Hash<String => String>)] the first file index,
+      #   the second file index, and any meta data
+      def determine_new_file_pointers(fp1, fp2, copied_file, opts={})
+        # Mark the new revision of this file as a copy of another
+        # file.  This copy data will effectively act as a parent
+        # of this new revision.  If this is a merge, the first
+        # parent will be the nullid (meaning "look up the copy data")
+        # and the second one will be the other parent.  For example:
+        #
+        # 0 --- 1 --- 3   rev1 changes file foo
+        #   \       /     rev2 renames foo to bar and changes it
+        #    \- 2 -/      rev3 should have bar with all changes and
+        #                      should record that bar descends from
+        #                      bar in rev2 and foo in rev1
+        #
+        # this allows this merge to succeed:
+        #
+        # 0 --- 1 --- 3   rev4 reverts the content change from rev2
+        #   \       /     merging rev3 and rev4 should use bar@rev2
+        #    \- 2 --- 4        as the merge base
+        
+        copied_revision = opts[:manifests][0][copied_file]
+        new_fp          = fp2
+        
+        if opts[:manifests][1] # branch merge
+          # copied on remote side
+          if fp2 == NULL_ID || copied_revision == nil
+            if opts[:manifests][1][copied_file]
+              copied_revision = opts[:manifests][1][copied_file]
+              new_fp = fp1
+            end
+          end
+        end
+
+        if copied_revision.nil? || copied_revision.empty?
+          ancestor        = repo["."].ancestors.detect {|ancestor| ancestor[copied_file] }
+          copied_revision = ancestor[copied_file].file_node
+        end
+        
+        UI::say "#{@path}: copy #{copied_file}:#{copied_revision.hexlify}"
+        
+        meta_data            = {}
+        meta_data["copy"]    = copied_file
+        meta_data["copyrev"] = copied_revision.hexlify
+        fp1, fp2 = NULL_ID, new_fp
+        
+        [fp1, fp2, meta_data]
+      end
+      
+      ##
+      # Is it more recent than +other+?
       def <=>(other)
-        to_i <=> other.to_i
-      end
-      
-      def to_i
-        change_id
+        change_id <=> other.change_id
       end
       
       ##
@@ -59,6 +187,7 @@ module Amp
       ##
       # Dunno why this is here
       #
+      # @return [String]
       def repo_path
         @path
       end
@@ -72,16 +201,17 @@ module Amp
       end
       
       ##
-      # The revision index into the history of the repository. Could also
-      # be a node_id
+      # The revision of the repository that this {VersionedFile} belongs to.
       def change_id
         @change_id ||= @changeset.revision         if @changeset
         @change_id ||= file_log[file_rev].link_rev unless @changeset
         @change_id
       end
       
+      ##
+      # The version of the file in its own history.
       def file_node
-        @file_node ||= file_log.lookup_id(@file_id) if @file_id
+        @file_node ||= file_log.lookup_id(@file_id) if (@file_id ||= nil)
         @file_node ||= changeset.file_node(@path)   unless @file_id
         @file_node ||= NULL_ID
       end
@@ -107,7 +237,7 @@ module Amp
       ##
       # IRB Inspector string representation
       def inspect
-        "#<Versioned File: #{to_s}>"
+        "#<HG Versioned File: #{to_s}>"
       end
       
       ##
@@ -131,37 +261,29 @@ module Amp
         self.class.new @repo, @path, :file_id => file_id, :file_log => file_log
       end
       
-      # Gets the flags for this file (x and l)
+      # Gets the flags for this file (x, l, or empty string)
       def flags; changeset.flags(@path); end
-      
-      # Returns the revision index
-      def revision
-        return changeset.rev if @changeset || @change_id
-        file_log[file_rev].link_rev
-      end
-      
-      # Link-revision index
-      def linkrev; file_log[file_rev].link_rev; end
+      # The manifest that this file revision is from
+      def manifest_entry; changeset.manifest_entry; end
       # Node ID for this file's revision
       def node; changeset.node; end
-      # User who committed this revision to this file
-      def user; changeset.user; end
-      # Date this revision to this file was committed
-      def date; changeset.date; end
       # All files in this changeset that this revision of this file was committed
-      def files; changeset.files; end
-      # The description of the commit that contained this file revision
-      def description; changeset.description; end
-      # The branch this tracked file belongs to
-      def branch; changeset.branch; end
-      # THe manifest that this file revision is from
-      def manifest; changeset.manifest; end
+      def files; changeset.all_files; end
       # The data in this file
       def data; file_log.read(file_node); end
       # The path to this file
       def path; @path; end
       # The size of this file
       def size; file_log.size(file_rev); end
+      
+      # Returns the revision index
+      def revision
+        return changeset.rev if @changeset || @change_id
+        link_rev
+      end
+      
+      # Link-revision index
+      def link_rev; file_log[file_rev].link_rev; end
       
       ##
       # Compares to a bit of text.
@@ -170,29 +292,27 @@ module Amp
       def cmp(text)
         file_log.cmp(file_node, text)
       end
-      
+            
       ##
-      # Just the opposite of #cmp
+      # Has this file been renamed? If so give some good info. Returns
+      # the new location and the flags ('x', 'l', '')
       # 
-      # @param [VersionedFile] other what to compare to
-      # @return [Boolean] true if the two are the same
-      def ===(other)
-        !self.cmp(other.data)
-      end
-      
-      ##
-      # Has this file been renamed? If so, return some useful info
-      def renamed
-        renamed = file_log.renamed(file_node)
+      # @return [Array<String, String>] [new_path, flags]
+      def renamed?
+        renamed = file_log.renamed?(file_node)
         return renamed unless renamed
         
-        return renamed if rev == linkrev
+        return renamed if rev == link_rev
         
         name = path
         fnode = file_node
         changeset.parents.each do |p|
           pnode = p.filenode(name)
           next if pnode.nil?
+          
+          # Why the fuck does this method return nil. This could fuck things
+          # up down the line. There better be a good fucking reason for this.
+          # Sorry I'm so irritated. I just need some food.
           return nil if fnode == pnode
         end
         renamed
@@ -203,9 +323,9 @@ module Amp
       def parents
         p = @path
         fl = file_log
-        pl = file_log.parents(file_node).map {|n| [p, n, fl]}
+        pl = file_log.parents(file_node).map {|n| [p, n, fl] }
         
-        r = file_log.renamed(file_node)
+        r = file_log.renamed?(file_node)
         pl[0] = [r[0], r[1], nil] if r
         
         pl.select {|parent,n,l| n != NULL_ID}.map do |parent, n, l|
@@ -242,7 +362,7 @@ module Amp
       end
       
       def annotate_get_file(path, file_id)
-        log = (path == @path) ? file_log : @repo.get_file(path)
+        log = path == @path ? file_log : @repo.get_file(path)
         return VersionedFile.new(@repo, path, :file_id => file_id, :file_log => log)
       end
       
@@ -255,7 +375,7 @@ module Amp
           parent_list.map! {|n| [path, n]}
         end
         if follow_copies
-          r = file.renamed
+          r = file.renamed?
           pl[0] = [r[0], @repo.get_file(r[0]).revision(r[1])] if r
         end
         return parent_list.select {|p, n| n != NULL_REV}.
@@ -263,7 +383,7 @@ module Amp
       end
       
       def annotate(follow_copies = false, line_number = false)
-        base = (revision != linkrev) ? file(file_rev) : self
+        base = (revision != link_rev) ? file(file_rev) : self
         
         needed = {base => 1}
         counters = {(base.path + base.file_id.to_s) => 1}
@@ -320,7 +440,7 @@ module Amp
         filelog = filelog_cache[file]
         parent_list = filelog.parents(node).select {|p| p != NULL_ID}.map {|p| [file, p]}
         
-        has_renamed = filelog.renamed(node)
+        has_renamed = filelog.renamed?(node)
         
         parent_list << has_renamed if has_renamed
         ancestor_cache[vertex] = parent_list
@@ -412,11 +532,14 @@ module Amp
       end
       
       ##
-      # Has this file been renamed? If so give some good info.
-      def renamed
+      # Has this file been renamed? If so give some good info. Returns
+      # the new location and the flags ('x', 'l', '')
+      # 
+      # @return [Array<String, String>] [new_path, flags]
+      def renamed?
         rp = repo_path
         return nil if rp == @path
-        [rp, (self.changeset.parents[0].manifest[rp] || NULL_ID)]
+        [rp, (self.changeset.parents[0].manifest_entry[rp] || NULL_ID)]
       end
       
       ##
@@ -427,21 +550,17 @@ module Amp
         rp = repo_path
         pcl = @changeset.parents
         fl = file_log
-        pl = [[rp, pcl[0].manifest[rp] || NULL_ID, fl]]
+        pl = [[rp, pcl[0].manifest_entry[rp] || NULL_ID, fl]]
         if pcl.size > 1
           if rp != p
             fl = nil
           end
-          pl << [p, pcl[1].manifest[p] || NULL_ID, fl]
+          pl << [p, pcl[1].manifest_entry[p] || NULL_ID, fl]
         end
         pl.select {|_, n, __| n != NULL_ID}.map do |parent, n, l|
           VersionedFile.new(@repo, parent, :file_id => n, :file_log => l)
         end
       end
-      
-      ##
-      # Working directory has no children!
-      def children; []; end
       
       ##
       # Returns the current size of the file

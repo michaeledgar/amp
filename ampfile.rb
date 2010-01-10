@@ -16,9 +16,9 @@ Amp::Command.new("silly") do |c|
   c.desc "tell you how silly you are"
 end
 
-#command :push do |c|
+# command :push do |c|
 #  c.before { system "hg verify" }
-#end
+# end
 
 template :silly, <<-EOF
 <%= change_node.inspect %> <%= revision %>

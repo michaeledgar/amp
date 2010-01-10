@@ -25,7 +25,7 @@
               %td.data= @changeset.children.map {|c| link_to_changeset(root, c.node_id.hexlify) }.join(" ")
             %tr
               %td.label files
-              %td.data= @changeset.files.map {|file| link_to_file(root, @changeset.node_id.hexlify, file) }.join("<br />")
+              %td.data= @changeset.changed_files.keys.map {|file| link_to_file(root, @changeset.node_id.hexlify, file) }.join("<br />")
         %ul.diff-list
-          - @changeset.files.each do |file|
+          - @changeset.changed_files.keys.each do |file|
             = haml :_diff_file, :locals => {:file => file, :changeset => @changeset}

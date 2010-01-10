@@ -92,7 +92,7 @@ module Amp
       
       unless command
         puts "Invalid command! #{cmd}"
-        exit(-1)
+        return false
       end
       
       # get the sub-command's options
@@ -113,14 +113,16 @@ module Amp
         puts
       end
       
+      result = false
       # Run that fucker!!!
       begin
         full_backtrace_please do
-          command.run cmd_opts, ARGV
+          result = command.run cmd_opts, ARGV
         end
       rescue AbortError => e
         puts e.to_s
       end
+      result
     end
     
     ##
@@ -162,7 +164,6 @@ module Amp
         
         if prefix_list.size > 1
           puts "Ambiguous command: #{cmd}. Could mean: #{prefix_list.join(", ")}"
-          exit(-1)
         end
         nil
       end

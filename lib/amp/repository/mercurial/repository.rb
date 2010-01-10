@@ -1,8 +1,9 @@
 module Amp
   module Repositories
-    class RepositoryCapabilityError < StandardError; end
     
     module Mercurial
+      class RepositoryCapabilityError < StandardError; end
+      
       
       ##
       # This module is necessary so that we have a hook for autoload.
@@ -42,6 +43,23 @@ module Amp
           end
           path
         end
+        
+        # def self.repo_in_dir?(path)
+        #   res = File.amp_directories_to(path).detect do |p|
+        #     File.directory? File.join(path, ".hg")
+        #   end
+        #   !!res
+        # end
+        # 
+        # ################################
+        # private
+        # ################################
+        # def self.find_repo(path)
+        #   res = File.amp_directories_to(path).detect do |p|
+        #     File.directory? File.join(p, ".hg")
+        #   end
+        #   res || raise("No repository found for Mercurial")
+        # end
       end
       
       ##

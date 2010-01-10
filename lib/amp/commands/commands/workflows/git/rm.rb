@@ -4,8 +4,10 @@ command :rm do |c|
   c.opt :force, "Forces removal of files", :short => "-f", :default => false
   c.opt :quiet, "Doesn't print which files are removed", :short => "-q"
   c.opt :"dry-run", "Doesn't actually remove files - just prints output", :short => "-n"
-  c.opt :cached, "Removes the file only from the index (doesn't unlink file)"
+  c.opt :cached, "Removes the file only from the staging area (doesn't unlink file)"
   c.opt :recursive, "Recursively remove named directories", :short => "-r"
+  c.opt :"no-unlink", "Don't remove the file - just forget it", :short => '-s'
+  
   c.on_run do |opts, args|
     repo = opts[:repository]
     working_changeset = repo[nil]
@@ -46,7 +48,7 @@ command :rm do |c|
       (remove + forget).sort.each {|f| Amp::UI.say "removing #{f}" }
     end
     
-    repo.staging_area.remove remove, :unlink => ! opts[:after] unless opts[:"dry-run"] # forgetting occurs here
+    repo.staging_area.remove remove, :unlink => opts[:"no-unlink"] unless opts[:"dry-run"] # forgetting occurs here
     repo.forget forget unless opts[:"dry-run"]
     
     remove += forget

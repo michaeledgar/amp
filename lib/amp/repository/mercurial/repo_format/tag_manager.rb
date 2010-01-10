@@ -49,7 +49,7 @@ module Amp
         # @param [String] node the node-ID, in binary form.
         # @return [Array<String>] a list of tags for the given node.
         def tags_for_node(node)
-          return (@tags_for_node_cache[node] || []) if @tags_for_node_cache
+          return (@tags_for_node_cache[node] || []) if (@tags_for_node_cache ||= nil)
           @tags_for_node_cache = {}
           tags.each do |tag, tag_node|
             @tags_for_node_cache[tag_node] ||= [] # make sure there's an array
@@ -72,7 +72,7 @@ module Amp
         #
         # @return [Hash] a hash mapping tags to node-IDs.
         def tags
-          return @tags_cache if @tags_cache
+          return @tags_cache if (@tags_cache ||= nil)
           
           global_tags, tag_types = {}, {}
           
@@ -167,11 +167,11 @@ module Amp
             staging_area.add(".hgtags")
           end
           
-          tag_node = commit :files => [".hgtags"], 
+          tag_node = commit :modified => [".hgtags"], 
                             :message => opts[:message], 
                             :user => opts[:user],
-                            :date => opts[:date], 
-                            :p1 => opts[:parent], 
+                            :date => opts[:date],
+                            :parents => [opts[:parent]], 
                             :extra => opts[:extra]
           
           tag_node

@@ -1,7 +1,7 @@
 command :branches do |c|
   c.workflow :hg
   c.desc "Prints the current branches (active and closed)"
-  
+  c.opt :active, "Only show active branches", :short => "-a"
   c.on_run do |opts, args|
     repo = opts[:repository]
 
@@ -10,12 +10,12 @@ command :branches do |c|
       [ active_branches.include?(tag), repo.changelog.rev(node), tag ]
     end
     branches.reverse!
-    branches.each do |is_active, node, tag|
+    branches.sort {|a, b| b[1] <=> a[1]}.each do |is_active, node, tag|
       if !opts[:active] || is_active
         hexable = repo.lookup(node)
         if is_active
           branch_status = ""
-        elsif !(repo.branch_heads(tag, :closed => false).include?(hexable))
+        elsif !(repo.branch_heads(:branch => tag, :closed => false).include?(hexable))
           notice = " (closed)"
         else
           notice = " (inactive)"

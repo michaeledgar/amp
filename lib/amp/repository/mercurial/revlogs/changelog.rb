@@ -262,14 +262,14 @@ module Amp
       
       ##
       # Reads the revision at the given node_id. It returns it in a format
-      # that tells us everything about the revision - the manifest, the user
+      # that tells us everything about the revision - the manifest_entry, the user
       # who committed it, timestamps, the relevant filenames, the description
       # message, and any extra data.
       # 
       # @todo Text encodings, I hate you. but i must do them
       # @param [Fixnum] node the node ID to lookup into the revision log
-      # @return [[String, String, [Float, Integer], [String], String, Hash]]
-      #   The format is [Manifest, Username, [Time, Timezone], [Filenames],
+      # @return [(String, String, [Float, Integer], [String], String, Hash)]
+      #   The format is [ManifestEntry, Username, [Time, Timezone], [Filenames],
       #   Message, ExtraData].
       def read(node)
         text = decompress_revision node
@@ -303,7 +303,8 @@ module Amp
       # Adds the given commit to the changelog.
       # 
       # @todo Handle text encodings
-      # @param [Amp::Mercurial::Manifest] Manifest a hex-version of a node_id or something?
+      # @todo figure out what the fuck is going on with these parameters
+      # @param [Amp::Mercurial::Manifest] manifest a hex-version of a node_id or something?
       # @param [String] files the files relevant to the commit, to be included
       # @param [String] desc the commit message from the user
       # @param [Amp::Mercurial::Journal] journal the transaction journal to write to for rollbacks if

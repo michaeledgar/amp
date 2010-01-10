@@ -108,7 +108,7 @@ module Amp
         
         def load_browser_info(changeset, path)
           
-          mapping = changeset.manifest
+          mapping = changeset.manifest_entry
           orig_path = nil
           # if the path is a file (because we only keep track of files)
           if mapping[path]

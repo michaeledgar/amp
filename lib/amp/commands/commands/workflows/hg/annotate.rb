@@ -7,6 +7,7 @@ command :annotate do |c|
   c.opt :changeset, "Show the changeset ID instead of revision number", :short => "-c"
   c.opt :user, "Shows the user who committed instead of the revision", :short => "-u"
   c.opt :date, "Shows the date when the line was committed", :short => "-d"
+  c.opt :number, "Show the revision number of the committed line", :short => "-n"
   c.synonyms :blame, :praise
   
   c.on_run do |opts, args|
@@ -20,11 +21,16 @@ command :annotate do |c|
       max_size = 0
       full_results = results.map do |file, line_number, line|
         revpart = ""
-        showrev = !([opts[:changeset], opts[:user], opts[:date]].any?)
+        showrev = opts[:number] || !([opts[:changeset], opts[:user], opts[:date]].any?)
         
+        # What did this line do? There is no Array#count
+        #totalparts = [opts[:user], opts[:date], opts[:changeset], showrev].count {|x| x }
         revpart += (opts[:verbose] ? file.changeset.user : file.changeset.user.split("@").first[0..15]) if opts[:user]
+        revpart += " " if opts[:user] and opts[:date] || opts[:changeset] || showrev
         revpart += Time.at(file.changeset.date.first).to_s if opts[:date]
-        revpart += " " + file.changeset.node_id.hexlify[0..11] if opts[:changeset]
+        revpart += " " if opts[:date] and opts[:changeset] || showrev
+        revpart += file.changeset.node_id.hexlify[0..11] if opts[:changeset]
+        revpart += " " if opts[:changeset] and showrev
         revpart += file.change_id.to_s if showrev
         
         if line_number

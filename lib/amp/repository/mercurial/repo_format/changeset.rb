@@ -33,6 +33,7 @@ module Amp
           @node_id = @repo.lookup change_id
           @revision = @repo.changelog.rev @node_id
         end
+        @parents = nil
       end
       
       ##
@@ -101,6 +102,244 @@ module Amp
       end
       
       ##
+      # Commits the given changeset to the repository.
+      # 
+      #  commit_changeset:
+      #    foreach file in commit:
+      #        commit_file file
+      #    end
+      #    add_manifest_entry
+      #    add_changelog_entry
+      # Is this changeset a working changeset?
+      #
+      # @param changeset the changeset to commit. Could be working dir, for
+      #   example.
+      # @param opts the options for committing the changeset.
+      # @option [Boolean] opts :force (false) force the commit, even though
+      #   nothing has changed.
+      # @option [Boolean] opts :force_editor (false) force the user to open
+      #   their editor, even though they provided a message already
+      # @option [Boolean] opts :empty_ok (false) is it ok if they have no
+      #   description of the commit?
+      # @option [Boolean] opts :use_dirstate (true) use the DirState for this
+      #   commit? Used if you're committing the working directory (typical)
+      # @option [Boolean] opts :update_dirstate (true) should we update the
+      #   DirState after the commit? Used if you're committing the working
+      #   directory.
+      # @return [String] the digest referring to this entry in the revlog
+      def commit(opts = {:use_dirstate => true, :update_dirstate => true})
+        valid = false # don't update the DirState if this is set!
+        
+        commit = ((modified || []) + (added || [])).sort
+        remove = removed
+        xtra = extra.dup
+        branchname = xtra["branch"]
+        text = description
+        
+        p1, p2 = parents.map {|p| p.node }
+        c1 = repo.changelog.read(p1) # 1 parent's changeset as an array
+        c2 = repo.changelog.read(p2) # 2nd parent's changeset as an array
+        m1 = repo.manifest.read(c1[0]).dup # 1st parent's manifest
+        m2 = repo.manifest.read(c2[0])     # 2nd parent's manifest
+        
+        if opts[:use_dirstate]
+          oldname = c1[5]["branch"]
+          tests = [ commit.empty?, remove.empty?, ! opts[:force],
+                    p2 == NULL_ID, branchname == oldname ]
+          
+          if tests.all?
+            UI::status "nothing changed"
+            return nil
+          end
+        end
+        
+        xp1 = p1.hexlify
+        xp2 = p2 == NULL_ID ? "" : p2.hexlify
+        
+        Hook.run_hook :pre_commit
+        journal = Amp::Mercurial::Journal.new
+  
+        fresh    = {} # new = reserved haha i don't know why someone wrote "haha"
+        changed  = []
+        link_rev = repo.size
+        
+        (commit + (remove || [])).each {|file| UI::status file }
+        
+        # foreach file in commit:
+        #     commit_file file
+        # end
+        commit.each do |file|
+          versioned_file = self[file]
+          fresh[file]    = versioned_file.commit :manifests     => [m1, m2],
+                                                 :link_revision => link_rev,
+                                                 :journal       => journal ,
+                                                 :changed       => changed
+          
+          new_flags = versioned_file.flags
+          
+          # TODO
+          # Clean this shit up
+          if [ changed.empty? || changed.last != file, 
+               m2[file] != fresh[file]
+             ].all?
+            changed << file if m1.flags[file] != new_flags
+          end
+          m1.flags[file] = new_flags
+          
+          repo.staging_area.normal file if opts[:use_dirstate]
+        end
+        
+        #    add_manifest_entry
+        man_entry, updated, added = *add_manifest_entry(:manifests  => [m1, m2],
+                                                        :changesets => [c1, c2],
+                                                        :journal    => journal ,
+                                                        :link_rev   => link_rev,
+                                                        :fresh      => fresh   ,
+                                                        :remove     => remove  ,
+                                                        :changed    => changed )
+
+        #    get_commit_text
+        text = get_commit_text text, :added   => added,   :updated => updated,
+                                     :removed => removed, :user    => user   ,
+                                     :empty_ok     => opts[:empty_ok]        ,
+                                     :use_dirstate => opts[:use_dirstate]
+        
+        # atomically write to the changelog
+        #    add_changelog_entry
+        # for the unenlightened, rents = 'rents = parents
+        new_rents = add_changelog_entry :manifest_entry => man_entry,
+                                        :files   => (changed + removed),
+                                        :text    => text,
+                                        :journal => journal,
+                                        :parents => [p1, p2],
+                                        :user    => user,
+                                        :date    => date,
+                                        :extra   => xtra
+        
+        # Write the dirstate if it needs to be updated
+        # basically just bring it up to speed
+        if opts[:use_dirstate] || opts[:update_dirstate]
+          repo.dirstate.parents = new_rents
+          removed.each {|f| repo.dirstate.forget(f) } if opts[:use_dirstate]
+          repo.dirstate.write
+        end
+        
+        # The journal and dirstates are awesome. Leave them be.
+        valid = true
+        journal.close
+        
+        # if an error and we've gotten this far, then the journal is complete
+        # and it deserves to stay (if an error is thrown and journal isn't nil,
+        # the rescue will destroy it)
+        journal = nil
+        
+        # Run any hooks
+        Hook.run_hook :post_commit, :added => added, :modified => updated, :removed => removed, 
+                                    :user  => user,  :date     => date,    :text    => text,
+                                    :revision => repo.changelog.index_size
+        return new_rents
+      rescue StandardError => e
+        if !valid
+          repo.dirstate.invalidate!
+        end
+        if e.kind_of?(AbortError)
+          UI::warn "Abort: #{e}"
+        else
+          UI::warn "Got exception while committing. #{e}"
+          UI::warn e.backtrace.join("\n")
+        end
+        
+        # the journal is a vestigial and incomplete file.
+        # destroyzzzzzzzzzzz
+        journal.delete if journal
+      end
+      
+      ##
+      # Add an entry to the changelog (the final receipt of the commit).
+      # 
+      # @param [Hash] opts
+      # @return [String] the changelog id as to where the revision is in
+      #   the changelog
+      def add_changelog_entry(opts={})
+        repo.changelog.delay_update 
+        new_parents = repo.changelog.add opts[:manifest_entry],
+                                         opts[:files],
+                                         opts[:text],
+                                         opts[:journal],
+                                         opts[:parents][0],
+                                         opts[:parents][1],
+                                         opts[:user],
+                                         opts[:date],
+                                         opts[:extra]
+  
+        repo.changelog.write_pending
+        repo.changelog.finalize opts[:journal]
+        new_parents
+      end
+      
+      ##
+      # Get the commit text. Ask for it if none is given.
+      # 
+      # @param [String, NilClass] text (optional) the commit message
+      # @param [Hash] opts
+      def get_commit_text(text=nil, opts={})
+        user = opts.delete :user
+        
+        unless opts[:empty_ok] || (text && !text.empty?)
+          edit_text = to_templated_s :added   => added,   :updated       => updated,
+                                     :removed => removed, :template_type => :commit
+          text = UI::edit edit_text, user
+        end
+        
+        lines = text.rstrip.split("\n").map {|r| r.rstrip }.reject {|l| l.empty? }
+        raise abort("empty commit message") if lines.empty? && opts[:use_dirstate]
+        lines.join("\n")
+      end
+      
+      def add_manifest_entry(opts={})
+        # changed, m1, m2, c1, c2, fresh, remove, journal, link_rev
+        updated, added = [], []
+        
+        fresh   = opts[:fresh]
+        remove  = opts[:remove]
+        changed = opts[:changed]
+        
+        changesets = opts[:changesets]
+        manifests  = opts[:manifests]
+        
+        changed.sort.each do |file|
+          if manifests[0][file] || manifests[1][file]
+            updated << file
+          else
+            added << file
+          end
+        end
+        
+        manifests[0].merge! fresh
+        
+        remove.sort!
+        remove.reject! {|f| not manifests[0][f] }
+        remove.each {|f| manifests[0].delete f }
+        
+        UI::debug "before adding manifest entry"
+        
+        # sorry for making this destructive
+        # but it's clean and memory efficient
+        # GHC's GC goes like 3 times per second, so STFU
+        # I don't have that kind of luxury
+        fresh.replace fresh.inject([]) {|a, (k, v)| v ? a << k : a }
+        man_entry = repo.manifest.add manifests[0], opts[:journal],
+                                      opts[:link_rev], changesets[0][0], changesets[1][0], [fresh, remove]
+        [man_entry, updated, added]
+      end
+      
+      ##
+      # @return [Boolean] is the changeset representing the working directory?
+      def working?
+        false
+      end
+      
+      ##
       # Gives an easier way to digest this changeset while reminding us it's a
       # changeset
       def inspect
@@ -147,8 +386,8 @@ module Amp
       # or if it's a link. Sizes and so on are also included.
       #
       # @return [ManifestEntry] the manifest at this point in time
-      def manifest
-        @manifest ||= @repo.manifest.read(raw_changeset[0])
+      def manifest_entry
+        @manifest_entry ||= @repo.manifest.read(raw_changeset[0])
       end
       
       ##
@@ -157,14 +396,14 @@ module Amp
       #
       # @return [Array<String>] all the files tracked in this changeset.
       def all_files
-        return manifest.files
+        return manifest_entry.files
       end
       
       ##
       # Returns the change in the manifest at this revision. I don't entirely
       # know what this is yet.
       def manifest_delta
-        @manifest_delta ||= @repo.manifest.read_delta(raw_changeset[0])
+        @manifest_entry_delta ||= @repo.manifest.read_delta(raw_changeset[0])
       end
       
       ##
@@ -191,9 +430,9 @@ module Amp
       end
       
       ##
-      # Iterates over each entry in the manifest.
+      # Iterates over each entry in the manifest entry.
       def each(&block)
-        manifest.sort.each(&block)
+        manifest_entry.sort.each(&block)
       end
       
       ##
@@ -202,7 +441,7 @@ module Amp
       # @param [String] file the file to lookup
       # @return [Boolean] whether the file is in this changeset's manifest
       def include?(file)
-        manifest[file] != nil
+        manifest_entry[file] != nil
       end 
       
       ##
@@ -221,8 +460,8 @@ module Amp
       # @param path the path to the file
       # @return [[String, String]] the [node_id, flags] pair for this file
       def file_info(path)
-        if manifest # have we loaded our manifest yet? if so, use that sucker
-          result = [manifest[path], manifest.flags[path]]
+        if manifest_entry # have we loaded our manifest yet? if so, use that sucker
+          result = [manifest_entry[path], manifest_entry.flags[path]]
           if result[0].nil?
             return [NULL_ID, '']
           else
@@ -245,7 +484,7 @@ module Amp
       ##
       # Gets the flags for the file at the given path at this revision.
       # @param path the path to the file in question
-      # @return [String] the flags for the file, such as "x" or "l".
+      # @return [String] the flags for the file, such as "x", "l", or "".
       #
       def flags(path)
         info = file_info(path)[1]
@@ -254,11 +493,11 @@ module Amp
       end
       
       ##
-      # Gets the node_id in the manifest for the file at this path, for this
+      # Gets the node_id in the manifest_entry for the file at this path, for this
       # specific revision.
       # 
       # @param path the path to the file
-      # @return [String] the node's ID in the manifest, which we'll use every
+      # @return [String] the node's ID in the manifest_entry, which we'll use every
       #   where we need a node_id.
       def file_node(path)
         file_info(path).first[0..19]
@@ -293,15 +532,15 @@ module Amp
       def date; raw_changeset[2]; end
       def easy_date; Time.at(raw_changeset[2].first); end
       # the files affected in this commit!
-      def changed_files; raw_changeset[3]; end
+      def altered_files; raw_changeset[3]; end
       # pre-API compatibility
-      alias_method :files, :changed_files
+      alias_method :files, :altered_files
       
       # the message with this commit
       def description; raw_changeset[4]; end
       # What branch i was committed onto
       def branch 
-        raw_changeset[5]["branch"] 
+        extra["branch"] 
       end
       # Any extra stuff I've got in me
       def extra; raw_changeset[5]; end
@@ -355,6 +594,7 @@ module Amp
       def initialize(repo, opts={:text => ""})
         @repo = repo
         @revision = nil
+        @parents = nil
         @node_id  = nil
         @text = opts[:text]
         require 'time' if opts[:date].kind_of?(String)
@@ -362,9 +602,8 @@ module Amp
         @user = opts[:user] if opts[:user]
         @parents = opts[:parents].map {|p| Changeset.new(@repo, p)} if opts[:parents]
         @status = opts[:changes] if opts[:changes]
-        
-        @extra = {}
-        @extra = opts[:extra].dup if opts[:extra]
+        @manifest = nil
+        @extra = opts[:extra] ? opts[:extra].dup : {}
         unless @extra["branch"]
           branch = @repo.dirstate.branch
           # encoding - to UTF-8
@@ -375,19 +614,38 @@ module Amp
       end
       
       ##
+      # Is this changeset a working changeset?
+      #
+      # @return [Boolean] is the changeset representing the working directory?
+      def working?
+        true
+      end
+      
+      ##
       # Converts to a string.
       # I'm my first parent, plus a little extra.
+      # "I am my own grandpa"
+      # 
+      # @return [String]
       def to_s
         parents.first.to_s + "+"
+      end
+      
+      
+      ##
+      # Do I include a given file? (not sure this is ever used yet)
+      def include?(key)
+        status = @repo.staging_area.file_status(key)
+        ![:unknown, :removed].include?(status)
+      end
+      
+      def all_files
+        repo.staging_area.all_files
       end
       
       ##
       # Am I nil? never!
       def nil?; false; end
-      
-      ##
-      # Do I include a given file? (not sure this is ever used yet)
-      def include?(key); "?r".include?(@repo.dirstate[key].status.to_hg_letter); end
       
       ##
       # What is the status of the working directory? This little
@@ -422,16 +680,16 @@ module Amp
       end
       
       ##
-      # OK, so we've got the last revision's manifest, that part's simple and makes sense.
+      # OK, so we've got the last revision's manifest entry, that part's simple and makes sense.
       # except now, we need to get the status of the working directory, and
-      # add in all the other files, because they're in the "manifest" by being
+      # add in all the other files, because they're in the "manifest entry" by being
       # in existence. Oh, and we need to remove any files from the parent's
-      # manifest that don't exist anymore. Make sense?
-      def manifest
-        return @manifest if @manifest
+      # manifest entry that don't exist anymore. Make sense?
+      def manifest_entry
+        return @manifest_entry if @manifest_entry
         
-        # Start off with the last revision's manifest, that's safe.
-        man = parents()[0].manifest.dup
+        # Start off with the last revision's manifest_entry, that's safe.
+        man = parents()[0].manifest_entry.dup
         # Any copied files since the last revision?
         copied = @repo.dirstate.copy_map
         # Any modified, added, etc files since the last revision?
@@ -446,7 +704,7 @@ module Amp
           end
         end
         
-        # Delete files from the real manifest that don't exist.
+        # Delete files from the real manifest entry that don't exist.
         (deleted + removed).each do |file|
           man.delete file if man[file]
         end
@@ -474,8 +732,8 @@ module Amp
       # @param [String] path the path to the file
       # @return [String] the flags, such as "x", "l", or ""
       def flags(path)
-        if @manifest
-          return manifest.flags[path] || ""
+        if @manifest_entry
+          return manifest_entry.flags[path] || ""
         end
         pnode = parents[0].raw_changeset[0]
     
@@ -504,7 +762,7 @@ module Amp
       # @param [Boolean] check_ignored (false) should we check for ignored files?
       # @return [Array<String>] an array of filenames in the tree that match +match+
       def walk(match, check_ignored = false)
-        tree = @repo.dirstate.walk true, check_ignored, match
+        tree = @repo.staging_area.walk true, check_ignored, match
         tree.keys.sort
       end
       

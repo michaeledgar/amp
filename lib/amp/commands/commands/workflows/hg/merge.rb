@@ -9,7 +9,7 @@ command :merge do |c|
     repo = opts[:repository]
     if !opts[:rev]
       branch = repo[nil].branch
-      bheads = repo.branch_heads[branch]
+      bheads = repo.branch_heads(:branch => branch)
       if bheads.size > 2
         raise abort("branch #{branch} has #{bheads.size} - please merge " +
                              " with an explicit revision")

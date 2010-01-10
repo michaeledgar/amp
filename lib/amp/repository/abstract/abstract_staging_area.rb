@@ -1,6 +1,8 @@
 module Amp
   module Repositories
     class AbstractStagingArea
+      include CommonStagingAreaMethods
+      attr_reader :repo
       
       ##
       # Marks a file to be added to the repository upon the next commit.
@@ -20,6 +22,16 @@ module Amp
       # @return [Boolean] true for success, false for failure
       def remove(*filenames)
         raise NotImplementedError.new("remove() must be implemented by subclasses of AbstractStagingArea.")
+      end
+        
+      ##
+      # Set +file+ as normal and clean. Un-removes any files marked as removed, and
+      # un-adds any files marked as added.
+      # 
+      # @param  [Array<String>] files the name of the files to mark as normal
+      # @return [Boolean] success marker
+      def normal(*files)
+        raise NotImplementedError.new("normal() must be implemented by subclasses of AbstractStagingArea.")
       end
       
       ##
@@ -72,13 +84,79 @@ module Amp
       # Possible results:
       # :added (subset of :included)
       # :removed
-      # :unknown
+      # :untracked
       # :included
       # :normal
       #
       def file_status(filename)
-        raise NotImplementedError.new("status() must be implemented by subclasses of AbstractStagingArea.")
+        raise NotImplementedError.new("file_status() must be implemented by subclasses of AbstractStagingArea.")
       end
+      
+      ##
+      # Returns all files tracked by the repository *for the working directory* - not
+      # to be confused with the most recent changeset.
+      #
+      # @api
+      # @return [Array<String>] all files tracked by the repository at this moment in
+      #   time, including just-added files (for example) that haven't been committed yet.
+      def all_files
+        raise NotImplementedError.new("all_files() must be implemented by subclasses of AbstractStagingArea.")
+      end
+      
+      ##
+      # Returns whether the given directory is being ignored. Optional method - defaults to
+      # +false+ at all times.
+      #
+      # @api-optional
+      # @param [String] directory the directory to check against ignoring rules
+      # @return [Boolean] are we ignoring this directory?
+      def ignoring_directory?(directory)
+        false
+      end
+      
+      ##
+      # Returns whether the given file is being ignored. Optional method - defaults to
+      # +false+ at all times.
+      #
+      # @api-optional
+      # @param [String] file the file to check against ignoring rules
+      # @return [Boolean] are we ignoring this file?
+      def ignoring_file?(file)
+        false
+      end
+      
+      ##
+      # Does a detailed look at a file, to see if it is clean, modified, or needs to have its
+      # content checked precisely.
+      #
+      # Supplements the built-in #status command so that its output will be cleaner.
+      #
+      # Defaults to report files as normal - it cannot check if a file has been modified
+      # without this method being overridden.
+      #
+      # @api-optional
+      #
+      # @param [String] file the filename to look up
+      # @param [File::Stats] st the current results of File.lstat(file)
+      # @return [Symbol] a symbol representing the current file's status
+      def file_precise_status(file, st)
+        return :normal
+      end
+      
+      ##
+      # Calculates the difference (in bytes) between a file and its last tracked state.
+      #
+      # Defaults to zero - in other words, it deactivates the delta feature.
+      #
+      # @api-optional
+      # @param [String] file the filename to look up
+      # @param [File::Stats] st the current results of File.lstat(file)
+      # @return [Fixnum] the number of bytes difference between the file and
+      #  its last tracked state.
+      def calculate_delta(file, st)
+        0
+      end
+      
     end
   end
 end

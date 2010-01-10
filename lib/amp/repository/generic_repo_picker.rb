@@ -25,6 +25,7 @@ module Amp
       class << self
         include Enumerable
         attr_accessor :all_pickers
+        
         ##
         # Returns whether or not there is a repository in the given directory. This
         # picker should only be responsible for one type of repository - git, svn, hg,
@@ -60,6 +61,14 @@ module Amp
         
         private
         
+        ##
+        # Assuming you're a Ruby Newbie reading this: The interpreter calls
+        # {{inherited}} on the superclass when a class is subclassed.
+        # 
+        # For the non-newbies, we're just keeping track of all subclasses so
+        # we know what classes we can pick from.
+        # 
+        # @param [Class] subclass the class that just inherited from this class
         def inherited(subclass)
           all_pickers << subclass
         end

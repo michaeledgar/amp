@@ -10,13 +10,15 @@ command :move do |c|
   c.before do |opts, args|
     if args.size < 2
       Amp::UI.say "Usage: amp move source destination"
-      c.break
+      cut!
     elsif args.size > 2 && !File.directory?(args.last)
       Amp::UI.say "If you want to move more than 1 file, your destination must" +
                   " be a directory."
-      c.break
+      cut!
+    else
+      true
     end
-    true
+    
   end
   
   c.on_run do |opts, args|

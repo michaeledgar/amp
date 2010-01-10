@@ -68,7 +68,7 @@ HELP
       Amp::Mercurial::RevlogSupport::ChangeGroup.write_bundle(cg, bundle_type, file)
       cleanup = file.path
       unless remote.local?
-        remote = Amp::Repositories::BundleRepository.new(repo.root, opts[:global_config], cleanup)
+        remote = Amp::Repositories::Mercurial::BundleRepository.new(repo.root, opts[:global_config], cleanup)
       end
     end
     opts.merge! :template_type => :log

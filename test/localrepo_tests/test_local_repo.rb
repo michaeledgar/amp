@@ -54,7 +54,7 @@ class TestLocalRepo < Test::Unit::TestCase
   def test_initial_readme
     changeset = @repo[0]
     
-    changeset.manifest.inspect # force load of manifest
+    changeset.manifest_entry.inspect # force load of manifest
     
     file = changeset["readme"]
     # data check on a file
@@ -78,7 +78,7 @@ class TestLocalRepo < Test::Unit::TestCase
                       "totally sweet. We're gonna do awesome stuff.\nI hope "+
                       "you like it.\n" # typo fixed
     changeset = @repo[1]
-    changeset.manifest # force load of manifest
+    changeset.manifest_entry # force load of manifest
     file = changeset["readme"]
     
     expected = expected_readme
@@ -100,6 +100,8 @@ class TestLocalRepo < Test::Unit::TestCase
     added    = []
     deleted  = []
     removed  = []
+    #copied   = []
+    #moved    = []
     expected = { :modified => modified.sort,
                  :added    => added.sort,
                  :removed  => removed.sort,
@@ -107,6 +109,8 @@ class TestLocalRepo < Test::Unit::TestCase
                  :unknown  => unknown.sort,
                  :ignored  => ignored.sort,
                  :clean    => clean.sort  ,
+                 #:copied   => copied,
+                 #:moved    => moved,
                  :delta    => 19
                }
       

@@ -53,13 +53,7 @@ module Amp
         
         # Fixes the values to force them to be signed (possible to be negative)
         def fix_signs
-          require 'amp/dependencies/amp_support/ruby_amp_support'
-    
           self.offset_flags     = self.offset_flags.byte_swap_64
-          self.compressed_len   = self.compressed_len.to_signed_32
-          self.uncompressed_len = self.uncompressed_len.to_signed_32
-          self.base_rev         = self.base_rev.to_signed_32
-          self.link_rev         = self.link_rev.to_signed_32
           self.parent_one_rev   = self.parent_one_rev.to_signed_32
           self.parent_two_rev   = self.parent_two_rev.to_signed_32
           

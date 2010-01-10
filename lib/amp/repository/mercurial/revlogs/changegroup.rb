@@ -130,7 +130,7 @@ module Amp
           # if we have no header, we're uncompressed
           if !header.start_with?("HG")
             # append the header to it. meh
-            headerio = StringIO.new(header, (ruby_19? ? "w+:ASCII-8BIT" : "w+"))
+            headerio = StringIO.new(header, (ruby_19? ? "w+:ASCII-8BIT" : "r+"))
             Amp::Support::MultiIO.new(headerio, file_handle)
             # WOW we have legacy support already
           elsif header == "HG10GZ"
@@ -138,7 +138,7 @@ module Amp
             Zlib::GzipReader.new(file_handle)
           elsif header == "HG10BZ"
             # get a BZip reader, but it has to decompress "BZ" first. Meh.
-            headerio = StringIO.new("BZ", (ruby_19? ? "w+:ASCII-8BIT" : "w+"))
+            headerio = StringIO.new("BZ", (ruby_19? ? "w+:ASCII-8BIT" : "r+"))
             input = Amp::Support::MultiIO.new(headerio, file_handle)
             BZ2::Reader.new(input)
           end
@@ -171,7 +171,7 @@ module Amp
           empty = false
           count = 0
           
-          # Do at least 2 changegroups (changelog + manifest), then go until we're empty
+          # Do at least 2 changegroups (changelog + manifest_entry), then go until we're empty
           while !empty || count <= 2
             # Set empty to true for this particular file (each iteration of this loop
             # represents compressing 1 file's changesets into changegroups in the bundle)

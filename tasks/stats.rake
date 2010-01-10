@@ -15,7 +15,7 @@ task :stats do
   files = FileList['lib/**/*.rb'] +
           FileList["test/**/*.rb"] +
           FileList["ext/**/*.c"]
-  
+  files.reject! {|f| f =~ /maruku/ && f !~ /to_ansi/  }
   puts ScriptLines.headline
   sum = ScriptLines.new("TOTAL (#{files.size} file#{files.size == 1 ? '' : 's'})")
 

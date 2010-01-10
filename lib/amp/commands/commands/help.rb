@@ -5,25 +5,7 @@ command :help do |c|
   c.on_run do |options, args|
     output = ""
     
-    if args.empty?
-      output << "These are the following commands available:\n"
-      
-      Amp::Command.all_for_workflow(options[:global_config]["amp"]["workflow", Symbol, :hg], false).sort {|k1, k2| k1.to_s <=> k2.to_s}.each do |k, v| 
-        output << "\t#{k.to_s.ljust(30, " ")}#{v.desc}" + "\n"
-      end
-      
-      output << 'Run "amp help [command]" for more information.'
-      
-      Amp::UI.say output
-    else
-      
-      unless cmd = Amp::Command.all_for_workflow(options[:global_config]["amp"]["workflow", Symbol, :hg])[args.first.to_sym]
-        Amp::UI.say "The command #{args.first} was not found."
-      else
-        cmd.collect_options
-        cmd.educate
-      end
-      
-    end
+    cmd_name = args.empty? ? "__default__" : args.first
+    Amp::Help::HelpUI.print_entry(cmd_name, options)
   end
 end

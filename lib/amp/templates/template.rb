@@ -70,6 +70,7 @@ module Amp
           instance_eval do
             def ensure_templates_loaded; end
           end
+          true
         end
       end
       
@@ -104,7 +105,7 @@ module Amp
         case renderer.to_sym
         when :erb
           require 'erb'
-          locals_assigns = locals.to_a.collect { |k,v| "#{k} = locals[:#{k}]" }
+          locals_assigns = locals.map { |k,v| "#{k} = locals[:#{k}]" }
           eval locals_assigns.join("\n"), render_binding
           
           erb = ERB.new(text, 0, "-")
@@ -146,8 +147,6 @@ module Amp
         File.open(file, "w") { |out| out.write text }
       end
     end
-    
-    
     
   end
 end

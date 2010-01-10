@@ -26,9 +26,11 @@ command :status do |c|
               'added'    => :blue,
               'removed'  => :red,
               'deleted'  => :magenta,
+              'copied'   => :blue,
+              'moved'    => :red,
               'unknown'  => :green,
               'ignored'  => :yellow,
-              'clean'    => :white
+              'clean'    => :white,
              }
     states = ['modified',
               'added'   ,
@@ -36,11 +38,13 @@ command :status do |c|
               'deleted' ,
               'unknown' ,
               'ignored' ,
-              'clean'   ]
+              'clean'   ,
+              'copied'  ,
+              'moved'   ]
     show = states.select {|k| options[k.to_sym] } # filter the list down
-    
     show = states if options[:all]
     show = states[0..4] if show.empty?
+    #show += states[7..8] unless options[:hg]
     
     statopts = {:node_1 => node1, :node_2 => node2 }
     
@@ -65,7 +69,6 @@ command :status do |c|
         changestates.each do |state, char, files|
           if show.include? state
             files.each do |f|
-              #Amp::Logger.info("#{char} #{f}")
               if options[:"no-color"]
                 Amp::UI.tell "#{char} #{File.join(cwd, f.to_s)[1..-1]}#{stop}" unless f.nil?
               else
@@ -82,21 +85,27 @@ command :status do |c|
           
           if options[:"no-color"]
             Amp::UI.say("#{state.upcase}" +
-                " => #{num_of_files} file#{num_of_files == 1 ? 's' : ''}")
+                " => #{num_of_files} file#{num_of_files == 1 ? '' : 's'}")
           else
             Amp::UI.say("#{state.upcase.send colors[state]}" +
-                " => #{num_of_files} file#{num_of_files == 1 ? 's' : ''}")
+                " => #{num_of_files} file#{num_of_files == 1 ? '' : 's'}")
           end
           
-          status[state.to_sym].each do |file|
-            #Amp::Logger.info("#{state[0,1].upcase} #{file}")
-            Amp::UI.say "\t#{File.join(cwd, file)[1..-1]}"
+          unless [:copied, :moved].include? state.to_sym
+            status[state.to_sym].each do |file|
+              Amp::UI.say "\t#{File.join(cwd, file)[1..-1]}"
+            end
+          else
+            status[state.to_sym].each do |(src, dst)|
+              Amp::UI.say "\t#{File.join(cwd, src)[1..-1]} => #{File.join(cwd, dst)[1..-1]}"
+            end
           end
-          
         end
         
-        Amp::UI.say
-        Amp::UI.say "#{status[:delta]} bytes were changed" if status[:delta]
+        unless show.map {|s| status[s.to_sym] }.all? {|s| s.empty? }
+          Amp::UI.say
+          Amp::UI.say "#{status[:delta]} bytes were changed" if status[:delta]
+        end
       end
     end
     

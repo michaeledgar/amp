@@ -15,14 +15,9 @@ command :diff do |c|
     files = differences[:added] + differences[:removed] + differences[:deleted] + differences[:modified]
     
     files.each do |filename|
-      vf_old, vf_new     = revs.map {|rev| rev.get_file filename} 
-      date_old, date_new = revs.map {|rev| rev.easy_date }
-      path_old, path_new = vf_old.path, vf_new.path || "/dev/null"
-      rev_old, rev_new   = vf_old.file_rev, vf_new.file_rev
+      vf_old, vf_new     = revs.map {|rev| rev.get_file filename}
       
-      diff = vf_new.file_log.unified_revision_diff rev_old, date_old, rev_new, 
-                                                   date_new, path_old, path_new, 
-                                                   :pretty => !opts[:"no-color"]
+      diff = vf_old.unified_diff_with vf_new, :pretty => !opts[:"no-color"]
       Amp::UI::say diff
     end
     

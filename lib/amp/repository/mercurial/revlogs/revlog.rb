@@ -82,7 +82,7 @@ module Amp
       # @return [String] the node's ID
       def node_id_for_index(index)
         unless @index[index]
-          raise Mercurial::RevlogSupport::LookupError.new("Couldn't find node for id #{index.inspect}")
+          raise Mercurial::RevlogSupport::LookupError.new("Couldn't find node for index #{index.inspect}")
         end
         @index[index].node_id
       end
@@ -98,7 +98,7 @@ module Amp
       #   the requested node.
       def revision_index_for_node(id)
         unless @index.node_map[id]
-          raise StandardError.new("Couldn't find node for id #{id.inspect}")
+          raise Mercurial::RevlogSupport::LookupError.new("Couldn't find node for id #{id.inspect}")
         end
         @index.node_map[id]
       end
@@ -190,7 +190,7 @@ module Amp
       ##
       # Returns each revision as a {Amp::Mercurial::RevlogSupport::IndexEntry}.
       # Don't iterate over the extra revision -1!
-      def each(&b); @index[0..-2].each(&b); end
+      def each(&b); @index[0..-2].each(&b); self; end
       
       ##
       # Returns all of the indices for all revisions.
@@ -626,14 +626,6 @@ module Amp
       end
       
       ##
-      # Unified diffs 2 revisions, based on their indices. They are returned in a sexified
-      # unified diff format.
-      def unified_revision_diff(rev1, rev2)
-        Diffs::Mercurial::MercurialDiff.unified_diff( decompress_revision(self.node_id_for_index(rev1)),
-                                        decompress_revision(self.node_id_for_index(rev2)))
-      end
-      
-      ##
       # Diffs 2 revisions, based on their indices. They are returned in
       # BinaryDiff format.
       # 
@@ -642,7 +634,7 @@ module Amp
       # @return [String] The diff of the 2 revisions.
       def revision_diff(rev1, rev2)
         return get_chunk(rev2) if (rev1 + 1 == rev2) && 
-               self[rev1].base_rev == self[rev2].base_rev
+                                  self[rev1].base_rev == self[rev2].base_rev
         Diffs::Mercurial::MercurialDiff.text_diff( decompress_revision(node_id_for_index(rev1)),
                                         decompress_revision(node_id_for_index(rev2)))
       end
@@ -675,7 +667,9 @@ module Amp
         end
         data_file = open(@data_file) if !(@index.inline?) && rev > base + 1
         text = get_chunk(base, data_file) if text.nil?
-        bins = ((base + 1)..rev).map {|r| get_chunk(r, data_file)}
+        bins = []
+        (base + 1).upto(rev) {|r| bins << get_chunk(r, data_file)}
+        #bins = ((base+1)..rev).map {|r| get_chunk(r, data_file)}
         text = Diffs::Mercurial::MercurialPatch.apply_patches(text, bins)
         
         p1, p2 = parents_for_node node
@@ -743,7 +737,7 @@ module Amp
       ##
       # add a revision to the log
       # 
-      # @param [String] text the revision data to add
+      # @param [String] text the new revision's data to add
       # @param transaction the transaction object used for rollback
       # @param link the linkrev data to add
       # @param [String] p1 the parent nodeids of the revision
@@ -969,9 +963,8 @@ module Amp
         
         load_index_map if @index.is_a? Mercurial::RevlogSupport::LazyIndex
         
-        rev = 0
-        all_indices.each {|_rev| rev = _rev; break if @index[rev].link_rev >= min_link }
-        return if rev > all_indices.max
+        rev = all_indices.find {|_rev| @index[_rev].link_rev >= min_link }
+        return unless rev
         
         endpt = data_start_for_index rev
         unless @index.inline?

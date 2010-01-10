@@ -1,8 +1,9 @@
 module Amp; end
 # The root directory of this application
 Amp::CODE_ROOT = File.expand_path File.dirname(__FILE__)
-$: << Amp::CODE_ROOT # now we don't need to do `require "#{curdir}..."
-
+Amp::EXT_ROOT = File.expand_path File.join(File.dirname(__FILE__), "..", "ext")
+$:.unshift Amp::CODE_ROOT # now we don't need to do `require "#{curdir}..."
+$:.unshift Amp::EXT_ROOT
 # Timing variable
 $start    ||= Time.now
 # Should we display anything?
@@ -77,7 +78,15 @@ module Amp
       autoload :CopyCalculator,          "amp/graphs/copies.rb"
     end
   end                                      
-                                           
+  
+  module Help
+    autoload :HelpUI,                   "amp/help/help.rb"
+    autoload :HelpEntry,                "amp/help/help.rb"
+    autoload :HelpRegistry,             "amp/help/help.rb"
+    autoload :CommandHelpEntry,         "amp/help/help.rb"
+    autoload :FileHelpEntry,            "amp/help/help.rb"
+  end
+                                       
   module Merges
     module Mercurial                      
       autoload :MergeState,              "amp/repository/mercurial/repo_format/merge_state.rb"
@@ -92,7 +101,12 @@ module Amp
     autoload :AbstractStagingArea,       "amp/repository/abstract/abstract_staging_area.rb"
     autoload :AbstractChangeset,         "amp/repository/abstract/abstract_changeset.rb"
     autoload :AbstractVersionedFile,     "amp/repository/abstract/abstract_versioned_file.rb"
-    autoload :CommonLocalRepoMethods,    "amp/repository/abstract/local_repo/common_methods.rb"
+    autoload :CommonChangesetMethods,    "amp/repository/abstract/common_methods/changeset.rb"
+    autoload :CommonLocalRepoMethods,    "amp/repository/abstract/common_methods/local_repo.rb"
+    autoload :CommonStagingAreaMethods,  "amp/repository/abstract/common_methods/staging_area.rb"
+    autoload :CommonChangesetMethods,    "amp/repository/abstract/common_methods/changeset.rb"
+    autoload :CommonVersionedFileMethods,"amp/repository/abstract/common_methods/versioned_file.rb"
+    
     module Mercurial
       autoload :BranchManager,           "amp/repository/mercurial/repo_format/branch_manager.rb"
       autoload :BundleRepository,        "amp/repository/mercurial/repositories/bundle_repository.rb"
@@ -110,7 +124,6 @@ module Amp
       autoload :Verification,            "amp/repository/mercurial/repo_format/verification.rb"
     end
   end
-  
   
   module Mercurial
     module RevlogSupport
@@ -153,6 +166,7 @@ end
 autoload :Archive,       "amp/dependencies/minitar.rb"
 autoload :Zip,           "amp/dependencies/zip/zip.rb"
 autoload :PriorityQueue, "amp/dependencies/priority_queue.rb"
+autoload :Maruku,        "amp/dependencies/maruku.rb"
 
 #############################
 # Files we need to just *run*
@@ -169,7 +183,6 @@ if $cl # if it's a command line app
   require       "amp/commands/command.rb"
   require_dir { "amp/commands/*.rb"              }
   require_dir { "amp/commands/commands/*.rb"     }
-  
 else
   # it's not a command line app
  require     'amp/support/docs.rb' # live documentation access
@@ -222,4 +235,4 @@ if ENV["TESTING"] == "true"
 end
 
 # Benchmarking stuff
-#need { 'amp/profiling_hacks' }
+need { 'amp/profiling_hacks' }

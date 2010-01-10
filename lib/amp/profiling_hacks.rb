@@ -24,13 +24,13 @@ end
 
 $hash = Hash.new {|h, k| h[k] = 0 }
 # 
-# String.class_eval do
-#   show_caller_for :split_newlines, "$hash[caller[0]] += 1"
+# Kernel.module_eval do
+#   show_caller_for :catch, "$hash[caller[0]] += 1"
 # end
-
-if ENV["TESTING"] == "true"
-  END {
-    require 'pp'
-    STDERR.puts $hash.inspect if $hash.any?
-  }
-end
+# 
+# if ENV["TESTING"] == "true"
+#   END {
+#     require 'pp'
+#     STDERR.puts $hash.inspect if $hash.any?
+#   }
+# end

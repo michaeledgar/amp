@@ -276,7 +276,7 @@ module Amp
                   if filelog_src.index_size == 0
                     error(link_rev, "empty or missing copy source revlog "+
                                     "#{rename_info[0]}, #{rename_info[1].short_hex}", file)
-                  elsif rename_info[1] == RevlogSupport::Node::NULL_ID
+                  elsif rename_info[1] == Amp::Mercurial::RevlogSupport::Node::NULL_ID
                     warn("#{file}@#{link_rev}: copy source revision is NULL_ID "+
                          "#{rename_info[0]}:#{rename_info[1].short_hex}", file)
                   else
@@ -307,8 +307,7 @@ module Amp
           # @param [Revlog] log the log we will be verifying
           # @param [String] name the name of the file this log is stored in
           def check_revlog(log, name)
-            #p name
-            if log.empty? && (@changelog.any? || @revlog.any?)
+            if log.empty? && (@changelog.any? || @manifest.any?)
               return error(0, "#{name} is empty or missing")
             end
             
@@ -321,7 +320,7 @@ module Amp
               error(nil, "index off by #{size_diffs[:index_diff]} bytes", name)
             end
             
-            v0 = RevlogSupport::Support::REVLOG_VERSION_0
+            v0 = Amp::Mercurial::RevlogSupport::Support::REVLOG_VERSION_0
             if log.index.version != v0
               warn("#{name} uses revlog format 1. changelog uses format 0.") if @changelog.index.version == v0
             elsif log.index.version == v0
@@ -353,7 +352,7 @@ module Amp
             
             begin
               log.parents_for_node(node).each do |parent|
-                if !seen[parent] && parent != RevlogSupport::Node::NULL_ID
+                if !seen[parent] && parent != Amp::Mercurial::RevlogSupport::Node::NULL_ID
                   error(link_rev, "unknown parent #{parent.short_hex} of #{node.short_hex}", filename)
                 end
               end

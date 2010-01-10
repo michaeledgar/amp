@@ -37,19 +37,18 @@ module Amp
         # @param [Amp::AmpConfig] config the configuration loaded from the user's
         #   system. Will have some settings overwritten by the repo's hgrc.
         def initialize(path="", create=false, config=nil)
-          @capabilities = {}
-          @root        = path[-1, 1] == '/' ? path[0..-2] : path # no ending slashes
-          @root        = File.expand_path @root
-          @hg          = File.join @root, ".hg"
+          super(path, create, config)
+          @hg          = working_join ".hg"
           @file_opener = Amp::Opener.new @root
           @file_opener.default = :open_file     # these two are the same, pretty much
           @hg_opener   = Amp::Opener.new @root
-          @hg_opener.default   = :open_hg     # just with different defaults
+          @hg_opener.default   = :open_hg       # just with different defaults
           @filters     = {}
           @changelog   = nil
           @manifest    = nil
           @dirstate    = nil
           @staging_area = StagingArea.new(self)
+          @working_lock_ref = @lock_ref = nil
           requirements = []
         
           # make a repo if necessary
@@ -85,6 +84,7 @@ module Amp
         #   so further configuration can go down.
         def init(config=@config)
           # make the directory if it's not there
+          super
           FileUtils.makedirs @hg
         
           requirements = ["revlogv1"]
@@ -113,9 +113,7 @@ module Amp
           status(:only => [:modified, :added, :removed, :deleted]).all? {|_, v| v.empty? }
         end
         
-        ##
-        # @see pristine?
-        def changed?; !pristine?; end
+        opposite_method :changed?, :pristine?
         
         ##
         # Gets the changeset at the given revision.
@@ -215,7 +213,7 @@ module Amp
         ##
         # Takes a block, and runs that block with both the store and the working directory locked.
         #
-        # @param [Boolean] wait (true) should we wait for locks, or jsut give up early?
+        # @param [Boolean] wait (true) should we wait for locks, or just give up early?
         def lock_working_and_store(wait=true)
           lock_store(wait) do
             lock_working(wait) do
@@ -241,7 +239,7 @@ module Amp
         #
         # @param [Integer, String] change_id the ID (or index) of the requested changeset
         # @return [Array<Changeset>] the parent changesets of the requested changeset
-        def parents(change_id = nil)
+        def parents(change_id=nil)
           self[change_id].parents
         end
         
@@ -291,7 +289,7 @@ module Amp
         # @param [String] path the path to the file to write to
         # @param [String] data the data to write
         # @param [String] flags the flags to set
-        def working_write(path, data, flags)
+        def working_write(path, data, flags = "")
           @file_opener.open(path, "w") do |file|
             file.write(data)
           end
@@ -326,7 +324,7 @@ module Amp
         # @api
         # @param [String] filename the file to mark resolved
         def mark_resolved(filename)
-          merge_stage.mark_resolved
+          merge_state.mark_resolved filename
         end
         
         ##
@@ -336,7 +334,7 @@ module Amp
         # @api
         # @param [String] filename the file to mark as conflicted
         def mark_conflicted(filename)
-          merge_state.mark_conflicted
+          merge_state.mark_conflicted filename
         end
         
         ##
@@ -509,11 +507,12 @@ module Amp
         # This does not apply the changes, but pulls them onto
         # the local server.
         # 
-        # @param [String] remote the path of the remote source (will either be
-        #   an HTTP repo or an SSH repo)
-        # @param [{Symbol => [String] or Boolean}] this reads two parameters from
-        #   opts -- heads and force. heads is the changesets to collect. If this
-        #   is empty, it will pull from tip.
+        # @param [Repository] remote_repo the remote repository object to pull from
+        # @param [Hash] options extra options for pulling
+        # @option [Array<String, Fixnum>] :heads ([]) which repository heads to pull, such as
+        #   a branch name or a sha-1 identifier
+        # @option [Boolean] :force (false) force the pull, ignoring any errors or warnings
+        # @return [Boolean] for success/failure
         def pull(remote, opts={:heads => nil, :force => nil})
           lock_store do
             # get the common nodes, missing nodes, and the remote heads
@@ -655,17 +654,12 @@ module Amp
             end # end each
           end # end if
           
-          hdz = branch_heads
           # never return 0 here
           ret = if new_heads < old_heads
                   new_heads - old_heads - 1
                 else
                   new_heads - old_heads + 1
                 end # end if
-          
-          # class << ret
-          #   def success?; self <= 1 || hdz.size == 1; end
-          # end
           
           ret
         end # end def
@@ -1230,6 +1224,7 @@ module Amp
           true # success marker
         end
         
+        ##
         # Return list of roots of the subsets of missing nodes from remote
         # 
         # If base dict is specified, assume that these nodes and their parents
@@ -1244,6 +1239,10 @@ module Amp
         # All the descendants of the list returned are missing in self.
         # (and so we know that the rest of the nodes are missing in remote, see
         # outgoing)
+        # 
+        # @return [Array<String>] the nodes that are missing from the local repository
+        #   but are present in the foreign repo. These are the nodes that will be
+        #   coming in over the wire.
         def find_incoming_roots(remote, opts={:base  => nil,   :heads => nil,
                                               :force => false, :base  => nil})
           common_nodes(remote, opts)[1]
@@ -1268,7 +1267,7 @@ module Amp
         # All the ancestors of base are in self and in remote.
         # 
         # @param [Amp::Repository] remote the repository we're pulling from
-        # @param [(Array<>, Array<>, Array<>)] the common nodes, missing nodes, and
+        # @param [(Array<String>, Array<String>, Array<String>)] the common nodes, missing nodes, and
         #   remote heads
         def common_nodes(remote, opts={:heads => nil, :force => nil, :base => nil})
           # variable prep!
@@ -1307,6 +1306,7 @@ module Amp
           # make a hash with keys of unknown
           requests = Hash.with_keys unknown
           count    = 0
+          
           # Search through the remote branches
           # a branch here is a linear part of history, with 4 (four)
           # parts:
@@ -1418,6 +1418,8 @@ module Amp
         ##
         # Forgets an added file or files from the repository. Doesn't delete the
         # files, it just says "don't add this on the next commit."
+        # 
+        # Please note that this has different semantics from {DirState#forget}
         #
         # @param [Array, String] list a file path (or list of file paths) to
         #   "forget".
@@ -1456,6 +1458,13 @@ module Amp
         #
         # unbundle assumes local user cannot lock remote repo (new ssh
         # servers, http servers).
+        #
+        # @param [Repository] remote_repo the remote repository object to push to
+        # @param [Hash] options extra options for pushing
+        # @option options [Boolean] :force (false) Force pushing, even if it would create
+        #   new heads (or some other error arises)
+        # @option options [Array<Fixnum, String>] :revs ([]) specify which revisions to push
+        # @return [Boolean] for success/failure
         def push(remote_repo, opts={:force => false, :revs => nil})
           if remote_repo.capable? "unbundle"
             push_unbundle remote_repo, opts
@@ -1652,7 +1661,7 @@ module Amp
         # @param [Amp::Match] match the matcher decides how to pick the files
         # @param [Array<String>] an array of filenames
         def walk(node=nil, match = Match.create({}) { true })
-          self[node].walk(match) # calls Changeset#walk
+          self[node].walk match # calls Changeset#walk
         end
         
         ##
@@ -1665,131 +1674,7 @@ module Amp
         #   annotation
         def annotate(file, revision=nil, opts={})
           changeset = self[revision]
-          file = changeset.get_file(file)
-          return file.annotate(opts[:follow_copies], opts[:line_numbers])
-        end
-        
-        ##
-        # This gives the status of the repository, comparing 2 node in
-        # its history. Now, with no parameters, it's going to compare the
-        # last revision with the working directory, which is the most common
-        # usage - that answers "what is the current status of the repository,
-        # compared to the last time a commit happened?". However, given any
-        # two revisions, it can compare them.
-        # 
-        # @example @repo.status # => {:unknown => ['code/smthng.rb'], :added => [], ...}
-        # @param [Hash] opts the options for this command. there's a bunch.
-        # @option [String, Integer] opts :node_1 (".") an identifier for the starting
-        #   revision
-        # @option [String, Integer] opts :node_2 (nil) an identifier for the ending
-        #   revision. Defaults to the working directory.
-        # @option [Proc] opts :match (proc { true }) a proc that will match
-        #   a file, so we know if we're interested in it.
-        # @option [Boolean] opts :ignored (false) do we want to see files we're
-        #   ignoring?
-        # @option [Boolean] opts :clean (false) do we want to see files that are
-        #   totally unchanged?
-        # @option [Boolean] opts :unknown (false) do we want to see files we've
-        #   never seen before (i.e. files the user forgot to add to the repo)?
-        # @return [Hash<Symbol => Array<String>>] no, I'm not kidding. the keys are:
-        #   :modified, :added, :removed, :deleted, :unknown, :ignored, :clean. The
-        #   keys are the type of change, and the values are arrays of filenames
-        #   (local to the root) that are under each key.
-        def status(opts={:node_1 => '.'})
-          run_hook :status
-          
-          node1, node2, match = opts[:node_1], opts[:node_2], opts[:match]
-          
-          match = Match.create({}) { true } unless match
-          
-          node1 = self[node1] unless node1.kind_of? Amp::Mercurial::Changeset # get changeset objects
-          node2 = self[node2] unless node2.kind_of? Amp::Mercurial::Changeset
-          
-          write_dirstate = false
-          
-          # are we working with working directories?
-          working = node2.revision == nil
-          parent_working = working && node1 == self["."]
-          
-          # load the working directory's manifest
-          node2.manifest if !working && node2.revision < node1.revision
-          
-          if working
-            # get the dirstate's latest status
-            status = dirstate.status(opts[:ignored], opts[:clean], opts[:unknown], match)
-            
-            # this case is run about 99% of the time
-            # do we need to do hashes on any files to see if they've changed?
-            if parent_working && status[:lookup].any?
-              # lookup.any? is a shortcut for !lookup.empty?
-              clean, modified, write_dirstate = *fix_files(status[:lookup], node1, node2)
-              
-              status[:clean]    += clean
-              status[:modified] += modified
-            end
-          else
-            status = {:clean => [], :modified => [], :lookup => [], :unknown => [], :ignored => [],
-                      :removed => [], :added => [], :deleted => []}
-          end
-          # if we're working with old revisions...
-          unless parent_working
-            # get the older revision manifest
-            mf1 = node1.manifest.dup
-            
-            if working
-              # get the working directory manifest. note, it's a tweaked
-              # manifest to reflect working directory files
-              mf2 = self["."].manifest.dup
-              
-              # mark them as not in the manifest to force checking later
-              files_for_later = status[:lookup] + status[:modified] + status[:added]
-              files_for_later.each {|file| mf2.mark_for_later file, node2 }
-              
-              # remove any files we've marked as removed them from the '.' manifest
-              status[:removed].each {|file| mf2.delete file }
-            else
-              # if we aren't working with the working directory, then we'll
-              # just use the old revision's information
-              status[:removed], status[:unknown], status[:ignored] = [], [], []
-              mf2 = node2.manifest.dup
-            end
-            
-            # Every file in the later revision (or working directory)
-            mf2.each do |file, node|
-              # Does it exist in the old manifest? If so, it wasn't added.
-              if mf1[file]
-                # the tests to run
-                tests = [ mf1.flags[file] != mf2.flags[file]           ,
-                          mf1[file] != mf2[file] &&
-                            (mf2[file] || node1[file] === node2[file]) ]
-                
-                # It's in the old manifest, so lets check if its been changed
-                # Else, it must be unchanged
-                if tests.any?
-                  status[:modified] << file 
-                  status[:clean]    << file if opts[:clean]
-                end
-                
-                # Remove that file from the old manifest, since we've checked it
-                mf1.delete file
-              else
-                # if it's not in the old manifest, it's been added
-                status[:added] << file
-              end
-            end
-            
-            # Anything left in the old manifest is a file we've removed since the
-            # first revision.
-            status[:removed] = mf1.keys
-          end
-          
-          # We're done!
-          status.delete :lookup # because nobody cares about it
-          delta = status.delete :delta
-          
-          status.map {|k, v| [k, v.sort] }.to_hash # sort dem fuckers
-          status[:delta] = delta
-          status.select {|k, _| opts[:only] ? opts[:only].include?(k) : true }.to_hash
+          changeset[file].annotate opts[:follow_copies], opts[:line_numbers]
         end
         
         ##
@@ -1885,337 +1770,103 @@ module Amp
         # Commits a changeset or set of files to the repository. You will quite often
         # use this method since it's basically the basis of version control systems.
         #
+        # @api
         # @param [Hash] opts the options to this method are all optional, so it's a very
         #   flexible method. Options listed below.
-        # @option [Array] opts :files ([]) the specific files to commit - if this is
-        #   not provided, the current status of the working directory is used.
-        # @option [Hash] opts :extra ({}) any extra data, such as "close" => true
+        # @option opts [Array] :modified ([]) which files have been added or modified
+        #   that you want to be added as a changeset.
+        # @option opts [Array] :removed ([]) which files should be removed in this
+        #   commit?
+        # @option opts [Hash] :extra ({}) any extra data, such as "close" => true
         #   will close the active branch.
-        # @option [String] opts :message ("") the message for the commit. An editor
+        # @option opts [String] :message ("") the message for the commit. An editor
         #   will be opened if this is not provided.
-        # @option [Boolean] opts :force (false) Forces the commit, ignoring minor details
+        # @option opts [Boolean] :force (false) Forces the commit, ignoring minor details
         #   like when you try to commit when no files have been changed.
-        # @option [Match] opts :match (nil) A match object to specify how to pick files
+        # @option opts [Match] :match (nil) A match object to specify how to pick files
         #   to commit. These are useful so you don't accidentally commit ignored files,
         #   for example.
-        # @option [Boolean] opts :empty_ok (false) Is an empty commit message a-ok?
-        # @option [Boolean] opts :force_editor (false) Do we force the editor to be
+        # @option opts [Array<String>] :parents (nil) the node IDs of the parents under
+        #   which this changeset will be committed. No more than 2 for mercurial.
+        # @option opts [Boolean] :empty_ok (false) Is an empty commit message a-ok?
+        # @option opts [Boolean] :force_editor (false) Do we force the editor to be
         #   opened, even if :message is provided?
-        # @option [String] opts :user ($USER) the username to associate with the commit.
+        # @option opts [String] :user (ENV["HGUSER"]) the username to associate with the commit.
         #   Defaults to AmpConfig#username.
-        # @option [DateTime, Time, Date] opts :date (Time.now) the date to mark with
+        # @option opts [DateTime, Time, Date] :date (Time.now) the date to mark with
         #   the commit. Useful if you miss a deadline and want to pretend that you actually
         #   made it!
-        # @return [String] the digest referring to this entry in the revlog
-        def commit(opts={:message => "", :extra => {}, :files => []})
+        # @return [String] the digest referring to this entry in the changelog
+        def commit(options={})
+          pre_commit(options) {|changeset, opts| changeset.commit opts }
+        end
+        
+        ##
+        # Prepares a local changeset to be committed. It must take a block
+        # and yield to it the changeset and any options to be passed to
+        # {AbstractChangeset#commit}. This is only ever called by
+        # {AbstractLocalRepository#commit}.
+        # 
+        # @example def pre_commit(opts={})
+        #            cs = MyChangeset.new :text => 'asdf', :diff => "asdfasd"
+        #            raise "fail" if something_happens
+        #            yield cs, opts # well MTV, dis where da magic happen
+        #            true
+        #          end
+        # 
+        # @yield [String] the result of {AbstractChangeset#commit}
+        # @yieldparam [AbstractChangeset] the changeset to commit
+        # @yieldparam [Hash] any options to be passed to {AbstractChangeset#commit}
+        # @return [Boolean] success/failure
+        def pre_commit(opts={})
+          [:parents, :modified, :removed].each {|sym| opts[sym] ||= [] }
           opts[:extra] ||= {}
-          opts[:force] = true if opts[:extra]["close"]
-          opts[:files] ||= []
-          opts[:files].uniq!
+          opts[:force]   = true if opts[:extra]["close"]
           
-          use_dirstate = opts[:p1] == nil
-          changes = {}
+          # lock the working directory and store
           lock_working_and_store do
-            if use_dirstate
+            opts[:use_dirstate] = opts[:parents][0].nil?
+            
+            # do we use the dirstate?
+            if opts[:use_dirstate]
               p1, p2 = dirstate.parents
-              update_dirstate = true
               
-              tests = [opts[:force] ,
-                       p2 != NULL_ID,
-                       opts[:match] ]
-              
-              raise StandardError("cannot partially commit a merge") if tests.all?
-              
-              if opts[:files].any?
-                changes = {:modified => [], :removed => []}
-                
-                # split the files up so we can deal with them appropriately
-                opts[:files].each do |file|
-                  state = dirstate[file]
-                  if state.normal? || state.merged? || state.added?
-                    changes[:modified] << file
-                  elsif state.removed?
-                    changes[:removed]  << file
-                  elsif state.untracked?
-                    UI.warn "#{file} not tracked!"
-                  else
-                    UI.err "#{file} has unknown state #{state[0]}"
-                  end
-                end
-                
-              else
-                changes = status(:match => opts[:match])
+              if opts[:force]  && # we're forcing the commit
+                 p2 != NULL_ID && # but we're merging two branches
+                 opts[:match]     # and we have a partial matcher
+                raise StandardError("cannot partially commit a merge")
               end
+              
+              opts[:update_dirstate] = opts[:modified].any?
             else
-              p1, p2 = opts[:p1], (opts[:p2] || NULL_ID)
-              update_dirstate = dirstate.parents[0] == p1
-              changes = {:modified => files}
+              p1, p2 = opts[:parents]
+              p2   ||= NULL_ID
+              
+              opts[:update_dirstate] = dirstate.parents[0] == p1
             end
             
             
-            merge_state = self.merge_state
-            
-            changes[:modified].each do |file|
-              if merge_state.unresolved?(file)
+            opts[:modified].each do |file|
+              if merge_state.unresolved? file
                 raise StandardError.new("unresolved merge conflicts (see `amp resolve`)")
               end
             end
             
+            changes = {:modified => opts[:modified], :removed => opts[:removed]}
             changeset = Amp::Mercurial::WorkingDirectoryChangeset.new self, :parents => [p1, p2]      ,
                                                                             :text    => opts[:message],
                                                                             :user    => opts[:user]   ,
                                                                             :date    => opts[:date]   ,
                                                                             :extra   => opts[:extra]  ,
                                                                             :changes => changes
-              
-            revision = commit_changeset changeset, :force           => opts[:force]       ,
-                                                   :force_editor    => opts[:force_editor],
-                                                   :empty_ok        => opts[:empty_ok]    ,
-                                                   :use_dirstate    => use_dirstate       ,
-                                                   :update_dirstate => update_dirstate
+            
+            tailored_hash = opts.only :force, :force_editor, :empty_ok,
+                                      :use_dirstate, :update_dirstate
+            revision = yield changeset, tailored_hash
             
             merge_state.reset
             return revision
-          end
-        end
-        
-        ##
-        # Commits the given changeset to the repository.
-        #
-        # @param changeset the changeset to commit. Could be working dir, for
-        #   example.
-        # @param opts the options for committing the changeset.
-        # @option [Boolean] opts :force (false) force the commit, even though
-        #   nothing has changed.
-        # @option [Boolean] opts :force_editor (false) force the user to open
-        #   their editor, even though they provided a message already
-        # @option [Boolean] opts :empty_ok (false) is it ok if they have no
-        #   description of the commit?
-        # @option [Boolean] opts :use_dirstate (true) use the DirState for this
-        #   commit? Used if you're committing the working directory (typical)
-        # @option [Boolean] opts :update_dirstate (true) should we update the
-        #   DirState after the commit? Used if you're committing the working
-        #   directory.
-        # @return [String] the digest referring to this entry in the revlog
-        def commit_changeset(changeset, opts = {:use_dirstate => true,
-                                                :update_dirstate => true})
-          journal = nil
-          valid = false #don't update the DirState if this is set!
-          
-          commit = ((changeset.modified || []) + (changeset.added || [])).sort
-          remove = changeset.removed
-          extra = changeset.extra.dup
-          branchname = extra["branch"]
-          user = changeset.user
-          text = changeset.description
-          
-          p1, p2 = changeset.parents.map {|p| p.node}
-          c1 = changelog.read(p1) # 1 parent's changeset as an array
-          c2 = changelog.read(p2) # 2nd parent's changeset as an array
-          m1 = manifest.read(c1[0]).dup # 1st parent's manifest
-          m2 = manifest.read(c2[0])     # 2nd parent's manifest
-          
-          if opts[:use_dirstate]
-            oldname = c1[5]["branch"]
-            tests = [ commit.empty?, remove.empty?, ! opts[:force],
-                      p2 == NULL_ID, branchname = oldname ]
-            
-            if tests.all?
-              UI::status "nothing changed"
-              return nil
-            end
-          end
-          
-          xp1 = p1.hexlify
-          xp2 = (p2 == NULL_ID) ? "" : p2.hexlify
-          
-          run_hook :pre_commit
-          journal = Amp::Mercurial::Journal.new
-    
-          fresh    = {} # new = reserved haha
-          changed  = []
-          link_rev = self.size
-          
-          (commit + (remove || [])).each {|file| UI::status file }
-          
-          #Amp::Logger.info("<changeset commit>").indent
-          
-          commit.each do |file|
-            # begin
-            
-            versioned_file = changeset.get_file(file)
-            newflags = versioned_file.flags
-            
-            fresh[file] = commit_file(versioned_file, m1, m2, link_rev,
-                                      journal, changed)
-            if [ changed.empty? || changed.last != file, 
-                 m2[file] != fresh[file] ].all?
-              changed << file if m1.flags[file] != newflags
-            end
-            m1.flags[file] = newflags
-            
-            dirstate.normal file if opts[:use_dirstate]
-            #Amp::Logger.section("committing: #{file}") do
-              #Amp::Logger.info("flags: #{newflags.inspect}")
-              #Amp::Logger.info("total changes: #{changed.inspect}")
-            #end
-            # rescue
-            #            if opts[:use_dirstate]
-            #              UI.warn("trouble committing #{file}")
-            #              raise
-            #            else
-            #              remove << file
-            #            end
-            # end
-          end
-          
-          updated, added = [], []
-          changed.sort.each do |file|
-            if m1[file] || m2[file]
-              updated << file
-            else
-              added << file
-            end
-          end
-          
-          m1.merge!(fresh)
-          
-          removed = remove.sort.select {|f| m1[f] || m2[f]}
-          removed_1 = []
-          removed.select {|f| m1[f]}.each do |f|
-            m1.delete f
-            removed_1 << f
-          end
-          
-          fresh = fresh.map {|k, v| (v) ? k : nil}.reject {|k| k.nil? }
-          man_entry = manifest.add(m1, journal, link_rev, c1[0], c2[0],
-                                  [fresh, removed_1])
-    
-          if !opts[:empty_ok] && !text
-            template_opts = {:added => added, :updated => updated,
-                             :removed => removed, :template_type => :commit }
-            edit_text = changeset.to_templated_s(template_opts)
-            text = UI.edit(edit_text, user)
-          end
-          
-          lines = text.rstrip.split("\n").map {|r| r.rstrip}.reject {|l| l.empty?}
-          if lines.empty? && opts[:use_dirstate]
-            raise abort("empty commit message")
-          end
-          text = lines.join("\n")
-          
-          changelog.delay_update
-          n = changelog.add(man_entry, changed + removed_1, text, journal, p1, p2, user,
-                            changeset.date, extra)
-    
-          self.changelog.write_pending()
-          changelog.finalize(journal)
-          
-          if opts[:use_dirstate] || opts[:update_dirstate]
-            dirstate.parents = n
-            removed.each {|f| dirstate.forget(f) } if opts[:use_dirstate]
-            dirstate.write
-          end
-          
-          valid = true
-          journal.close
-          journal = nil
-          run_hook :post_commit, :added => added, :modified => updated,        :removed => removed, 
-                                 :user  => user,  :date     => changeset.date, :text    => text,
-                                 :revision => changelog.index_size
-          return n
-        rescue StandardError => e
-          if !valid
-            dirstate.invalidate!
-          end
-          if e.kind_of?(AbortError)
-            UI::warn "Abort: #{e}"
-          else
-            UI::warn "Got exception while committing. #{e}"
-            UI::warn e.backtrace.join("\n")
-          end
-          journal.delete if journal
-        end
-        
-        
-        ##
-        # Commits a file as part of a larger transaction.
-        #
-        # @param file the versioned-file to commit
-        # @param manifest1 the manifest of the first parent
-        # @param manifest2 the manifest of the second parent
-        # @param link_revision the revision index we'll be adding this under
-        # @param journal the journal for aborting failed commits
-        # @param change_list the list of all the files changed during the commit
-        #
-        def commit_file(file, manifest1, manifest2, link_revision, journal, change_list)
-          filename = file.path
-          text = file.data
-          curfile = self.file filename
-          
-          fp1 = manifest1[filename] || NULL_ID
-          fp2 = manifest2[filename] || NULL_ID
-    
-          metadata = {}
-          copied = file.renamed
-          if copied && copied[0] != filename
-            # Mark the new revision of this file as a copy of another
-            # file.  This copy data will effectively act as a parent
-            # of this new revision.  If this is a merge, the first
-            # parent will be the nullid (meaning "look up the copy data")
-            # and the second one will be the other parent.  For example:
-            #
-            # 0 --- 1 --- 3   rev1 changes file foo
-            #   \       /     rev2 renames foo to bar and changes it
-            #    \- 2 -/      rev3 should have bar with all changes and
-            #                      should record that bar descends from
-            #                      bar in rev2 and foo in rev1
-            #
-            # this allows this merge to succeed:
-            #
-            # 0 --- 1 --- 3   rev4 reverts the content change from rev2
-            #   \       /     merging rev3 and rev4 should use bar@rev2
-            #    \- 2 --- 4        as the merge base
-            
-            copied_file = copied[0]
-            copied_revision = manifest1[copied_file]
-            new_fp = fp2
-            
-            if manifest2 # branch merge
-              if fp2 == NULL_ID || copied_revision == nil # copied on remote side
-                if manifest2[copied_file]
-                  copied_revision = manifest2[copied_file]
-                  new_fp = fp1
-                end
-              end
-            end
-    
-            if copied_revision.nil? || copied_revision.empty?
-              self["."].ancestors.each do |a|
-                if a[copied_file]
-                  copied_revision = a[copied_file].file_node
-                  break
-                end
-              end
-            end
-            
-            UI::say "#{filename}: copy #{copied_file}:#{copied_revision.hexlify}"
-            metadata["copy"] = copied_file
-            metadata["copyrev"] = copied_revision.hexlify
-            fp1, fp2 = NULL_ID, new_fp
-          elsif fp2 != NULL_ID
-            fpa = curfile.ancestor(fp1, fp2)
-            
-            fp1, fp2 = fp2, NULL_ID if fpa == fp1
-            fp2 = NULL_ID if fpa != fp2 && fpa == fp2
-          end
-          
-          if fp2 == NULL_ID && !(curfile.cmp(fp1, text)) && metadata.empty?
-            return fp1
-          end
-          
-          change_list << filename
-          return curfile.add(text, metadata, journal, link_revision, fp1, fp2)
+          end #unlock working dir + store
         end
         
         private
@@ -2238,56 +1889,7 @@ module Amp
           end
           requirements
         end
-        
-        ##
-        # Look up the files in +lookup+ to make sure
-        # they're either the same or not. Normally, we can
-        # just tell if two files are the same by looking at their sizes. But
-        # sometimes, we can't! That's where this method comes into play; it
-        # hashes the files to verify integrity.
-        # 
-        # @param [String] lookup files to look up
-        # @param node1
-        # @param node2
-        # @return [[String], [String], Boolean] clean files, modified files, and
-        #   whether or not to write the dirstate
-        def fix_files(lookup, node1, node2)
-          write_dirstate = false # this gets returned
-          modified = [] # and this
-          fixup    = [] # fixup are files that haven't changed so they're being
-                        # marked wrong in the dirstate. this gets returned
-          
-          lookup.each do |file|
-            # this checks to see if the file has been modified after doing
-            # hashes/flag checks
-            tests = [ node1.include?(file)                   ,
-                      node2.flags(file) == node1.flags(file) ,
-                      node1[file]      === node2[file]       ]
-            
-            unless tests.all?
-              modified << file
-            else
-              fixup << file # mark the file as clean
-            end
-          end
-          
-    
-          # mark every fixup'd file as clean in the dirstate
-          begin
-            lock_working do        
-              fixup.each do |file|
-                write_dirstate = true
-                dirstate.normal file
-                modified.delete file
-              end
-            end
-          rescue LockError
-          end
-          dirstate.write if write_dirstate
-          
-          # the fixups are actually clean
-          [fixup, modified, write_dirstate]
-        end
+
         
         ##
         # do a binary search
@@ -2307,9 +1909,6 @@ module Amp
           until opts[:find].empty?
             new_search = []
             count += 1
-            
-            #puts opts[:find].inspect #killme
-            #puts opts[:find].inspect #killme
             
             zipped = opts[:find].zip opts[:repo].between(opts[:find])
             zipped.each do |(n, list)|

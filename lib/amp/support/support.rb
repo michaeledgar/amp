@@ -1,4 +1,3 @@
-
 require 'digest'
 
 if RUBY_VERSION < "1.9"
@@ -9,6 +8,7 @@ if RUBY_VERSION < "1.9"
   autoload :Tempfile, 'tempfile'
   autoload :Socket,   'socket'
   autoload :WeakRef,  'weakref'
+  autoload :Find,     'find'
 else
   require 'fileutils'
   require 'socket'
@@ -181,6 +181,21 @@ class Module
     end
     self
   end
+  
+  ##
+  # Creates an opposite method based on a defined method:
+  # one that returns true if the base method returns false, and vice-versa.
+  #
+  # @param [Symbol] new_method The new method to define
+  # @param [Symbol] base_method the base method we use to define the opposite
+  #   method
+  def opposite_method(new_method, base_method)
+    class_eval <<-EOF
+def #{new_method}(*args, &block)
+  not #{base_method}(*args, &block)
+end
+EOF
+  end
 end
 
 module Kernel
@@ -223,7 +238,7 @@ module Kernel
       Amp::UI.say message
       Amp::UI.say e.to_s
       e.backtrace.each {|err| Amp::UI.say "\tfrom #{err}" }
-      exit
+      return
     end
   end
   
@@ -467,6 +482,7 @@ class File
   # @param  [Boolean] empty whether or not to return an empty string as well
   # @return [Array] the directories leading up to this path
   def self.amp_directories_to(path, empty=false)
+    path = File.expand_path(path)
     dirs = path.split('/')[0..-2]
     ret  = []
     
@@ -551,7 +567,10 @@ class Hash
   # @param  [Object] value (true) the value to assign each key to in the resultant hash
   # @return [Hash] a hash with keys from +iterable+, all set to +value+
   def self.with_keys(iterable, value=true)
-    iterable.inject({}) {|h, k| h.merge!(k => value) }
+    # we try to be functional when it doesn't fuck us over
+    # here, the list of keys will never be ridiculous
+    # so we go fuctional
+    iterable.inject({}) {|h, k| h.merge k => value }
   end
   
   ##
@@ -560,6 +579,13 @@ class Hash
     keys.inject({}) {|h, (k, v)| h[k] = v }
   end
   
+  ##
+  # Construct a new hash with only the specified +keyz+
+  # 
+  # @return [Hash]
+  def only(*keyz)
+    keyz.inject({}) {|h, k| h.merge k => self[k] }
+  end
 end
 
 class Array
@@ -651,18 +677,32 @@ class String
   # @param [String] color_code a TTY color code
   # @return [String] the string wrapped in non-printing characters to make the text
   #   appear in a given color
-  def colorize(color_code)
-    "#{color_code}#{self}\e[0m"
+  def colorize(color_code, closing_tag = 39)
+    "\e[#{color_code}m#{self}\e[#{closing_tag}m"
+  end
+  
+  [:black, :red, :green, :yellow, :blue, :magenta, :cyan, :white].tap do |list|
+    list.each_with_index do |arg, idx|
+      define_method(arg) { colorize(30 + idx, 39) }
+      define_method("on_#{arg}") { colorize(40 + idx, 49) }
+    end
+    define_method :color do |*args|
+      result = self
+      args.each do |arg|
+        if arg.to_s[0,3] == "on_"
+        then base = 40; arg = arg.to_s[3..-1].to_sym
+        else base = 30
+        end
+        result = result.colorize(base + list.index(arg), base + 9)
+      end
+      result
+    end
   end
   
   # Returns the string, colored red.
-  def red; colorize("\e[31m"); end
-  def green; colorize("\e[32m"); end
-  def yellow; colorize("\e[33m"); end
-  def blue; colorize("\e[34m"); end
-  def magenta; colorize("\e[35m"); end
-  def cyan; colorize("\e[36m"); end
-  def white; colorize("\e[37m"); end
+  def bold; colorize(1, 22); end
+  def underline; colorize(4, 24); end
+  def blink; colorize(5, 25); end
   
   ##
   # Returns the path from +root+ to the path represented by the string. Will fail
