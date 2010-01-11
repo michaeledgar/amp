@@ -1,0 +1,51 @@
+.Dd January 10, 2010
+.Os
+.Dt amp 1
+.Sh NAME
+.Nm amp
+.Nd Ruby-based VCS engine
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl verbose
+.Op Fl profile
+.Op Fl R Ar repo_dir
+.Op Fl pure-ruby
+.Op Fl testing
+.Ar command ...
+.Sh DESCRIPTION
+  Amp is a revolutionary change in how we approach version control systems. Not only does it re-implement
+Mercurial's core in Ruby, but re-thinks how we interact with version control. It intends to wrap multiple
+VCS systems - git, hg, svn - under the same API, allowing the unique Amp command system to work with all
+repositories in the same manner.
+
+  Amp currently implements Mercurial and a large subset of the Mercurial command-set.
+.Bl -tag -width "mmmmmmmmmm" -compact
+.Pp
+.It Fl verbose
+Enables verbose output for the entire Amp process.
+.Pp
+.It Fl d
+Prings a variety of debug information about the arguments and options passed into amp.
+.Pp
+.It Fl profile
+Profiles the amp process as it runs the requested command. Deprecated and unwise.
+.Pp
+.It Fl R Ar repo_dir
+The path to the repository to use
+.Pp
+.It Fl pure-ruby
+Use only pure ruby (no C-extensions)
+.Pp
+.It Fl testing
+Running a test. Don't touch this.
+.El
+.Pp
+.Sh SEE ALSO
+.Xr git 1
+.Xr hg 1
+.Xr ruby 1
+.Xr amprc 5
+.Sh AUTHORS
+.An "Michael Edgar" Aq adgar@carboni.ca
+.An "Ari Brown" Aq seydar@carboni.ca

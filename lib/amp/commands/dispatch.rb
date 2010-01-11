@@ -21,7 +21,7 @@ module Amp
       global_opts = Trollop::options do
         banner "Amp - some more crystal, sir?"
         version "Amp version #{Amp::VERSION} (#{Amp::VERSION_TITLE})"
-        opt :debug_opts,      "Debug the command-line options", :short => "-d", :default => false, :type => :boolean
+        opt :"debug-opts",      "Debug the command-line options", :short => "-d"
         opt :verbose,         "Verbose output"
         opt :profile,         "Profile the command being run, running it the given number of times"
         opt :repository,      "The path to the repository to use", :short => "-R", :type => :string, :default => Dir.pwd
@@ -46,7 +46,7 @@ module Amp
       cmd            = ARGV.shift || "default" # get the subcommand
       opts_as_arr    = ARGV.dup
       
-      if global_opts[:debug_opts]
+      if global_opts[:"debug-opts"]
         global_config["debug", "messages"] = true
       end
       
@@ -100,7 +100,7 @@ module Amp
       cmd_opts.merge!(command.collect_options) {|k, v1, v2| v2 || v1 }
       
       cmd_opts[:global_config] = local_config
-      if global_opts[:debug_opts]
+      if global_opts[:"debug-opts"]
         require 'yaml'
         puts "Current directory: #{Dir.pwd}"
         puts "Global options: \n#{global_opts.inspect.to_yaml}"

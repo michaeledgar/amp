@@ -1,3 +1,4 @@
+coverage*
 .hg/*
 ext/amp/*/*.bundle
 ext/amp/*/*.o

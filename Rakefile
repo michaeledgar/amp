@@ -27,11 +27,12 @@ Hoe.spec "amp" do
   developer "Ari Brown", "seydar@carboni.ca"
   self.url = "http://amp.carboni.ca/"
   self.spec_extras = {:extensions => ["ext/amp/mercurial_patch/extconf.rb",
-                                      "ext/amp/priority_queue/extconf.rb",
-                                      "ext/amp/support/extconf.rb",
-                                      "ext/amp/bz2/extconf.rb"]}
+                                 "ext/amp/priority_queue/extconf.rb",
+                                 "ext/amp/support/extconf.rb",
+                                 "ext/amp/bz2/extconf.rb"]}
   self.need_rdoc = false
   self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas."
+  extra_dev_deps << ["rtfm", ">= 0.5.1"] << ["yard", ">= 0.4.0"]
 end
  
 # Hoe.spec "amp-pure" do
@@ -51,6 +52,7 @@ remove_task 'test_deps', 'publish_docs', 'post_blog',
 
 load 'tasks/yard.rake'
 load 'tasks/stats.rake'
+load 'tasks/man.rake'
 
 desc "Build the C extensions"
 task :build do
