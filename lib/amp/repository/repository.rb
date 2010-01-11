@@ -20,6 +20,7 @@ module Amp
       GenericRepoPicker.each do |picker|
         return picker.pick(config, path, create) if picker.repo_in_dir?(path)
       end
+      nil
       #Mercurial::Picker.pick config, path, create # cheat KILLME
     end # def self.pick
     

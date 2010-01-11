@@ -190,7 +190,7 @@ module Amp
 
       @workflows = []
       @synonyms  = []
-      yield(self) if block_given?
+      yield self if block_given?
       workflow :all if @workflows.empty?
       @options += GLOBAL_OPTIONS
       Amp::Help::CommandHelpEntry.new(full_name, self)
@@ -226,7 +226,7 @@ module Amp
     #       default :"no-color", true
     #     end
     # @param [Symbol, #to_sym] opt the option to modify. Can be symbol or string.
-    # @param value the new default value for the option
+    # @param [Object] value the new default value for the option
     def default(opt, value)
       opt = opt.to_sym
       the_opt = @options.find {|o| o[:name] == opt }

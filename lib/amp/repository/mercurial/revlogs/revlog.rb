@@ -772,9 +772,6 @@ module Amp
         entry = Mercurial::RevlogSupport::IndexEntry.new(Mercurial::RevlogSupport::Support.offset_version(offset, 0), 
                   len, text.size, base, link, rev(p1), rev(p2), node)
                   
-        offset += curr * @index.entry_size
-        journal << [@index_file, offset, curr]
-                  
         @index << entry
         @index.node_map[node] = curr
         @index.write_entry(@index_file, entry, journal, data, index_file_handle)
@@ -871,11 +868,11 @@ module Amp
         index_file_handle = open(@index_file, "a+")
         index_size = r * @index.entry_size
         if @index.inline?
-          journal << [@index_file, endpt + index_size, r]
+          journal << {:file => @index_file, :offset => endpt + index_size, :data => r}
           data_file_handle = nil
         else
-          journal << [@index_file, index_size, r]
-          journal << [@data_file, endpt]
+          journal << {:file => @index_file, :offset => index_size, :data => r}
+          journal << {:file => @data_file,  :offset => endpt}
           data_file_handle = open(@data_file, "a")
         end
         

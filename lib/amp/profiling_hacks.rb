@@ -22,10 +22,10 @@ end
 HELP
 end
 
-$hash = Hash.new {|h, k| h[k] = 0 }
+# $hash = Hash.new {|h, k| h[k] = 0 }
 # 
-# Kernel.module_eval do
-#   show_caller_for :catch, "$hash[caller[0]] += 1"
+# Hash.module_eval do
+#   show_caller_for :initialize_copy, "$hash[caller[0]] += 1"
 # end
 # 
 # if ENV["TESTING"] == "true"

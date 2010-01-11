@@ -6,7 +6,7 @@
 # See CPriorityQueue and RubyPriorityQueue for more information.
 unless $USE_RUBY
   begin
-    require 'amp/CPriorityQueue'
+    require 'amp/priority_queue/CPriorityQueue'
     PriorityQueue = CPriorityQueue
   rescue LoadError # C Version could not be found, try ruby version
     need { 'priority_queue/ruby_priority_queue' }

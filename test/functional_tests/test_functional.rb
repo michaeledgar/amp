@@ -32,6 +32,8 @@ class TestFunctional < Test::Unit::TestCase
     require_dir { "amp/commands/*.rb"              }
     require_dir { "amp/commands/commands/*.rb"     }
     
+    ENV["HGUSER"] = "tester"
+    
     assert_command_match(/#{Amp::VERSION_TITLE}/, "version")
     assert_command_match(/#{Amp::VERSION}/, "version")
     
@@ -335,9 +337,9 @@ class TestFunctional < Test::Unit::TestCase
     
     assert_equal get_resource("command.rb", "version3"), amp("view", ["command.rb"], :rev => 3)
     
-    # annotate_output = amp("annotate", ["STYLE.txt"], :user => true, :number => true).strip
-    # correct_annotation = read_supporting_file("annotate.out").strip
-    # assert_equal correct_annotation, annotate_output
+    annotate_output = amp("annotate", ["STYLE.txt"], :user => true, :number => true).strip
+    correct_annotation = read_supporting_file("annotate.out").strip
+    assert_equal correct_annotation, annotate_output
     
     # Create a dummy commit
     File.open('used_in_bundle', 'w') {|f| f.write "monkay" }
@@ -609,8 +611,13 @@ class TestFunctional < Test::Unit::TestCase
       success = Amp::Dispatch.run
     rescue StandardError => err
       $stdout = out
-      puts
-      puts s.string
+      message = ["***** Left engine failure *****",
+                 "***** Ejection system error *****",
+                 "***** Vaccuum in booster engine *****"
+                ][rand(3)]
+      Amp::UI.say message
+      Amp::UI.say err.to_s
+      err.backtrace.each {|e| Amp::UI.say "\tfrom #{e}" }
       raise
     ensure
       ARGV.clear.concat(argv)

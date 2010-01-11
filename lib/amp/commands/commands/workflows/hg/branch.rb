@@ -22,7 +22,7 @@ command :branch do |c|
       repo.dirstate.branch = _label
       Amp::UI.status("marked working directory as branch #{_label}")
     else
-      Amp::UI.say("#{repo.dirstate.branch}")
+      Amp::UI.say repo.dirstate.branch
     end
   end
 end

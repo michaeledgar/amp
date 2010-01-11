@@ -193,11 +193,11 @@ module Amp
           
           # pick a compression format
           types.each do |x|
-            (type = x and break) if Mercurial::RevlogSupport::ChangeGroup::BUNDLE_HEADERS.include? x
+            (type = x and break) if Amp::Mercurial::RevlogSupport::ChangeGroup::BUNDLE_HEADERS.include? x
           end
           
           # compress and create the bundle
-          data = Mercurial::RevlogSupport::ChangeGroup.write_bundle cg, type
+          data = Amp::Mercurial::RevlogSupport::ChangeGroup.write_bundle cg, type
           
           # send the data
           resp = do_read 'unbundle', :data => data.string,

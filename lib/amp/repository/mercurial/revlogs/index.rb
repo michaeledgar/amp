@@ -254,11 +254,11 @@ module Amp
           
           entry = pack_entry entry, link
           
-          data_file_handle = open(data_file, "a")
+          data_file_handle  = open(data_file,  "a")
           index_file_handle = open(index_file, "a+")
           
-          journal << [data_file, offset]
-          journal << [index_file, curr * entry.size]
+          journal << {:file => data_file,  :offset => offset}
+          journal << {:file => index_file, :offset => curr * entry.size}
           
           data_file_handle.write data[:compression] if data[:compression].any?
           data_file_handle.write data[:text]
@@ -383,19 +383,22 @@ module Amp
           entry = pack_entry entry, link
           
           @opener.open(data_file, "a+") do |data_file_handle|
+            data_offset = data_file_handle.tell
+            
             data_file_handle.write data[:compression] if data[:compression].any?
             data_file_handle.write data[:text]
-            
             data_file_handle.flush
+            
+            journal << {:file => data_file, :offset => data_offset, :data => curr}
           end
           
           index_file_handle ||= (opened = true && @opener.open(index_file, "a+"))
           
+          offset = index_file_handle.tell
           index_file_handle.write entry
           index_file_handle.close if opened
           
-          #journal << [data_file, offset]
-          #journal << [index_file, curr * entry.size]
+          journal << {:file => index_file, :offset => offset, :data => curr}
         end
     
       end
@@ -466,22 +469,28 @@ module Amp
         end
         
         ##
-        # This method writes the index to file. Pretty 1337h4><.
+        # This method writes the index entry to file. Pretty 1337h4><.
         #
         # @param [String] index_file the path to the index file.
         def write_entry(index_file, entry, journal, data, index_file_handle = nil)
           curr = self.size - 1
+          prev = curr - 1
+          
           link = (entry.is_a? Array) ? entry[4] : entry.link_rev
           
           entry = pack_entry entry, curr
           
           index_file_handle ||= (opened = true && @opener.open(index_file, "a+"))
           
+          offset = index_file_handle.tell
+          
           index_file_handle.write entry
           index_file_handle.write data[:compression] if data[:compression].any?
           index_file_handle.write data[:text]
           
           index_file_handle.close if opened
+          
+          journal << {:file => index_file, :offset => offset, :data => curr}
           
         end
         

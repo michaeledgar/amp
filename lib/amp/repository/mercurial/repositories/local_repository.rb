@@ -23,7 +23,6 @@ module Amp
         attr_reader :hg
         attr_reader :hg_opener
         attr_reader :branch_manager
-        attr_reader :store_opener
         attr_reader :store
         attr_reader :staging_area
         
@@ -220,6 +219,13 @@ module Amp
               yield
             end
           end
+        end
+        
+        ##
+        # Returns an opener object, which knows how to open objects in the repository's
+        # store.
+        def store_opener
+          @store.opener
         end
         
         ##
@@ -580,7 +586,7 @@ module Amp
           cnr        = nil # scoping
           heads      = nil # scoping
           
-          Amp::Mercurial::Journal::start join('journal') do |journal|
+          Amp::Mercurial::Journal.start(join('journal'), :opener => @store.opener) do |journal|
             UI::status 'adding changeset'
             
             # pull of the changeset group
@@ -1153,7 +1159,7 @@ module Amp
         # 
         # @param  [Array<String>] files a list of files to revert
         # @return [Boolean] a success marker
-        def revert(files, opts={})
+        def revert(files=nil, opts={})
           # get the parents - used in checking if we haven an uncommitted merge
           parent, p2 = dirstate.parents
           
@@ -1161,7 +1167,7 @@ module Amp
           rev = opts[:revision] || opts[:rev] || opts[:to]
           
           # check to make sure it's logically possible
-          unless rev || p2 == RevlogSupport::Node::NULL_ID
+          unless rev || p2 == Amp::Mercurial::RevlogSupport::Node::NULL_ID
             raise abort("uncommitted merge - please provide a specific revision")
           end
           

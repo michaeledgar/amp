@@ -39,6 +39,8 @@ command "stats" do |c|
   end
 end
 
+# bisect_command
+
 namespace :docs do
   
   command "gen" do |c|

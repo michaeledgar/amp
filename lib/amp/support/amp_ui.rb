@@ -247,7 +247,7 @@ EOS
       tempfile.write text
       tempfile.close
       
-      ENV["AMPUSER"] = username
+      ENV["HGUSER"] = username
       edit_file path
       
       text = File.open(path) {|tf| tf.read } || ''

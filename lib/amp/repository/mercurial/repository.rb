@@ -22,6 +22,7 @@ module Amp
         end
         
         def self.repo_in_dir?(path)
+          return true if path[0,4] == "http" || path[0,5] == "https"
           while !(File.directory?(File.join(path, ".hg")))
             old_path, path = path, File.dirname(path)
             if path == old_path

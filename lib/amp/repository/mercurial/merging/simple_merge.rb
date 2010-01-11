@@ -290,7 +290,7 @@ module Amp
         def reprocessed_merge_regions
           merge_regions do |*region|
             if region[0] != :conflict
-              yield *region
+              yield(*region)
               next
             end
             type, idx_z, z_match, idx_a, a_match, idx_b, b_match = region
@@ -308,7 +308,7 @@ module Amp
               
               reg = mismatch_region(next_a, region_ia, next_b, region_ib)
               
-              yield *reg if reg
+              yield(*reg) if reg
               yield :same, region_ia, region_len + region_ia
               
               next_a = region_ia + region_len
@@ -316,7 +316,7 @@ module Amp
               
             end
             reg = mismatch_region(next_a, a_match, next_b, b_match)
-            yield *reg if reg
+            yield(*reg) if reg
           end
         end
         

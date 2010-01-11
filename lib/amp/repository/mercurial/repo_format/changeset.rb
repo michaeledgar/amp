@@ -67,9 +67,9 @@ module Amp
         cs_tags     = tags
         type        = opts[:template_type].to_s || 'log'
         
-        added   = opts[:added]
-        removed = opts[:removed]
-        updated = opts[:updated]
+        added   = opts[:added] || []
+        removed = opts[:removed] || []
+        updated = opts[:updated] || []
         config  = opts
         
         parents = useful_parents log, revision
@@ -157,7 +157,7 @@ module Amp
         xp2 = p2 == NULL_ID ? "" : p2.hexlify
         
         Hook.run_hook :pre_commit
-        journal = Amp::Mercurial::Journal.new
+        journal = Amp::Mercurial::Journal.new(:opener => repo.store_opener)
   
         fresh    = {} # new = reserved haha i don't know why someone wrote "haha"
         changed  = []
@@ -286,7 +286,7 @@ module Amp
         user = opts.delete :user
         
         unless opts[:empty_ok] || (text && !text.empty?)
-          edit_text = to_templated_s :added   => added,   :updated       => updated,
+          edit_text = to_templated_s :added   => added,   :updated       => modified,
                                      :removed => removed, :template_type => :commit
           text = UI::edit edit_text, user
         end
@@ -686,7 +686,7 @@ module Amp
       # in existence. Oh, and we need to remove any files from the parent's
       # manifest entry that don't exist anymore. Make sense?
       def manifest_entry
-        return @manifest_entry if @manifest_entry
+        return @manifest_entry if @manifest_entry ||= nil
         
         # Start off with the last revision's manifest_entry, that's safe.
         man = parents()[0].manifest_entry.dup
@@ -732,7 +732,7 @@ module Amp
       # @param [String] path the path to the file
       # @return [String] the flags, such as "x", "l", or ""
       def flags(path)
-        if @manifest_entry
+        if @manifest_entry ||= nil
           return manifest_entry.flags[path] || ""
         end
         pnode = parents[0].raw_changeset[0]

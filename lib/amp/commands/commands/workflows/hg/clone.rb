@@ -32,7 +32,6 @@ HELP
     require 'uri'
     
     src, rev, checkout = *c.parse_url(args.shift)               # get the source url, revisions we want, and the checkout
-    # puts [src, rev, checkout].inspect
     source = Amp::Repositories.pick opts[:global_config], src # make it an actual repository
     dest   = (dest = args.shift) || File.basename(src)        # get the destination URL
     
@@ -91,8 +90,8 @@ HELP
       
       [source, dest_repo]
     rescue
-      p "RESCUE ME"
-      FileUtils.remove_entry dest # kill the dir if we've had any problems
+      #FileUtils.remove_entry dest # kill the dir if we've had any problems
+      raise
     end
   end
 end

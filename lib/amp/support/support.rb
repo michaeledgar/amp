@@ -570,13 +570,13 @@ class Hash
     # we try to be functional when it doesn't fuck us over
     # here, the list of keys will never be ridiculous
     # so we go fuctional
-    iterable.inject({}) {|h, k| h.merge k => value }
+    iterable.inject({}) {|h, k| h[k] = value; h }
   end
   
   ##
   # Create a subset of +self+ with keys +keys+.
   def pick(*keys)
-    keys.inject({}) {|h, (k, v)| h[k] = v }
+    keys.inject({}) {|h, (k, v)| h[k] = v; h }
   end
   
   ##
@@ -584,7 +584,7 @@ class Hash
   # 
   # @return [Hash]
   def only(*keyz)
-    keyz.inject({}) {|h, k| h.merge k => self[k] }
+    keyz.inject({}) {|h, k| h[k] = self[k]; h }
   end
 end
 
@@ -616,7 +616,7 @@ class Array
   end
   
   def to_hash
-    inject({}) {|h, (k, v)| h.merge k => v }
+    inject({}) {|h, (k, v)| h[k] = v; h }
   end
   
   def short_hex
@@ -655,18 +655,6 @@ class Integer
   end
   alias_method :gigabyte, :gigabytes
   alias_method :gb,       :gigabytes
-  
-  
-  ##
-  # Forces this integer to be negative if it's supposed to be!
-  # 
-  # @param [Fixnum] bits the number of bits to use - signed shorts are different from
-  #   signed longs!
-  def to_signed(bits)
-    return to_signed_16 if bits == 16
-    return to_signed_32 if bits == 32
-    raise "Unexpected number of bits: #{bits}"
-  end
   
 end
 

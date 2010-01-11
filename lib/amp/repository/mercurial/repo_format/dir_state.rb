@@ -484,7 +484,7 @@ module Amp
                 # good news - i did pretty well on my physics test by using
                 # brian ford's name instead of my own.
                 file = "#{file}\0#{@copy_map[file]}" if @copy_map[file]
-                info = [info[0], 0, (-1).to_signed(32), (-1).to_signed(32)] if info[3].to_i > limit.to_i and info[0] == :normal
+                info = [info[0], 0, (-1).to_signed_32, (-1).to_signed_32] if info[3].to_i > limit.to_i and info[0] == :normal
                 info << file.size # the final element to make it pass, which is the length of the filename
                 info = info.pack FORMAT # pack them their lunch
                 si.write info # and send them off
@@ -689,7 +689,7 @@ module Amp
               info = s.read(e_size).unpack FORMAT
             
               # byte swap and shizzle
-              info = [info[0].to_dirstate_symbol, info[1], info[2].to_signed(32), info[3].to_signed(32), info[4]]
+              info = [info[0].to_dirstate_symbol, info[1], info[2].to_signed_32, info[3].to_signed_32, info[4]]
               # ^^^^ we have to sign them because otherwise they'll be hugely wrong
             
               # read in the filename

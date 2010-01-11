@@ -11,14 +11,16 @@ module Amp
     # Provides a journal interface so when a large number of transactions
     # are occurring, and any one could fail, we can rollback the changes.
     class Journal
-      DEFAULT_OPTS = {:reporter => StandardErrorReporter, :after_close => nil}
+      DEFAULT_OPTS = {:reporter => StandardErrorReporter, :after_close => nil, :createmode => nil}
       
-      attr_accessor :report, :journal, :after_close
+      attr_accessor :reporter, :journal, :after_close, :opener
       
       ##
       # @return [Amp::Mercurial::Journal]
-      def self.start(file, opts=DEFAULT_OPTS)
-        journal = Journal.new opts[:reporter], file, &opts[:after_close]
+      def self.start(file, opts={})
+        opts = DEFAULT_OPTS.merge(opts)
+        opts[:journal] = file
+        journal = Journal.new opts
         
         if block_given?
           begin
@@ -43,17 +45,22 @@ module Amp
       #   of the journal file we'll be using
       # @param [Proc] after_close A proc to call (with no args) after we
       #   close (finish) the transaction.
-      def initialize(reporter=StandardErrorReporter, journal=".journal#{rand(10000)}", createmode=nil, &after_close)   
+      def initialize(opts = {}, &after_close)   
+        opts = DEFAULT_OPTS.merge(opts)
+        opts[:journal] ||= ".journal#{rand(10000)}"
         @count = 1
-        @reporter = reporter
-        @after_close = after_close
         @entries = []
         @map = {}
-        @journal_file = journal
+        @journal_file = opts[:journal]
+        self.reporter = opts[:reporter]
+        self.after_close = after_close
+        self.opener = opts[:opener]
         
         @file = Kernel::open(@journal_file, "w")
         
-        FileUtils.chmod(createmode & 0666, @journal_file) unless createmode.nil?
+        FileUtils.chmod(createmode & 0666, @journal_file) unless opts[:createmode].nil?
+        
+        UI.status "opening journal"
       end
       
       ##
@@ -75,17 +82,17 @@ module Amp
       # 
       # All params should be contained in the array
       # 
-      # @param file the name of the file we're modifying and need to track
-      # @param offset the length of the file we're storing
-      # @param data any extra data to hold onto
-      def add_entry(array)
-        file, offset, data = array[0], array[1], array[2]
-        return if @map[file]
-        @entries << {:file => file, :offset => offset, :data => data}
-        @map[file] = @entries.size - 1
+      # @param h [Hash] a hash of the args
+      # @option h [String] :file the name of the file
+      # @option h [Integer] :offset the offset of :file at the last known good revision
+      # @option h [String] :data any extra data
+      def add_entry(h={})
+        return if @map[h[:file]]
+        @entries << {:file => h[:file], :offset => h[:offset], :data => h[:data]}
+        @map[h[:file]] = @entries.size - 1
         
         # tell the journal how to truncate this revision
-        @file.write("#{file}\0#{offset}\n")
+        @file.write "#{h[:file]}\0#{h[:offset]}\n"
         @file.flush
       end
       
@@ -95,6 +102,7 @@ module Amp
       
       ##
       # Finds the entry for a given file's path
+      # 
       # @param [String] file the path to the file
       # @return [Hash] A hash with the values :file, :offset, and :data, as
       #   they were when they were stored by {add_entry} or {update}
@@ -166,9 +174,10 @@ module Amp
         @entries.each do |hash|
           file, offset = hash[:file], hash[:offset]
           begin
-            fp = open(File.join(".hg","store",file), "a")
-            fp.truncate offset
-            fp.close
+            self.opener.open(file, "a") do |fp|
+              p "OPENED #{file} truncating to #{offset}"
+              fp.truncate offset
+            end
           rescue
             @reporter.report "Failed to truncate #{File.join(".hg","store",file)}\n"
           end
@@ -182,23 +191,23 @@ module Amp
       # somewhere. So, we should rollback any changes it left lying around.
       # 
       # @param [String] file the journal file to use during the rollback
-      def self.rollback(file)
+      def self.rollback(opener, file)
         files = {}
-        fp = open(file)
-        fp.each_line do |line|
-          file, offset = line.split("\0")
-          files[file] = offset.to_i
+        File.open(file, "r") do |fp|
+          fp.each_line do |line|
+            file, offset = line.split("\0")
+            files[file] = offset.to_i
+          end
         end
-        fp.close
-        files.each do |file, offset|
+        files.each do |file_to_truncate, offset|
           if o > 0
-            fp = open(file, "a")
-            fp.truncate o.to_i
-            fp.close
+            opener.open(file_to_truncate, "a") do |fp|
+              fp.truncate o.to_i
+            end
           else
-            fp = open(f)
-            fn = fp.path
-            fp.close
+            opener.open(file_to_truncate, "a") do |fp|
+              fn = fp.path
+            end
             FileUtils.safe_unlink fn
           end
         end
@@ -207,4 +216,3 @@ module Amp
     end
   end
 end
-          
