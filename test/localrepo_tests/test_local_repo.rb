@@ -1,8 +1,8 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require 'fileutils'
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
-class TestLocalRepo < Test::Unit::TestCase
+class TestLocalRepo < AmpTestCase
   REPO_PATH = File.expand_path(File.join(File.dirname(__FILE__)))
   EXISTING_REPO_PATH = File.expand_path(File.join(File.dirname(__FILE__), "testrepo"))
   
@@ -33,7 +33,7 @@ class TestLocalRepo < Test::Unit::TestCase
   end
   
   def test_open_existing_repo
-    assert_not_nil @repo
+    refute_nil @repo
   end
   
   def test_repo_size

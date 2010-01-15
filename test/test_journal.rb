@@ -1,7 +1,7 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
-class TestJournal < Test::Unit::TestCase
+class TestJournal < AmpTestCase
   def test_journal
     tfile = "tempjournal"
     j = Amp::Mercurial::Journal.new(:reporter => Amp::StandardErrorReporter, :journal => tfile, :opener => simple_opener)

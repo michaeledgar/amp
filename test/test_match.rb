@@ -1,7 +1,7 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
-class TestMatch < Test::Unit::TestCase
+class TestMatch < AmpTestCase
 
   def setup
     @all_files = ["silly.rb", "code/lib.rb", "code/support.yml", "bin/amp.rb", "test/test_bdiff.rb"]

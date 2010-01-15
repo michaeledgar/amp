@@ -189,7 +189,7 @@ p, .infopage ul.bullets, .infopage ul.bullets li {
 	margin:3px 3px 3px 30px;
 }
 
-ul.bullets, ul.bullets li { list-style-type:disc; }
+ul.bullets, ul.bullets li { list-style-type:disc; position:relative;clear:left; }
 
 .half-border { border-right: none 1px #ccc; border-bottom: none 1px #ccc; }
 

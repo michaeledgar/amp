@@ -30,6 +30,7 @@ EOS
   c.opt :"dirty-room", "Eval the ruby code in -f in the context of this amp binary (faster than shelling out)", :short => '-d'
   c.opt :file, "The file to run with --command (which defaults to ruby) for testing", :short => '-f', :type => :string
   c.opt :"no-update", "Don't update the working directory during tests", :short => '-U'
+  c.opt :revs, "The revision range to search in", :short => '-r', :type => :string, :default => '0'
   
   c.before do |opts, args|
     # Set the command to be the command and the file joined together in
@@ -90,16 +91,29 @@ EOS
       raise "Must have the --command or --dirty-room option set!"
     end
     
+    last_good, last_bad = *c.parse_revision_range(opts[:revs])
+    last_bad ||= repo.size - 1
+    history = [last_bad]  # KILLME
+    
+    test_rev  = last_bad
+    is_good   = {} # {revision :: integer => good? :: boolean}
+    last_good.upto(last_bad) {|i| is_good[i] = nil }
     
     ########################################
     # COMPLIMENT WHOEVER IS READING THE CODE
     ########################################
     
     # Hey! That's a really nice shirt. Where'd you get it?
+    Amp::UI.say "Sweet computer, btw. I'm really digging this hardware.\n"
     
+    
+    ########################################
+    # EXPLICITLY SAY WHAT WE'RE DOING
+    ########################################
     Amp::UI.say <<-EOS
 OK! Terve! Today we're going to be bisecting your repository find a bug.
-Let's see... We're set to #{using} to do some bug hunting.
+Let's see... We're set to #{using} to do some bug hunting between revisions
+#{last_good.to_s.red} and #{last_bad.to_s.red}.
 
 Enough talk, let's go Orkin-Man on this bug!
 ========
@@ -116,13 +130,11 @@ EOS
     # if this is official, but it works.
     # 
     
-    last_good = 0
-    last_bad  = repo.size - 1
-    test_rev  = last_bad
-    is_good   = {} # {revision :: integer => good? :: boolean}
-    
     until (last_good - last_bad).abs < 1
       repo.clean test_rev
+      
+      # keep the user updated
+      pretty_print is_good 
       
       # if the code sample works
       if run_sample[]
@@ -135,7 +147,9 @@ EOS
       end
       
       test_rev = (last_good + last_bad) / 2
+      history << test_rev
     end
+    puts # clear the progress bar business
     
     ############################################
     # CLEANING UP
@@ -155,6 +169,31 @@ EOS
     else
       Amp::UI.say "Revision #{last_bad} has the bug!"
     end
+  end
+  
+  def pretty_print(hash)
+    print("\b" * hash.size * 3)
+    print "\r"
+    print '['
+    hash.keys.sort[0..-2].each do |key|
+      case hash[key]
+      when true
+        print 'o, '
+      when false
+        print 'x, '
+      when nil
+        print '_, '
+      end
+    end
+    case hash[hash.keys.sort.last]
+    when true
+      print 'o'
+    when false
+      print 'x'
+    when nil
+      print '_'
+    end
+    print ']'
   end
   
   # c.on_run do |opts, args|

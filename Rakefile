@@ -1,6 +1,5 @@
 # -*- ruby -*-
 
-require 'rubygems'
 require 'rake'
 require 'rake/tasklib'
 require 'rake/testtask'
@@ -21,7 +20,7 @@ def remove_task(*task_names)
   end
 end
  
-
+Hoe.plugin :minitest
 Hoe.spec "amp" do
   developer "Michael Edgar", "adgar@carboni.ca"
   developer "Ari Brown", "seydar@carboni.ca"
@@ -32,7 +31,7 @@ Hoe.spec "amp" do
                                  "ext/amp/bz2/extconf.rb"]}
   self.need_rdoc = false
   self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas."
-  extra_dev_deps << ["rtfm", ">= 0.5.1"] << ["yard", ">= 0.4.0"]
+  extra_dev_deps << ["rtfm", ">= 0.5.1"] << ["yard", ">= 0.4.0"] << ["minitest", ">= 1.5.0"]
 end
  
 # Hoe.spec "amp-pure" do
@@ -48,7 +47,7 @@ end
 
 
 remove_task 'test_deps', 'publish_docs', 'post_blog', 
-            'deps:fetch', 'deps:list', 'deps:email', 'flay', 'clean', 'test', 'flog'
+            'deps:fetch', 'deps:list', 'deps:email', 'flay', 'clean', 'flog'
 
 load 'tasks/yard.rake'
 load 'tasks/stats.rake'
@@ -86,19 +85,19 @@ task :prepare do
 end
 
 # liberally modified from Hoe's
-desc 'Test the amp AWESOMENESS.'
-task :test do
-  framework = "test/unit"
-  test_globs = ['test/**/test_*.rb']
-  ruby_flags = ENV['RUBY_FLAGS'] || "-w -I#{%w(lib ext bin test).join(File::PATH_SEPARATOR)}" +
-    (ENV['RUBY_DEBUG'] ? " #{ENV['RUBY_DEBUG']}" : '')
-  tests = [ framework] +
-    test_globs.map { |g| Dir.glob(g) }.flatten
-  tests.map! {|f| %(require "#{f}")}
-  cmd = "#{ruby_flags} -e '$amp_testing = true; #{tests.join("; ")}' "
-  
-  ruby cmd
-end
+# desc 'Test the amp AWESOMENESS.'
+# task :test do
+#   framework = "test/unit"
+#   test_globs = ['test/**/test_*.rb']
+#   ruby_flags = ENV['RUBY_FLAGS'] || "-w -I#{%w(lib ext bin test).join(File::PATH_SEPARATOR)}" +
+#     (ENV['RUBY_DEBUG'] ? " #{ENV['RUBY_DEBUG']}" : '')
+#   tests = [ framework] +
+#     test_globs.map { |g| Dir.glob(g) }.flatten
+#   tests.map! {|f| %(require "#{f}")}
+#   cmd = "#{ruby_flags} -e '$amp_testing = true; #{tests.join("; ")}' "
+#   
+#   ruby cmd
+# end
 
 desc "Compile Site"
 task :"build-website" do

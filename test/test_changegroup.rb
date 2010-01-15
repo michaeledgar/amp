@@ -1,8 +1,9 @@
 require 'stringio'
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
+require 'zlib'
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
-class TestChangegroup < Test::Unit::TestCase
+class TestChangegroup < AmpTestCase
   include Amp::Mercurial::RevlogSupport
   
   def test_compressor_uncompressed

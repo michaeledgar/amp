@@ -1,7 +1,7 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
-class TestFilenameCacheStore < Test::Unit::TestCase
+class TestFilenameCacheStore < AmpTestCase
   STORE_PATH = File.expand_path(File.join(File.dirname(__FILE__)))
   def setup
     @store = Amp::Repositories::Mercurial::Stores.pick(['store','fncache'], STORE_PATH, Amp::Opener)

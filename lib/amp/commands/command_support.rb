@@ -133,5 +133,12 @@ module Amp
       message
     end
     
+    def parse_revision_range(input)
+      match = input.match /(\d+)(?:#{REV_SEP}(\d*))?/
+      fin   = match[2]
+      fin &&= fin.empty? ? nil : fin.to_i
+      [match[1].to_i, fin]
+    end
+    
   end
 end

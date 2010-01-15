@@ -1,4 +1,4 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp/support/generator"))
 
 class FibonacciGeneratorTester < Generator
@@ -11,7 +11,7 @@ class FibonacciGeneratorTester < Generator
   end
 end
 
-class TestGenerator < Test::Unit::TestCase
+class TestGenerator < AmpTestCase
   def setup
     @generator = FibonacciGeneratorTester.new
   end

@@ -1,6 +1,6 @@
 require 'digest'
 
-if RUBY_VERSION < "1.9"
+if RUBY_VERSION < "1.9" || RUBY_VERSION >= "1.9.2"
   require 'ftools'
   
   autoload :Etc,      'etc'
@@ -16,6 +16,7 @@ else
   require 'etc'
   require 'tempfile'
   require 'weakref'
+  require 'find'
 end
 autoload :ERB,      'erb'
 

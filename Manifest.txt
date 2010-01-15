@@ -39,6 +39,7 @@ lib/amp/commands/commands/workflows/hg/add.rb
 lib/amp/commands/commands/workflows/hg/addremove.rb
 lib/amp/commands/commands/workflows/hg/annotate.rb
 lib/amp/commands/commands/workflows/hg/archive.rb
+lib/amp/commands/commands/workflows/hg/bisect.rb
 lib/amp/commands/commands/workflows/hg/branch.rb
 lib/amp/commands/commands/workflows/hg/branches.rb
 lib/amp/commands/commands/workflows/hg/bundle.rb
@@ -142,6 +143,7 @@ lib/amp/repository/abstract/common_methods/local_repo.rb
 lib/amp/repository/abstract/common_methods/staging_area.rb
 lib/amp/repository/abstract/common_methods/versioned_file.rb
 lib/amp/repository/generic_repo_picker.rb
+lib/amp/repository/git/repository.rb
 lib/amp/repository/mercurial/encoding/mercurial_diff.rb
 lib/amp/repository/mercurial/encoding/mercurial_patch.rb
 lib/amp/repository/mercurial/encoding/patch.rb
@@ -208,6 +210,7 @@ lib/amp/templates/mercurial/blank.log.erb
 lib/amp/templates/mercurial/default.commit.erb
 lib/amp/templates/mercurial/default.log.erb
 lib/amp/templates/template.rb
+man/amp.1
 site/src/about/ampfile.haml
 site/src/about/commands.haml
 site/src/about/index.haml
@@ -254,6 +257,7 @@ site/src/index.haml
 site/src/learn/index.haml
 site/src/scripts/jquery-1.3.2.min.js
 site/src/scripts/jquery.cookie.js
+tasks/man.rake
 tasks/stats.rake
 tasks/yard.rake
 test/dirstate_tests/dirstate
@@ -326,7 +330,6 @@ test/revlog_tests/test_revlog.rb
 test/revlog_tests/testindex.i
 test/store_tests/store.tar.gz
 test/store_tests/test_fncache_store.rb
-test/test_amp.rb
 test/test_base85.rb
 test/test_bdiff.rb
 test/test_changegroup.rb

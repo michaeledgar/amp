@@ -1,4 +1,4 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
 class OppositeMethodTestKlass
@@ -8,7 +8,7 @@ class OppositeMethodTestKlass
   opposite_method :opposite, :base
 end
 
-class TestSupport < Test::Unit::TestCase
+class TestSupport < AmpTestCase
   def test_split_newlines
     assert_equal(["hi there what's\n", "\r up there\r kids\n", " lol"], "hi there what's\n\r up there\r kids\n lol".split_newlines)
   end

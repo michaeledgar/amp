@@ -13,17 +13,19 @@ module Amp
         end
         
         def self.repo_in_dir?(path)
-          File.amp_directories_to(path).each do |p|
-            return true if File.directory? File.join(p, ".git")
+          dirs = File.amp_directories_to(path) << path
+          res  = dirs.detect do |p|
+            File.directory? File.join(path, ".git")
           end
-          false
+          !!res
         end
         
         ################################
         private
         ################################
         def self.find_repo(path)
-          res = File.amp_directories_to(path).detect do |p|
+          dirs = File.amp_directories_to(path) << path
+          res  = dirs.detect do |p|
             File.directory? File.join(p, ".git")
           end
           res || raise("No repository found for Git")

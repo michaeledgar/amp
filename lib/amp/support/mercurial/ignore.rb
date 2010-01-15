@@ -13,37 +13,39 @@ module Amp
       # @param [String] root the root of the repo
       # @param [Array<String>] files absolute paths to files
       def parse_ignore(root, files=[])
-        patterns = {} # not sure what this is
+        all_patterns = files.select {|file| File.exist?(File.join(root, file))}.map do |file|
+          text = File.read File.join(root,file)
+          matcher_for_text text
+        end # files.map
         
-        files.each do |file|
-          syntax = 're' # default syntax 
-          text = File.read File.join(root,file) rescue next
-          pattern = matcher_for_text text
-          patterns[file] = pattern if pattern
-        end # files.each
-        
-        all_patterns = patterns.values.flatten
-        # let the system know that nothing is ignored
-        return proc { false } if all_patterns.empty?
         # here's the proc to do the tests
-        regexps_to_proc all_patterns
+        regexps_to_proc all_patterns.compact.flatten
       end
       
       ##
-      # Parse the lines into valid syntax
+      # Parse the lines into valid syntax. Removes empty lines.
       # 
       # @param [String] file and open file
       def parse_lines(text)
         lines = text.split("\n").map do |line|
-          if line =~ /#/
-            line.sub! COMMENT, "\\1"
-            line.gsub! "\\#", "#"
-          end
-          
+          line = strip_comment line
           line.rstrip!
           line.empty? ? nil : line
         end
         lines.compact
+      end
+      
+      ##
+      # Strips comments from a line of text
+      #
+      # @param [String] line the line of text to de-commentify
+      # @return [String] the same line of text, with comments removed.
+      def strip_comment(line)
+        if line =~ /#/
+          line.sub! COMMENT, "\\1"
+          line.gsub! "\\#", "#"
+        end
+        line
       end
       
       ##
@@ -55,10 +57,9 @@ module Amp
       def matcher_for_text(text)
         return [] unless text
         syntax = nil
-        patterns = parse_lines(text).map do |line|
-          next if line.empty?
+        patterns = parse_lines(text).select {|line| !line.empty?}.map do |line|
           # check for syntax changes
-          if line =~ /^syntax:/
+          if line.start_with? "syntax:"
             syntax = SYNTAXES[line[7..-1].strip] || :regexp
             next # move on
           end
@@ -77,14 +78,13 @@ module Amp
         scanpt = string =~ /(\w+):(.+)/
         if scanpt.nil?
           # just a line, no specified syntax
-          syntax = 'regexp'
+          include_syntax = :regexp
           # no syntax, the whole thing is a pattern
           include_regexp = string   
         else
-          syntax = $1               # the syntax is the first match
+          include_syntax = $1.to_sym        # the syntax is the first match
           include_regexp = $2.strip # the rest of the string is the pattern
         end
-        include_syntax = syntax.to_sym
         parse_line include_syntax, include_regexp
       end
       
@@ -98,10 +98,10 @@ module Amp
       # @return [NilClass, Regexp] nil means the syntax was a bad choice
       def parse_line(syntax, line)
         return nil unless syntax
-        
+        syntax = syntax.to_sym
         # find more valid syntax stuff
         # we need to make everything here valid regexps
-        case syntax.to_sym
+        case syntax
         when :regexp
           # basic regex
           pattern = /#{line}/
@@ -113,10 +113,10 @@ module Amp
           ps.map! do |l|
             parts = l.split '*' # split it up and we'll escape all the parts
             parts.map! {|p| Regexp.escape p }
-            /#{parts.join '[^/]*'}/ # anything but a slash, ie, no change in directories
+            parts.join '[^/]*' # anything but a slash, ie, no change in directories
           end
           joined = ps.join '/(?:.*/)*'
-          pattern = (syntax.to_sym == :glob) ? /^#{joined}/ : /#{joined}/
+          pattern = (syntax == :glob) ? /^#{joined}/ : /#{joined}/
         else
           pattern = nil
         end

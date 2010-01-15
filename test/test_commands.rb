@@ -1,8 +1,8 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp/commands/command.rb"))
 
-class TestCommmands < Test::Unit::TestCase
+class TestCommmands < AmpTestCase
   include Amp
   include Amp::KernelMethods
   extend  Amp::KernelMethods

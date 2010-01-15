@@ -82,7 +82,7 @@ module PythonConfig
     alias_method :dup, :clone
     
     def parse_line(line) #:nodoc:
-      next if line =~ COMMENT_REGEX
+      return if line =~ COMMENT_REGEX
       if line =~ SECTION_REGEXP
         section_name = $1
         @cursection = add_section section_name

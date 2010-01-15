@@ -1,8 +1,8 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp"))
 
 
-class TestDifflib < Test::Unit::TestCase
+class TestDifflib < AmpTestCase
   include Amp::Diffs
   def test_one_match
     matcher = SequenceMatcher.new("hi there my name is mike i hope you like me", 

@@ -1,9 +1,7 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
-
-
-class TestManifest < Test::Unit::TestCase
+class TestManifest < AmpTestCase
   
   def setup
     opener = Amp::Opener.new(File.dirname(__FILE__))

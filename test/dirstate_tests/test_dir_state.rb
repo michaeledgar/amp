@@ -1,4 +1,4 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
 # easyness
@@ -7,7 +7,7 @@ class String
 end
 
 
-class TestDirState < Test::Unit::TestCase
+class TestDirState < AmpTestCase
   
   def setup
     f = File.open File.join(File.dirname(__FILE__), "hgrc")

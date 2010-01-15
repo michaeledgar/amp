@@ -1,8 +1,8 @@
 require 'stringio'
-require "test/unit"
-require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp/support/amp_ui"))
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
+require File.join(File.dirname(__FILE__), "../lib/amp/support/amp_ui")
 
-class TestAmpUI < Test::Unit::TestCase
+class TestAmpUI < AmpTestCase
   include Amp
   def setup
     @old_stdin = $stdin

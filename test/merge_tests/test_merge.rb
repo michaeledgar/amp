@@ -1,7 +1,7 @@
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
-class TestMerge < Test::Unit::TestCase
+class TestMerge < AmpTestCase
   TEST_BASE = File.expand_path(File.join(File.dirname(__FILE__), 'base.txt'))
   TEST_LOCAL = File.expand_path(File.join(File.dirname(__FILE__), 'local.txt'))
   TEST_REMOTE = File.expand_path(File.join(File.dirname(__FILE__), 'remote.txt'))

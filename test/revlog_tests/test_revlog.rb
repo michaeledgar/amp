@@ -1,9 +1,8 @@
 # -*- coding: us-ascii -*-
-
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
-class TestRevlog < Test::Unit::TestCase
+class TestRevlog < AmpTestCase
   TEST_REVLOG_INDEX = "testindex.i"
   
   def setup
@@ -25,11 +24,11 @@ class TestRevlog < Test::Unit::TestCase
   
   
   def test_node_raises
-    assert_raise(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.node_id_for_index(12345) }
+    assert_raises(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.node_id_for_index(12345) }
   end
   
   def test_rev_raises
-    assert_raise(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.revision_index_for_node("abcdefghijkl") }
+    assert_raises(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.revision_index_for_node("abcdefghijkl") }
   end
   
   def test_revlog_size

@@ -22,8 +22,8 @@ module Amp
         end
         
         def self.repo_in_dir?(path)
-          return true if path[0,4] == "http" || path[0,5] == "https"
-          while !(File.directory?(File.join(path, ".hg")))
+          return true if path[0, 4] == "http"
+          until File.directory? File.join(path, ".hg")
             old_path, path = path, File.dirname(path)
             if path == old_path
               return false
@@ -36,7 +36,7 @@ module Amp
         private
         ################################
         def self.find_repo(path)
-          while !(File.directory?(File.join(path, ".hg")))
+          until File.directory? File.join(path, ".hg")
             old_path, path = path, File.dirname(path)
             if path == old_path
               raise "No Repository Found"
@@ -45,22 +45,6 @@ module Amp
           path
         end
         
-        # def self.repo_in_dir?(path)
-        #   res = File.amp_directories_to(path).detect do |p|
-        #     File.directory? File.join(path, ".hg")
-        #   end
-        #   !!res
-        # end
-        # 
-        # ################################
-        # private
-        # ################################
-        # def self.find_repo(path)
-        #   res = File.amp_directories_to(path).detect do |p|
-        #     File.directory? File.join(p, ".hg")
-        #   end
-        #   res || raise("No repository found for Mercurial")
-        # end
       end
       
       ##

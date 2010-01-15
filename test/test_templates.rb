@@ -1,7 +1,7 @@
-require 'test/unit'
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp/templates/template"))
 
-class TestTemplates < Test::Unit::TestCase
+class TestTemplates < AmpTestCase
   include Amp::Support  
   
   def setup

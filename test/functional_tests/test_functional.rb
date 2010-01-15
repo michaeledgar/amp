@@ -1,6 +1,5 @@
 require 'stringio'
-require 'test/unit'
-require File.expand_path(File.join(File.dirname(__FILE__), "../test_helper"))
+require File.join(File.expand_path(File.dirname(__FILE__)), '../testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 include Amp::KernelMethods
 # easyness
@@ -8,7 +7,7 @@ class String
   def fun_local; File.join($current_basedir, self); end
 end
 
-class TestFunctional < Test::Unit::TestCase
+class TestFunctional < AmpTestCase
   
   AMP_FILE   = (RUBY_VERSION < "1.9") ? "amp" : "amp1.9"
   AMP_BINARY = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'bin', AMP_FILE))
@@ -484,7 +483,7 @@ class TestFunctional < Test::Unit::TestCase
   
   def assert_command_no_match(regex, command, args=[], opts={})
     result = amp command, args, opts
-    assert_no_match regex, result
+    refute_match regex, result
   end
   
   def assert_hg_command_match(regex, command, args=[], opts={})
@@ -494,7 +493,7 @@ class TestFunctional < Test::Unit::TestCase
   
   def assert_hg_command_no_match(regex, command, args=[], opts={})
     result = hg command, args, opts
-    assert_no_match regex, result
+    refute_match regex, result
   end
   
   def assert_file_has_status(file, status)

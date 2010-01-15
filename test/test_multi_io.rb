@@ -1,8 +1,8 @@
 require 'stringio'
-require "test/unit"
+require File.join(File.expand_path(File.dirname(__FILE__)), 'testutilities')
 require File.expand_path(File.join(File.dirname(__FILE__), "../lib/amp/support/multi_io"))
 
-class TestMultiIO < Test::Unit::TestCase
+class TestMultiIO < AmpTestCase
   def setup
     input1 = StringIO.new("input1")
     input2 = StringIO.new("input2input2")
