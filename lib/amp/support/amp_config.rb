@@ -22,10 +22,10 @@ module Amp
     # Initializes the AmpConfig. Takes options to do that.
     # 
     # @param [Hash] opts the options for initialization.
-    # @option [AmpConfig] opts :parent_config (nil) The parent configuration
+    # @option opts [AmpConfig] :parent_config (nil) The parent configuration
     #   to base this configuration off of. The parent will be duplicated and
     #   then some options in it may be overridden.
-    # @option [[String], String] opts :read (nil) A list of files to read for
+    # @option opts [[String], String] :read (nil) A list of files to read for
     #   configuring this AmpConfig, for example repo/.hg/hgrc. Note: if
     #   :parent_config is not provided, this option will default to 
     #   /etc/mercurial/hgrc and ~/.hgrc.

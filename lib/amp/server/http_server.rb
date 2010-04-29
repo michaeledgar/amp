@@ -34,49 +34,50 @@ module Amp
     # It is worth noting that one may serve many repositories using one server
     # using this class. Spiffy, eh?
     class HTTPAuthorizedServer < HTTPServer
+      set :amp_storage_manner, :unset
       class << self
-      def set_storage(manner, opts={})
-        manner = manner.to_sym
-        
-        case manner
-        when :memory
-          extend RepoUserManagement::Memory
-        else
-          raise "Unknown storage manner #{manner.inspect}"
+        def set_storage(manner, opts={})
+          if amp_storage_manner != :unset
+            raise RuntimeError.new("Can't redefine storage type.")
+          end
+          
+          case manner.to_sym
+          when :memory
+            extend RepoUserManagement::Memory
+          else
+            raise "Unknown storage manner #{manner.inspect}"
+          end
+          
+          set :amp_storage_manner, manner.to_sym
         end
-        
-        # since you can only set the storage once...
-        def set_storage(*args)
-          raise RuntimeError.new("Can't redefine storage type.")
-        end # this will redefine this method to raise
-      end
       
-      def set_permission(style, *args)
-        case style
-        when :writer
-          set_writer *args
-        when :reader
-          set_reader *args
-        else
-          raise ArgumentError.new("Unknown permission level: #{style.to_s.inspect}")
+        def set_permission(style, *args)
+          case style
+          when :writer
+            set_writer *args
+          when :reader
+            set_reader *args
+          else
+            raise ArgumentError.new("Unknown permission level: #{style.to_s.inspect}")
+          end
         end
-      end
       
-      ##
-      # Sets whether to use digest or basic authentication. May only be called once,
-      # for now.
-      #
-      # @param [Symbol, String] manner the type of authentication
-      def set_authentication(manner, opts={})
-        case manner.to_sym
-        when :basic
-          helpers Sinatra::BasicAuthorization
-        when :digest
-          helpers Sinatra::DigestAuthorization
-        end
-        # one-time method. don't yet support.
-        def set_authentication
-          raise RuntimeError.new("Can't redefine authentication type.")
+        ##
+        # Sets whether to use digest or basic authentication. May only be called once,
+        # for now.
+        #
+        # @param [Symbol, String] manner the type of authentication
+        def set_authentication(manner, opts={})
+          case manner.to_sym
+          when :basic
+            helpers Sinatra::BasicAuthorization
+          when :digest
+            helpers Sinatra::DigestAuthorization
+          end
+          # one-time method. don't yet support.
+          def set_authentication
+            raise RuntimeError.new("Can't redefine authentication type.")
+          end
         end
       end
       
@@ -144,8 +145,7 @@ module Amp
           
           {:user  => User.public_user,
            :read  => (repos[repo][:private] ? false : true),
-           :write => false
-          }
+           :write => false }
         end
       end
     end

@@ -32,22 +32,38 @@ module Amp
       def self.amp_repository(http_path, repo, opts={})
         super(http_path, repo)
         
+        # Normalize the http_path, because we'll be adding/removing slashes a lot
+        # coming up.
         http_path.chomp!('/')
-        path_slashed = http_path + "/"
         
+        ##
+        # Defines a path to view a specific changeset by some unique identifier.
+        #
+        # - root/changeset/abcdef123456/  
+        # -- shows changeset with id (possbily just a prefix) of abcdef123456
         get "#{http_path}/changeset/:changeset/?" do |cs|
           @changeset = repo[cs]
           haml :changeset, :locals => {:root => http_path, :repo => repo}
         end
         
-        
-        [http_path+"/", "#{http_path}/commits/?", "#{http_path}/commits/:page/?"].each do |path|
+        ##
+        # Defines a set of paths for this repository to access a list
+        # of commits. Thie defines the following paths:
+        # - root/
+        # - root/commits/
+        # - root/commits/4/ (where 4 is a page number)
+        ["#{http_path}/", "#{http_path}/commits/?", "#{http_path}/commits/:page/?"].each do |path|
           get path do
             haml :commits, :locals => {:root => http_path, :opts => opts, :repo => repo, :page => params[:page].to_i}
           end
         end
         
-        
+        ##
+        # Provides a way to view a user in the system.
+        # Current unused.
+        #
+        # - root/users/adgar/
+        # -- Views something about the user with the name "adgar"
         get "#{http_path}/users/:user" do
           if users[params[:user]]
             "You are browsing user #{params[:user]} in a repository located at #{repo.inspect}"
@@ -106,6 +122,8 @@ module Amp
       
       helpers do
         
+        ##
+        # @TODO this needs SERIOUS explanation and work
         def load_browser_info(changeset, path)
           
           mapping = changeset.manifest_entry
@@ -165,30 +183,90 @@ module Amp
             </a>}
         end
         
+        ##
+        # Provides a nice link to a changeset's root. Haml helper.
+        #
+        # @param [String] root the root of the repo's http path
+        # @param [String] changeset_node the node to link to
+        # @param [Hash] opts any options to use to modify the output html
+        # @return [String] an HTML link to the given changeset.
         def link_to_changeset(root, changeset_node, opts={})
           link(root, :changeset, changeset_node, nil, opts)
         end
         
+        ##
+        # Provides a nice link to a file in the file browser at a given changeset. 
+        # Haml helper. Defaults the text of the link to the name of the file
+        #
+        # @param [String] root the root of the repo's http path
+        # @param [String] changeset_node the node to link to
+        # @param [String] file (nil) the name of the file to load.
+        # @param [Hash] opts any options to use to modify the output html
+        # @return [String] an HTML link to the given file scoped by the given changeset.
         def link_to_file(root, changeset_node, file=nil, opts={})
           opts[:text] ||= file
           link(root, :code, changeset_node, file, opts)
         end
         
+        ##
+        # Provides a nice link to a file's raw source at a given changeset.
+        #
+        # @param [String] root the root of the repo's http path
+        # @param [String] changeset_node the node to link to
+        # @param [String] file (nil) the name of the file to load.
+        # @param [Hash] opts any options to use to modify the output html
+        # @return [String] an HTML link to the given file's raw source scoped by the
+        #   given changeset
         def link_to_file_raw(root, changeset_node, file=nil, opts={})
           opts[:text] ||= file
           link(root, :raw, changeset_node, file, opts)
         end
         
+        ##
+        # Provides a nice link to a file at a given changeset diffed with its previous
+        # changeset.
+        #
+        # @param [String] root the root of the repo's http path
+        # @param [String] changeset_node the node to link to
+        # @param [String] file (nil) the name of the file to diff.
+        # @param [Hash] opts any options to use to modify the output html
+        # @return [String] an HTML link to the given file's diffed source scoped by the
+        #   given changeset
         def link_to_file_diff(root, changeset_node, file=nil, opts={})
           opts[:text] ||= file
           link(root, :diff, changeset_node, file, opts)
         end
         
+        ##
+        # Highlights the given text if possible, or at the very least, preformats it.
+        # The rescue block currently protects if UV is not installed, as well as any
+        # errors that arise from its usage (invalid syntaxes, etc.)
+        #
+        # @param [String] text the text to highlight
+        # @param [Hash] options the options for highlighting
+        # @option opts [String] :format ("ruby") Which code syntax to use
+        # @option opts [String] :theme ("twilight") Which theme to display in
+        # @option opts [Boolean] :lines (false) Should line numbers be displayed?
+        # @return [String] an HTML string with the code preformatted for display in a web page
         def highlight_text(text, opts = {:format => "ruby", :theme => "twilight", :lines => false})
-          require 'uv'
-          ::Haml::Helpers.preserve(Uv.parse( text.rstrip, "xhtml", opts[:format].to_s, opts[:lines], opts[:theme]))
+          begin
+            require 'uv'
+            ::Haml::Helpers.preserve(Uv.parse( text.rstrip, "xhtml", opts[:format].to_s, opts[:lines], opts[:theme]))
+          rescue LoadError => err
+            STDERR.puts "You should install UltraViolet for syntax highlighting goodness!"
+            return "<pre>\n#{text}\n</pre>"
+          rescue StandardError => err
+            return "<pre>\n#{text}\n</pre>"
+          end
         end
         
+        ##
+        # Returns a date relative to the current time based on the number
+        # of intervening seconds. Accurate to the second.
+        #
+        # @param [Date, Time] o_date the date or time to compare to right now.
+        # @return [String] a string representing the difference in time between the provided
+        #   date and the current time.
         def rel_date(o_date)
           a = (Time.now-o_date).to_i
           case a
@@ -205,10 +283,19 @@ module Amp
           return o_date.strftime("%B %d, %Y")
         end
         
+        ##
+        # Returns the name of the ultraviolet syntax for a given filetype based on its extension.
+        #
+        # @param [String] ext the extension to parse
+        # @return [Symbol] the symbol used by ultraviolet to highlight a file with the
+        #   given extension.
         def format_for_filename(ext)
+          # in case they passed in a full filename by mistake.
           ext = File.extname(ext)
           return :text if ext.nil? || ext.empty?
           
+          # The following are special cases i could find, where the symbol
+          # for the syntax isn't the same as the extension. I'm sure there's more.
           case ext.downcase
           when ".rb"
             :ruby
@@ -225,6 +312,12 @@ module Amp
           end
         end
         
+        ##
+        # Takes a diff, discards uninteresting lines, and wraps the interesting ones in specially
+        # designed <li> tags, so we can style them.
+        #
+        # @parma [String] input_diff the diff text to prepare
+        # @return [Array<String>] the lines of the diff to display
         def parse_diff(input_diff)
           line_counter_a, line_counter_b = 0, 0
           input_diff.split_lines_better.map do |line|
@@ -232,8 +325,8 @@ module Amp
               res = %{<li class='diff-unmod'><pre>#{line_counter_a} #{line_counter_b}&nbsp;#{line.rstrip}</pre></li>\n}
               line_counter_a += 1
               line_counter_b += 1
-            elsif line[0,3] == '+++'
-            elsif line[0,3] == '---'
+            elsif line[0,3] == '+++' # discard
+            elsif line[0,3] == '---' # discard
             elsif line[0,1] == '+'
               res = %{<li class='diff-add'><pre>#{" " * line_counter_b.to_s.size} #{line_counter_b} &nbsp;#{line.rstrip}</pre></li>\n}
               line_counter_b += 1

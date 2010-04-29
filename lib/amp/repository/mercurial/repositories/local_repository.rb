@@ -255,8 +255,8 @@ module Amp
         #
         # @param [String] path the path to the file
         # @param [Hash] opts the options for creating the versioned file
-        # @option [String] opts change_id (nil) The ID of the changeset in question
-        # @option [String, Integer] opts file_id (nil) the revision # or node ID of
+        # @option opts [String] change_id (nil) The ID of the changeset in question
+        # @option opts [String, Integer] file_id (nil) the revision # or node ID of
         #   into the file_log
         def versioned_file(path, opts={})
           Amp::Mercurial::VersionedFile.new(self, path, opts)
@@ -268,8 +268,8 @@ module Amp
         #
         # @param [String] path the path to the file
         # @param [Hash] opts the options for creating the versioned file
-        # @option [String] opts change_id (nil) The ID of the changeset in question
-        # @option [String, Integer] opts file_id (nil) the revision # or node ID of
+        # @option opts [String] change_id (nil) The ID of the changeset in question
+        # @option opts [String, Integer] file_id (nil) the revision # or node ID of
         #   into the file_log
         def working_file(path, opts={})
           VersionedWorkingFile.new(self, path, opts)
@@ -531,9 +531,9 @@ module Amp
         # 
         # @param [Repository] remote_repo the remote repository object to pull from
         # @param [Hash] options extra options for pulling
-        # @option [Array<String, Fixnum>] :heads ([]) which repository heads to pull, such as
+        # @option :heads [Array<String, Fixnum>] ([]) which repository heads to pull, such as
         #   a branch name or a sha-1 identifier
-        # @option [Boolean] :force (false) force the pull, ignoring any errors or warnings
+        # @option :force [Boolean] (false) force the pull, ignoring any errors or warnings
         # @return [Boolean] for success/failure
         def pull(remote, opts={:heads => nil, :force => nil})
           lock_store do

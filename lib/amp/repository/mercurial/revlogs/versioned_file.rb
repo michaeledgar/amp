@@ -32,12 +32,12 @@ module Amp
       # @param [Repository] repo The repo we're working with
       # @param [String] path the path to the file
       # @param [Hash] opts the options to customize how we load this file
-      # @option [FileLog] opts :file_log (nil) The FileLog to use for loading data
-      # @option [String] opts :change_id (nil) The revision ID/index to use to
+      # @option opts [FileLog] :file_log (nil) The FileLog to use for loading data
+      # @option opts [String] :change_id (nil) The revision ID/index to use to
       #   figure out which revision we're working with
-      # @option [Changeset] opts :changeset (nil) the changeset to use to figure
+      # @option opts [Changeset] :changeset (nil) the changeset to use to figure
       #   which revision we're working with
-      # @option [String] opts :file_id (nil) perhaps the ID of the revision in
+      # @option opts [String] :file_id (nil) perhaps the ID of the revision in
       #   the file_log to use?
       def initialize(repo, path, opts={})
         @repo, @path = repo, path

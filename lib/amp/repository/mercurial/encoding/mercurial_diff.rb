@@ -28,12 +28,12 @@ module Amp
         # 
         # @param [String] text the text to modify
         # @param [Hash] options the options to use when deciding how to clean text
-        # @option [Boolean] options :ignore_ws (false) do we ignore all whitespace?
+        # @option options [Boolean] :ignore_ws (false) do we ignore all whitespace?
         #   this has the net effect of removing all whitespace.
-        # @option [Boolean] options :ignore_ws_amount (false) when this option is
+        # @option options [Boolean] :ignore_ws_amount (false) when this option is
         #   true, we only remove "excessive" whitespace - more than 1 space or tab.
         #   we then substitute it all with 1 space.
-        # @option [Boolean] options :ignore_blank_lines (false) when this option
+        # @option options [Boolean] :ignore_blank_lines (false) when this option
         #   is true, we remove all extra blank lines.
         def whitespace_clean(text, options=DEFAULT_OPTIONS)
           if options[:ignore_ws]
@@ -94,7 +94,7 @@ module Amp
         # @param [Boolean] addtab (false) whether or not to add a tab in the
         #   line or not. Only used if we're in git mode or no-date mode.
         # @param options the options to use while creating the date line.
-        # @option [Boolean] options :git (false) are we creating a git diff?
+        # @option options [Boolean] :git (false) are we creating a git diff?
         #   this will deactivate dates.
         # @option options [Boolean] :nodates (false) should we never print dates?
         def date_tag(date, fn1, addtab = true, options = DEFAULT_OPTIONS)

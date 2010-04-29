@@ -113,15 +113,15 @@ module Amp
       # @param changeset the changeset to commit. Could be working dir, for
       #   example.
       # @param opts the options for committing the changeset.
-      # @option [Boolean] opts :force (false) force the commit, even though
+      # @option opts [Boolean] :force (false) force the commit, even though
       #   nothing has changed.
-      # @option [Boolean] opts :force_editor (false) force the user to open
+      # @option opts [Boolean] :force_editor (false) force the user to open
       #   their editor, even though they provided a message already
-      # @option [Boolean] opts :empty_ok (false) is it ok if they have no
+      # @option opts [Boolean] :empty_ok (false) is it ok if they have no
       #   description of the commit?
-      # @option [Boolean] opts :use_dirstate (true) use the DirState for this
+      # @option opts [Boolean] :use_dirstate (true) use the DirState for this
       #   commit? Used if you're committing the working directory (typical)
-      # @option [Boolean] opts :update_dirstate (true) should we update the
+      # @option opts [Boolean] :update_dirstate (true) should we update the
       #   DirState after the commit? Used if you're committing the working
       #   directory.
       # @return [String] the digest referring to this entry in the revlog

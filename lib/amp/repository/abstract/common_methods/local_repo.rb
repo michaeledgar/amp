@@ -90,7 +90,7 @@ EOF
       #   should be paths.
       # @param opts the options for this removal. Must be last argument or will mess
       #   things up.
-      # @option [Boolean] opts :unlink (false) whether or not to delete the
+      # @option opts [Boolean] :unlink (false) whether or not to delete the
       #   files from the filesystem after marking them as removed from the
       #   DirState.
       # @return [Boolean] success?
@@ -134,19 +134,19 @@ EOF
       # 
       # @example @repo.status # => {:unknown => ['code/smthng.rb'], :added => [], ...}
       # @param [Hash] opts the options for this command. there's a bunch.
-      # @option [String, Integer] opts :node_1 (".") an identifier for the starting
+      # @option opts [String, Integer] :node_1 (".") an identifier for the starting
       #   revision
-      # @option [String, Integer] opts :node_2 (nil) an identifier for the ending
+      # @option opts [String, Integer] :node_2 (nil) an identifier for the ending
       #   revision. Defaults to the working directory.
-      # @option [Proc] opts :match (proc { true }) a proc that will match
+      # @option opts [Proc] :match (proc { true }) a proc that will match
       #   a file, so we know if we're interested in it.
-      # @option [Boolean] opts :ignored (false) do we want to see files we're
+      # @option opts [Boolean] :ignored (false) do we want to see files we're
       #   ignoring?
-      # @option [Boolean] opts :clean (false) do we want to see files that are
+      # @option opts [Boolean] :clean (false) do we want to see files that are
       #   totally unchanged?
-      # @option [Boolean] opts :unknown (false) do we want to see files we've
+      # @option opts [Boolean] :unknown (false) do we want to see files we've
       #   never seen before (i.e. files the user forgot to add to the repo)?
-      # @option [Boolean] opts :delta (false) do we want to see the overall delta?
+      # @option opts [Boolean] :delta (false) do we want to see the overall delta?
       # @return [Hash<Symbol => Array<String>>] no, I'm not kidding. the keys are:
       #   :modified, :added, :removed, :deleted, :unknown, :ignored, :clean, and :delta. The
       #   keys are the type of change, and the values are arrays of filenames

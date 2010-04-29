@@ -30,11 +30,11 @@ module Amp
         #
         # @param [String] file the path to the the lock file to create
         # @param [Hash<Symbol => Object>] opts the options to use when creating the lock
-        # @option [Integer] options :timeout (-1) the length of time to keep trying to create the lock.
+        # @option options [Integer] :timeout (-1) the length of time to keep trying to create the lock.
         #   defaults to -1 (indefinitely)
-        # @option [Proc, #call] options :release_fxn (nil) A proc to run when the
+        # @option options [Proc, #call] :release_fxn (nil) A proc to run when the
         #   lock is released
-        # @option [String] options :desc (nil) A description of the lock
+        # @option options [String] :desc (nil) A description of the lock
         def initialize(file, opts={:timeout => -1})
           @file = file
           @held = false

@@ -142,15 +142,15 @@ module Amp
         #   the changeset
         # @param [String, Integer] node the node to apply the tag to
         # @param [Hash] opts the opts for tagging
-        # @option [String] opts message ("added tag _tag_ to changeset _node_") 
+        # @option opts [String] message ("added tag _tag_ to changeset _node_") 
         #   the commit message to use. 
-        # @option [Boolean] opts local (false) is the tag a local one? I.E., will it be
+        # @option opts [Boolean] local (false) is the tag a local one? I.E., will it be
         #   shared across repos?
-        # @option [String] opts user ($USER) the username to apply for the commit
-        # @option [Time] opts time (Time.now) what should the commit-time be marked as?
-        # @option [String] opts parent (nil) The parent revision of the one we
+        # @option opts [String] user ($USER) the username to apply for the commit
+        # @option opts [Time] time (Time.now) what should the commit-time be marked as?
+        # @option opts [String] parent (nil) The parent revision of the one we
         #   are tagging. or something.
-        # @option [Hash] opts extra ({}) the extra data to apply for the commit.
+        # @option opts [Hash] extra ({}) the extra data to apply for the commit.
         def apply_tag(names, node, opts={})
           use_dirstate = opts[:parent].nil?
           verify_tag_names(names)

@@ -82,9 +82,9 @@ module Sinatra
     
     private
     
-      def auth
-        @auth ||= Rack::Auth::Basic::Request.new(request.env)
-      end
+    def auth
+      @auth ||= Rack::Auth::Basic::Request.new(request.env)
+    end
   end
   
   # liberally lifted and modified from Rack's source

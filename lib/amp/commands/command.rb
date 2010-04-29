@@ -203,12 +203,12 @@ module Amp
     # @param desc the short, one-line description of the command
     # @param options the options that configure the command-line option 
     #                (too meta? sorry!)
-    # @option [String] options :short (nil) the short version of the option 
+    # @option options [String] :short (nil) the short version of the option 
     #                                       (e.g. "-I")
-    # @option [String] options :default (nil) the default value of the option.
-    # @option [Symbol] options :type (:string) the type of the option. Allows 
+    # @option options [String] :default (nil) the default value of the option.
+    # @option options [Symbol] :type (:string) the type of the option. Allows 
     #                                     you to force Integer or URL matches.
-    # @option [Boolean] options :multi (false) can this option take multiple 
+    # @option options [Boolean] :multi (false) can this option take multiple 
     #                                          values?
     def opt(name, desc='', options={})
       @options << {:name => name, :desc => desc, :options => options}

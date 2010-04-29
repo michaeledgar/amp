@@ -99,9 +99,9 @@ module Amp
       #
       # @param [Repository] remote_repo the remote repository object to pull from
       # @param [Hash] options extra options for pulling
-      # @option [Array<String, Fixnum>] :heads ([]) which repository heads to pull, such as
+      # @option options [Array<String, Fixnum>] :heads ([]) which repository heads to pull, such as
       #   a branch name or a sha-1 identifier
-      # @option [Boolean] :force (false) force the pull, ignoring any errors or warnings
+      # @option options [Boolean] :force (false) force the pull, ignoring any errors or warnings
       # @return [Boolean] for success/failure
       def pull(remote_repo, options = {})
         raise NotImplementedError.new("pull() must be implemented by subclasses of AbstractLocalRepository.")

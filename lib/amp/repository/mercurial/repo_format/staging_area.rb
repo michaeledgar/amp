@@ -67,7 +67,7 @@ module Amp
         # @param list the list of files. Could also just be 1 file as a string.
         #   should be paths.
         # @param opts the options for this removal.
-        # @option [Boolean] opts :unlink (false) whether or not to delete the
+        # @option opts [Boolean] :unlink (false) whether or not to delete the
         #   files from the filesystem after marking them as removed from the
         #   DirState.
         # @return [Boolean] success?
@@ -123,7 +123,7 @@ module Amp
         # @param [String] source the path to the source file
         # @param [String] destination the path to the destination file
         # @param [Hash] opts the options for the copy
-        # @option [Boolean] opts :after (false) should the file be deleted?
+        # @option opts [Boolean] :after (false) should the file be deleted?
         # @return [Boolean] success?
         def copy(source, destination, opts)
           # Traverse repository subdirectories
