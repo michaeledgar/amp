@@ -24,7 +24,27 @@ module Amp
       def staging_area
         raise NotImplementedError.new("staging_area() must be implemented by subclasses of AbstractLocalRepository.")
       end
-  
+      
+      ##
+      # Has the file been modified from node1 to node2?
+      # 
+      # @param [String] file the file to check
+      # @param [Hash] opts needs to have :node1 and :node2
+      # @return [Boolean] has the +file+ been modified?
+      def file_modified?(file, opts={})
+        raise NotImplementedError.new("file_modified?() must be implemented by subclasses of AbstractLocalRepository.")
+      end
+      
+      ##
+      # Write +text+ to +filename+, where +filename+
+      # is local to the root.
+      #
+      # @param [String] filename The file as relative to the root
+      # @param [String] text The text to write to said file
+      def working_write(filename, text)
+        raise NotImplementedError.new("working_write() must be implemented by subclasses of AbstractLocalRepository.")
+      end
+      
       ##
       # Commits a changeset or set of files to the repository. You will quite often
       # use this method since it's basically the basis of version control systems.
@@ -139,7 +159,7 @@ module Amp
       #
       # @api
       # @param [String] filename the file to attempt to resolve
-      def try_resolve_conflict
+      def try_resolve_conflict(filename)
         raise NotImplementedError.new("try_resolve_conflict() must be implemented by subclasses of AbstractLocalRepository.")
       end
       
@@ -156,6 +176,17 @@ module Amp
         raise NotImplementedError.new("uncommitted_merge_files() must be implemented by subclasses of AbstractLocalRepository.")
       end
       
+      ##
+      # Regarding branch support.
+      #
+      # For each repository format, you begin in a default branch.  Each repo format, of
+      # course, starts with a different default branch.  Mercurial's is "default", Git's is "master".
+      #
+      # @api
+      # @return [String] the default branch name
+      def default_branch_name
+        raise NotImplementedError.new("default_branch_name() must be implemented by subclasses of AbstractLocalRepository.")
+      end
     end
   end
 end

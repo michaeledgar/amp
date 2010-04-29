@@ -73,7 +73,7 @@ module Amp
       # @option opts [Array<String>] changed the running tally of changed files
       # @return [String] the file_id (where this revision is in its file log)
       def commit(opts={})
-        f_log     = repo.file @path # :: FileLog
+        f_log     = repo.file_log @path # :: FileLog
         copied    = renamed? # [ path,  ]
         meta_data = {}
         
@@ -197,13 +197,13 @@ module Amp
       # 
       # @return [FileLog] The revision log tracking this file
       def file_log
-        @file_log ||= @repo.file @path
+        @file_log ||= @repo.file_log @path
       end
       
       ##
       # The revision of the repository that this {VersionedFile} belongs to.
       def change_id
-        @change_id ||= @changeset.revision         if @changeset
+        @change_id ||= @changeset.revision         if     @changeset
         @change_id ||= file_log[file_rev].link_rev unless @changeset
         @change_id
       end
@@ -211,7 +211,7 @@ module Amp
       ##
       # The version of the file in its own history.
       def file_node
-        @file_node ||= file_log.lookup_id(@file_id) if (@file_id ||= nil)
+        @file_node ||= file_log.lookup_id(@file_id) if     @file_id
         @file_node ||= changeset.file_node(@path)   unless @file_id
         @file_node ||= NULL_ID
       end
@@ -256,7 +256,7 @@ module Amp
       ##
       # Retrieves the file with a different ID
       # 
-      # @param file_id a new file ID... still not sure what a file_id is
+      # @param [String] file_id a new file ID revision in file_log
       def file(file_id)
         self.class.new @repo, @path, :file_id => file_id, :file_log => file_log
       end
@@ -501,8 +501,10 @@ module Amp
       
       ##
       # Gets the file log?
+      # 
+      # @todo add a @file_log ||= in the front?
       def file_log
-        @repo.file(repo_path)
+        @repo.file_log repo_path
       end
       
       ##
@@ -527,7 +529,7 @@ module Amp
       ##
       # Get the contents of this file
       def data
-        data = @repo.working_read(@path)
+        data = @repo.working_read(@path) rescue nil
         data
       end
       

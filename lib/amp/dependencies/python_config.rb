@@ -38,8 +38,8 @@ Boolean = :bool unless defined? Boolean
 #    [prizes]
 #    lottery=3.2 million
 #
-#    config.awards["key"] #=> "value"
-#    config.prizes["lottery"] #=> "3.2 million" 
+#    config.awards["key"] # => "value"
+#    config.prizes["lottery"] # => "3.2 million" 
 # 
 # You can modify any values you want, though to add sections, you should use the add_section
 # method.

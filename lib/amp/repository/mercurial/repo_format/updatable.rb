@@ -111,7 +111,6 @@ module Amp
           end
           
           return stats
-            
         end
         
         ##
@@ -144,9 +143,9 @@ module Amp
         #   a tracked file in the target changeset, this abort error will be raised.
         def check_unknown(working_changeset, target_changeset)
           working_changeset.unknown.each do |file|
-            if target_changeset[file] && target_changeset[file].cmp(working_changeset[file].data())
+            if target_changeset.all_files.include?(file) && target_changeset[file].cmp(working_changeset[file].data())
               raise abort("Untracked file in the working directory differs from "+
-                                   "a tracked file in the requested revision: #{file}")
+                                   "a tracked file in the requested revision: #{file} #{target_changeset[file]}")
             end
           end
         end
@@ -244,12 +243,11 @@ module Amp
                               "sym(l)ink?")
                 return (r != "n") ? r : ''
               end
-              return n if m == a # changed from m to n
-              return m # changed from n to m
+              return m == a ? n : m
             end
             
-            return m if m.any? && m != a # changed from a to m
-            return n if n.any? && n != a # changed from a to n
+            return m if m && m.any? && m != a # changed from a to m
+            return n if n && n.any? && n != a # changed from a to n
             return '' #no more flag
           end
           
@@ -304,11 +302,8 @@ module Amp
               file2 = copy[file]
               if !remote_manifest[file2] #directory rename
                 act["remote renamed directory to #{file2}", :d, file, nil, file2, local_manifest.flags[file]]
-              elsif local_manifest[file2] # case 2 A,B/B/B
-                act["local copied to #{file2}", :merge, file, file2, file, 
-                    flag_merge[file, file2, file2], false]
-              else # case 4,21 A/B/B
-                act["local moved to #{file2}", :merge, file, file2, file,
+              else # case 2 A,B/B/B, # case 4,21 A/B/B
+                act["local copied to #{file2}", :merge, file, file2, file, # or local moved to
                     flag_merge[file, file2, file2], false]
               end
             elsif ancestor_manifest[file]
@@ -362,6 +357,9 @@ module Amp
           action_list
         end
         
+        ##
+        # Compare two actions in the update action list
+        #
         def action_cmp(action1, action2)
           move1 = action1[1] # action out of the tuple
           move2 = action2[1] # action out of the tuple
@@ -393,20 +391,7 @@ module Amp
           moves = []
           actions.sort! {|a1, a2| action_cmp a1, a2 }
           
-          # prescan for merges in the list of actions.
-          actions.each do |a|
-            file, action = a[0], a[1]
-            if action == :merge # ah ha! a merge.
-              file2, filename_dest, flags, move = a[2..-1] # grab some info about it
-              UI.debug("preserving #{file} for resolve of #{filename_dest}")
-              vf_local = working_changeset[file] # look up our changesets we'll need later
-              vf_other = target_changeset[file2]
-              vf_base  = vf_local.ancestor(vf_other) || versioned_file(file, :file_id => NULL_REV)
-              merge_state.add(vf_local, vf_other, vf_base, filename_dest, flags) # track this merge!
-              
-              moves << file if file != filename_dest && move
-            end
-          end
+          moves = scan_for_merges actions, working_changeset, target_changeset
           
           # If we're moving any files, we can remove renamed ones now
           moves.each do |file|
@@ -434,7 +419,7 @@ module Amp
               updated    << file if result.nil?
               merged     << file if result == false
               
-              File.amp_set_executable(working_join(file_dest), flags && flags.include?('x'))
+              FileHelpers.set_executable(working_join(file_dest), flags && flags.include?('x'))
               if (file != file_dest && move && File.amp_lexist?(working_join(file)))
                 UI.debug("removing #{file}")
                 File.unlink(working_join(file))
@@ -463,7 +448,7 @@ module Amp
               filelist.each {|fn| UI.warn fn }
             when :exec
               flags = action[2]
-              File.amp_set_executable(working_join(file), flags.include?('x'))
+              FileHelpers.set_executable(working_join(file), flags.include?('x'))
             end
             
           end
@@ -478,6 +463,29 @@ module Amp
           end
           
           hash
+        end
+        
+        ##
+        # Add merges in the action list to the merge state.
+        #
+        # @param [Array<Object>] actions 
+        def scan_for_merges(actions, working_changeset, target_changeset)
+          moves = []
+          # prescan for merges in the list of actions.
+          actions.select {|act| act[1] == :merge}.each do |a|
+            # destructure the list
+            file, action, file2, filename_dest, flags, move = a
+            UI.debug("preserving #{file} for resolve of #{filename_dest}")
+            # look up our changeset for the merge state entry
+            vf_local = working_changeset[file] 
+            vf_other = target_changeset[file2]
+            vf_base  = vf_local.ancestor(vf_other) || versioned_file(file, :file_id => NULL_REV)
+            # track this merge!
+            merge_state.add(vf_local, vf_other, vf_base, filename_dest, flags) 
+            
+            moves << file if file != filename_dest && move
+          end
+          moves
         end
         
         ##
@@ -528,6 +536,7 @@ module Amp
               end
             end
           end
+          staging_area.save
         end
       end
     end

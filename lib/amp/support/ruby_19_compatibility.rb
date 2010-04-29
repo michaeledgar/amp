@@ -15,6 +15,24 @@ if RUBY_VERSION < "1.9"
     end unless method_defined?(:lines)
     
     ##
+    # Does the string start with the given prefix?
+    #
+    # @param [String] prefix the prefix to test
+    # @return [Boolean] does the string start with the given prefix?
+    def start_with?(prefix)
+      self[0,prefix.size] == prefix  # self =~ /^#{str}/
+    end
+
+    ##
+    # Does the string end with the given suffix?
+    #
+    # @param [String] suffix the suffix to test
+    # @return [Boolean] does the string end with the given suffix?
+    def end_with?(suffix)
+      self[-suffix.size, suffix.size] == suffix   # self =~ /#{str}$/
+    end
+    
+    ##
     # Returns the numeric, ascii value of the first character
     # in the string.
     #

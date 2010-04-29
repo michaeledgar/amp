@@ -192,7 +192,7 @@ EOF
   #### parse_ignore #############
   
   def test_parse_ignore
-    proc = parse_ignore File.dirname(@ignore_path), "ignore"
+    proc = parse_ignore File.dirname(@ignore_path), ["ignore"]
     assert proc.call("test/some/test/dir/test_crazy.rb")
     assert proc.call("test/test_crazy.rb")
     assert proc.call("doc/file.html")

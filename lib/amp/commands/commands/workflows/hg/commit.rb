@@ -1,7 +1,7 @@
 command :commit do |c|
   c.workflow :hg
   
-  c.desc "Commit yo shit"
+  c.desc "Commit files from the staging area to the repository"
   c.opt :force, "Forces files to be committed", :short => "-f"
   c.opt :include, "Includes the given patterns", :short => "-I", :type => :string
   c.opt :exclude, "Ignores the given patterns", :short => "-E", :type => :string
@@ -54,23 +54,33 @@ EOS
   # @return [Hash] all the changes from the current dirstate.
   def calculate_dirstate_commit(repo, files, match)
     changes = nil
+    # Forces a status check - kinda nice, actually.
+    full_status = repo.status
     if files.any?
       changes = {:modified => [], :removed => [], :added => []}
       # split the files up so we can deal with them appropriately
       files.each do |file|
         case repo.staging_area.file_status file
-        when :normal, :merged, :added
+        when :merged, :added
           changes[:modified] << file
+        when :normal
+          changes[:modified] << file if full_status[:modified].include?(file)
         when :removed
           changes[:removed]  << file
         when :untracked
-          Amp::UI.warn "#{file} not tracked!"
+          if File.directory?(file)
+            changes[:modified].concat full_status[:modified].select {|x| x.start_with?(file)}
+            changes[:removed].concat  full_status[:removed].select  {|x| x.start_with?(file)}
+            # no warning if given empty directory
+          else
+            Amp::UI.warn "#{file} not tracked!"
+          end
         else
           Amp::UI.err "#{file} has unknown state #{state[0]}"
         end
       end
     else
-      changes = repo.status(:match => match)
+      changes = full_status
     end
     changes
   end

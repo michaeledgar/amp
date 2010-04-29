@@ -42,13 +42,13 @@ HELP
     exact = {}
     working_changeset.walk(matcher, true).each do |file, _|
       if matcher.exact? file
-        if repo.dirstate.ignore(file) && !opts[:force]
+        if repo.staging_area.ignoring_file?(file) && !opts[:force]
           raise abort("Can't add the ignored file #{file}. Use --force to override")
         end
         Amp::UI.status "adding #{file.relative_path repo.root}" if opts[:verbose]
         names << file
         exact[file] = true
-      elsif !repo.dirstate.include?(file) && (!repo.dirstate.ignore(file) || opts[:force])
+      elsif !repo.staging_area.include?(file) && (!repo.staging_area.ignoring_file?(file) || opts[:force])
         Amp::UI.status "adding #{file.relative_path repo.root}"
         names << file
       end

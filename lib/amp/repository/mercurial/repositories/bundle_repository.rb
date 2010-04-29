@@ -62,7 +62,7 @@ module Amp
             case header
             when "HG10BZ"
               # fuck BZip. Seriously.
-              headerio = StringIO.new "BZ", (ruby_19? ? "w+:ASCII-8BIT" : "w+")
+              headerio = StringIO.new "BZ", Support.binary_mode("w+")
               input = Amp::Support::MultiIO.new(headerio, @bundle_file)
               decomp = BZ2::Reader.new(input)
             when "HG10GZ"

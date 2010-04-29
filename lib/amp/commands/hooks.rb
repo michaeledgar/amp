@@ -9,7 +9,7 @@ module Amp
   #
   # Hooks are global, currently - they cannot only be applied to one repo at a time.
   class Hook
-    @@all_hooks = Hash.new {|h, k| h[k] = []}
+    @@all_hooks = ArrayHash.new
     def self.all_hooks; @@all_hooks; end
     
     class << self

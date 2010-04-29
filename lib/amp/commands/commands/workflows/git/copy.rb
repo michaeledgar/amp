@@ -23,5 +23,6 @@ command :copy do |c|
     sources.each do |source|
       repo.staging_area.copy(source, destination, opts)
     end
+    repo.staging_area.save
   end
 end

@@ -2,7 +2,6 @@ module Amp
   module Repositories
     class AbstractStagingArea
       include CommonStagingAreaMethods
-      attr_reader :repo
       
       ##
       # Marks a file to be added to the repository upon the next commit.
@@ -32,6 +31,15 @@ module Amp
       # @return [Boolean] success marker
       def normal(*files)
         raise NotImplementedError.new("normal() must be implemented by subclasses of AbstractStagingArea.")
+      end
+      
+      ##
+      # Mark the files as untracked.
+      # 
+      # @param  [Array<String>] files the name of the files to mark as untracked
+      # @return [Boolean] success marker
+      def forget(*files)
+        raise NotImplementedError.new("forget() must be implemented by subclasses of AbstractStagingArea.")
       end
       
       ##
@@ -93,6 +101,22 @@ module Amp
       end
       
       ##
+      # The directory used by the VCS to store magical information (.hg, .git, etc.).
+      #
+      # @api
+      # @return [String] relative to root
+      def vcs_dir
+        raise NotImplementedError.new("vcs_dir() must be implemented by subclasses of AbstractStagingArea.")
+      end
+      
+      ##
+      # Saves the staging area's state.  Any added files, removed files, "normalized" files
+      # will have that status saved here.
+      def save
+        raise NotImplementedError.new("save() must be implemented by subclasses of AbstractStagingArea")
+      end
+      
+      ##
       # Returns all files tracked by the repository *for the working directory* - not
       # to be confused with the most recent changeset.
       #
@@ -140,7 +164,7 @@ module Amp
       # @param [File::Stats] st the current results of File.lstat(file)
       # @return [Symbol] a symbol representing the current file's status
       def file_precise_status(file, st)
-        return :normal
+        return :lookup
       end
       
       ##

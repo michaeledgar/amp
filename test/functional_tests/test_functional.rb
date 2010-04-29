@@ -227,9 +227,10 @@ class TestFunctional < AmpTestCase
     
     # push our conflicting commit to testrepo from the "newrepo" child.
     push_results = amp "push"
+    
     assert_match(/1 changeset/, push_results)
-    assert_match(/2 changes/, push_results)
-    assert_match(/2 files/, push_results)
+    assert_match(/3 changes/, push_results)
+    assert_match(/3 files/, push_results)
     
     exit_repo
     
@@ -242,12 +243,12 @@ class TestFunctional < AmpTestCase
     # pull in newrepo's conflicting commit (it will yell at us for the extra head)
     assert_command_match(/\+1 heads?/, "pull")
     # Try to merge the 2 changesets
-    result = amp("merge")
+    result = amp "merge"
     
     # Expected results from the merge
     assert_match(/1 files? unresolved/, result)
     assert_match(/1 files? removed/,    result)
-    assert_match(/1 files? updated/,    result)
+    assert_match(/2 files? updated/,    result)
     
     # Ok, so we have one file that conflicts: STYLE.txt. We want to keep conflictrepo's
     # version of the file. So we'll suck out the local portion of the conflicted summary.
@@ -308,6 +309,7 @@ class TestFunctional < AmpTestCase
     
     # Let's make sure our tag went in smoothly.
     result = amp("tags").split("\n")
+    
     result = result.select {|entry| entry =~ /[0-9a-f]{10}/}
     assert_equal 2, result.size
     
@@ -331,6 +333,8 @@ class TestFunctional < AmpTestCase
     commit :message => "moves and copies"
     assert_verify
     
+    assert_command_match(/newbranch/, "identify", [], {:branch => true})
+    
     exit_repo
     enter_repo 'testrepo'
     
@@ -342,6 +346,7 @@ class TestFunctional < AmpTestCase
     
     # Create a dummy commit
     File.open('used_in_bundle', 'w') {|f| f.write "monkay" }
+    amp "add", ["used_in_bundle"]
     amp "commit", [], :message => 'monkey'
     assert_verify
     
@@ -355,7 +360,10 @@ class TestFunctional < AmpTestCase
     
     assert_command_match(/10/, "identify", [], :rev => "10", :num => true)
     
-    diff_out = amp("diff", ["command.rb", "--rev", "2", "--rev", "3", "--no-color"])
+    # Run identify on the current node should mention that the tag is "tip"
+    assert_command_match(/tip/, "identify")
+    
+    diff_out = amp("diff", ["command.rb", "--rev", "2", "--rev", "3"])
     assert_match(/\+\s+def silly_namespace\(name\)/, diff_out)
     assert_match(/\-\s+def volt_namespace\(name\)/, diff_out)
     

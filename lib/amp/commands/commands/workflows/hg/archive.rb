@@ -54,7 +54,7 @@ HELP
           changeset.walk(matcher).each do |file|
             Amp::UI::tell '.' # use dots to keep track
             data = changeset.get_file(file).data
-            tar.add_file_simple(File.join(File.amp_split_extension(dest).first,file), :size => data.size, :mode => 0644) { |f| f.write data }
+            tar.add_file_simple(File.join(FileHelpers.split_extension(dest).first,file), :size => data.size, :mode => 0644) { |f| f.write data }
           end
         end
       end
@@ -77,7 +77,7 @@ HELP
       # http://www.nabble.com/how-to-stream-or-write-data-into-a-tar.gz-file-as-if-the-data-were--from-files--td19498643.html
       need { '../../../../../../ext/amp/bz2/bz2' }
       
-      tar_name = File.amp_split_extension(dest).first + '.tar'
+      tar_name = FileHelpers.split_extension(dest).first + '.tar'
       
       make_tar_file[tar_name]
       
@@ -91,7 +91,7 @@ HELP
     when 'tgz' # tar archive, compressed using gzip
       # http://www.nabble.com/how-to-stream-or-write-data-into-a-tar.gz-file-as-if-the-data-were--from-files--td19498643.html
       require 'zlib'
-      tar_name = File.amp_split_extension(dest).first + '.tar'
+      tar_name = FileHelpers.split_extension(dest).first + '.tar'
       
       make_tar_file[tar_name]
       

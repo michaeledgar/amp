@@ -77,14 +77,15 @@ HELP
       
       # NOW we write the hgrc file if the dest is local
       if dest_repo.local?
+        src = File.expand_path(src) if source.local?
         dest_repo.hg_opener.open('hgrc', 'w') do |f|
           f.puts '[paths]'
-          f.puts "default = #{File.expand_path(src).gsub('%', '%%')}"
+          f.puts "default = #{src.gsub('%', '%%')}"
         end
         
-        if opts[:update]
+        unless opts[:"no-update"]
           Amp::UI::status "updating working directory"
-          dest_repo.update if opts[:update] # and here we add the files if we want to
+          dest_repo.update # and here we add the files if we want to
         end
       end
       

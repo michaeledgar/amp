@@ -1,4 +1,4 @@
-p "LOADING RUBY AMP SUPPORT"
+Amp::UI.debug "LOADING RUBY AMP SUPPORT"
 ##
 # Ruby versions of slow functions we've implemented in C
 class Integer
@@ -14,10 +14,10 @@ class Integer
   # @return [Integer] the number swapped as if it were a 64-bit integer
   def byte_swap_64
     if Amp::Support::SYSTEM[:endian] == :little
-      ((self >> 56))                        | ((self & 0x00FF000000000000) >> 40) |
-        ((self & 0x0000FF0000000000) >> 24) | ((self & 0x000000FF00000000) >> 8 ) |
-        ((self & 0x00000000FF000000) << 8 ) | ((self & 0x0000000000FF0000) << 24) |
-        ((self & 0x000000000000FF00) << 40) | ((self & 0x00000000000000FF) << 56)
+      ((self >> 56))                      | ((self & 0x00FF000000000000) >> 40) |
+      ((self & 0x0000FF0000000000) >> 24) | ((self & 0x000000FF00000000) >> 8 ) |
+      ((self & 0x00000000FF000000) << 8 ) | ((self & 0x0000000000FF0000) << 24) |
+      ((self & 0x000000000000FF00) << 40) | ((self & 0x00000000000000FF) << 56)
     else
       self
     end

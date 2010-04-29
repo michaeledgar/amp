@@ -8,8 +8,6 @@ module Amp
     # moment of that revision.
     class Changeset < Amp::Repositories::AbstractChangeset
       include Mercurial::RevlogSupport::Node
-      include Comparable
-      include Enumerable
       
       attr_reader :repo
       alias_method :repository, :repo
@@ -58,14 +56,14 @@ module Amp
         revision    = self.revision
         log         = @repo.changelog
         changes     = log.read change_node
-        username    = changes[1]
-        date        = Time.at changes[2].first
-        files       = changes[3]
-        description = changes[4]
-        extra       = changes[5]
+        username    = changes.user
+        date        = Time.at changes.time.first
+        files       = changes.files
+        description = changes.description
+        extra       = changes.extra
         branch      = extra["branch"]
         cs_tags     = tags
-        type        = opts[:template_type].to_s || 'log'
+        type        = opts[:template_type] || 'log'
         
         added   = opts[:added] || []
         removed = opts[:removed] || []
@@ -83,8 +81,8 @@ module Amp
         config = opts
         
         template = opts[:template]
-        template = "default-#{type}" if (template.nil? || template.to_s == "default")
-    
+        template = "default-#{type}" if template.nil? || template.to_s == "default"
+        
         template = Support::Template['mercurial', template]
         template.render({}, binding)
       end
@@ -144,9 +142,8 @@ module Amp
         
         if opts[:use_dirstate]
           oldname = c1[5]["branch"]
-          tests = [ commit.empty?, remove.empty?, ! opts[:force],
+          tests = [ commit.empty?, remove.empty?, !opts[:force],
                     p2 == NULL_ID, branchname == oldname ]
-          
           if tests.all?
             UI::status "nothing changed"
             return nil
@@ -215,15 +212,16 @@ module Amp
                                         :user    => user,
                                         :date    => date,
                                         :extra   => xtra
+      
         
         # Write the dirstate if it needs to be updated
         # basically just bring it up to speed
         if opts[:use_dirstate] || opts[:update_dirstate]
           repo.dirstate.parents = new_rents
           removed.each {|f| repo.dirstate.forget(f) } if opts[:use_dirstate]
-          repo.dirstate.write
+          repo.staging_area.save
         end
-        
+      
         # The journal and dirstates are awesome. Leave them be.
         valid = true
         journal.close
@@ -387,7 +385,7 @@ module Amp
       #
       # @return [ManifestEntry] the manifest at this point in time
       def manifest_entry
-        @manifest_entry ||= @repo.manifest.read(raw_changeset[0])
+        @manifest_entry ||= @repo.manifest.read(raw_changeset.manifest_node)
       end
       
       ##
@@ -403,7 +401,7 @@ module Amp
       # Returns the change in the manifest at this revision. I don't entirely
       # know what this is yet.
       def manifest_delta
-        @manifest_entry_delta ||= @repo.manifest.read_delta(raw_changeset[0])
+        @manifest_entry_delta ||= @repo.manifest.read_delta(raw_changeset.manifest_node)
       end
       
       ##
@@ -431,8 +429,11 @@ module Amp
       
       ##
       # Iterates over each entry in the manifest entry.
+      # 
+      # @return [Changeset] self, because that's how #each works
       def each(&block)
         manifest_entry.sort.each(&block)
+        self
       end
       
       ##
@@ -527,51 +528,25 @@ module Amp
       # our node_id in sexy hexy
       def hex; @node_id.hexlify; end
       # the user who committed me!
-      def user; raw_changeset[1]; end
+      def user; raw_changeset.user; end
       # the date i was committed!
-      def date; raw_changeset[2]; end
-      def easy_date; Time.at(raw_changeset[2].first); end
+      def date; raw_changeset.time; end
+      def easy_date; Time.at(raw_changeset.time.first); end
       # the files affected in this commit!
-      def altered_files; raw_changeset[3]; end
+      def altered_files; raw_changeset.files; end
       # pre-API compatibility
       alias_method :files, :altered_files
       
       # the message with this commit
-      def description; raw_changeset[4]; end
+      def description; raw_changeset.description; end
       # What branch i was committed onto
       def branch 
         extra["branch"] 
       end
       # Any extra stuff I've got in me
-      def extra; raw_changeset[5]; end
+      def extra; raw_changeset.extra; end
       # tags
       def tags; @repo.tags_for_node node; end
-      
-      ##
-      # recursively walk
-      # 
-      # @param [Amp::Matcher] match this is a custom object that knows files
-      #   magically. Not your grampa's proc!
-      def walk(match) # calls DirState#walk
-        # just make it so the keys are there
-        results = []
-        
-        hash = Hash.with_keys match.files
-        hash.delete '.'
-        
-        each do |file|
-          hash.each {|f, val| (hash.delete file and break) if f == file }
-          
-          results << file if match.call file # yield file if match.call file
-        end
-        
-        hash.keys.sort.each do |file|
-          if match.bad file, "No such file in revision #{revision}" and match[file]
-            results << file # yield file
-          end
-        end
-        results
-      end
       
       def ancestor(other_changeset)
         node = @repo.changelog.ancestor(self.node, other_changeset.node)
@@ -628,7 +603,10 @@ module Amp
       # 
       # @return [String]
       def to_s
-        parents.first.to_s + "+"
+        if (altered_files + status[:deleted]).any?
+        then parents.first.to_s + "+"
+        else parents.first.to_s
+        end
       end
       
       
@@ -672,11 +650,11 @@ module Amp
       #
       # hahaha mike that's hilarious
       def parents
-        return @parents if @parents
-        p = @repo.dirstate.parents
-        p = [p[0]] if p[1] == NULL_ID
-        @parents = p.map {|x| Changeset.new(@repo, x) }
-        @parents
+        @parents ||= begin
+                       p = @repo.dirstate.parents
+                       p = [p[0]] if p[1] == NULL_ID
+                       p.map {|x| Changeset.new(@repo, x) }
+                     end
       end
       
       ##
@@ -686,7 +664,7 @@ module Amp
       # in existence. Oh, and we need to remove any files from the parent's
       # manifest entry that don't exist anymore. Make sense?
       def manifest_entry
-        return @manifest_entry if @manifest_entry ||= nil
+        return @manifest_entry if @manifest_entry
         
         # Start off with the last revision's manifest_entry, that's safe.
         man = parents()[0].manifest_entry.dup
@@ -769,7 +747,7 @@ module Amp
       # If there's a description, ok then
       def description; @text; end
       # Files affected in this transaction: modified, added, removed.
-      def files; (status[:modified] + status[:added] + status[:removed]).sort; end
+      def altered_files; (status[:modified] + status[:added] + status[:removed]).sort; end
       # What files have changed?
       def modified; status[:modified]; end
       # What files have we added?
@@ -788,6 +766,10 @@ module Amp
       def extra; @extra; end
       # No children. Returns the empty array.
       def children; []; end
+      # The date, nicely handled
+      def easy_date; date; end
+      # The tags
+      def tags; self.parents.first.tags; end
     end
   end
 end

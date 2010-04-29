@@ -13,7 +13,11 @@ $USE_RUBY ||= false
 # Are we a command-line app? Default to no.
 $cl ||= false
 
+
+
 require "amp/support/loaders.rb"
+
+need { 'amp/profiling_hacks' }
 
 #require 'profile'
 require 'fileutils'
@@ -33,6 +37,13 @@ module Amp
   autoload :AmpConfig,                 "amp/support/amp_config.rb"
   autoload :UI,                        "amp/support/amp_ui.rb"
   
+  module Git
+    autoload :Changeset,                 "amp/repository/git/repo_format/changeset.rb"
+    autoload :WorkingDirectoryChangeset, "amp/repository/git/repo_format/changeset.rb"
+    autoload :VersionedFile,             "amp/repository/git/repo_format/versioned_file.rb"
+    autoload :VersionedWorkingFile,      "amp/repository/git/repo_format/versioned_file.rb"
+  end
+  
   module Mercurial
     autoload :Ignore,                    "amp/support/mercurial/ignore.rb"
     
@@ -47,6 +58,19 @@ module Amp
     autoload :ChangeGroup,               "amp/repository/mercurial/revlogs/changegroup.rb"
     autoload :Changeset,                 "amp/repository/mercurial/repo_format/changeset.rb"
     autoload :WorkingDirectoryChangeset, "amp/repository/mercurial/repo_format/changeset.rb"
+  end
+  
+  module Mercurial
+    module RevlogSupport
+      autoload :ChangeGroup,             "amp/repository/mercurial/revlogs/changegroup.rb"
+      autoload :Index,                   "amp/repository/mercurial/revlogs/index.rb"
+      autoload :IndexInlineNG,           "amp/repository/mercurial/revlogs/index.rb"
+      autoload :IndexVersion0,           "amp/repository/mercurial/revlogs/index.rb"
+      autoload :LazyIndex,               "amp/repository/mercurial/revlogs/index.rb"
+      autoload :IndexVersionNG,          "amp/repository/mercurial/revlogs/index.rb"
+      autoload :Node,                    "amp/repository/mercurial/revlogs/node.rb"
+      autoload :Support,                 "amp/repository/mercurial/revlogs/revlog_support.rb"
+    end
   end
   
   module Bundles
@@ -107,6 +131,12 @@ module Amp
     autoload :CommonChangesetMethods,    "amp/repository/abstract/common_methods/changeset.rb"
     autoload :CommonVersionedFileMethods,"amp/repository/abstract/common_methods/versioned_file.rb"
     
+    module Git
+      autoload :LocalRepository,         "amp/repository/git/repositories/local_repository.rb"
+      autoload :GitPicker,               "amp/repository/git/repository.rb"
+      autoload :StagingArea,             "amp/repository/git/repo_format/staging_area.rb"
+    end
+    
     module Mercurial
       autoload :BranchManager,           "amp/repository/mercurial/repo_format/branch_manager.rb"
       autoload :BundleRepository,        "amp/repository/mercurial/repositories/bundle_repository.rb"
@@ -125,17 +155,7 @@ module Amp
     end
   end
   
-  module Mercurial
-    module RevlogSupport
-      autoload :ChangeGroup,             "amp/repository/mercurial/revlogs/changegroup.rb"
-      autoload :Index,                   "amp/repository/mercurial/revlogs/index.rb"
-      autoload :IndexInlineNG,           "amp/repository/mercurial/revlogs/index.rb"
-      autoload :IndexVersion0,           "amp/repository/mercurial/revlogs/index.rb"
-      autoload :IndexVersionNG,          "amp/repository/mercurial/revlogs/index.rb"
-      autoload :Node,                    "amp/repository/mercurial/revlogs/node.rb"
-      autoload :Support,                 "amp/repository/mercurial/revlogs/revlog_support.rb"
-    end
-  end
+
   
   module Servers
     autoload :FancyHTTPServer,           "amp/server/fancy_http_server.rb"
@@ -177,7 +197,9 @@ require "amp/dependencies/amp_support.rb"
 require "amp/support/ruby_19_compatibility.rb"
 require "amp/support/support.rb"              
 require "amp/templates/template.rb"
-require "amp/repository/mercurial/repository.rb"
+require "amp/repository/mercurial/repository.rb" # we're just loading in
+require 'amp/repository/git/repository.rb'       # all of the base repositories
+
 if $cl # if it's a command line app
   include Amp::KernelMethods
   require       "amp/commands/command.rb"
@@ -187,11 +209,12 @@ else
   # it's not a command line app
  require     'amp/support/docs.rb' # live documentation access
 end
+
 require      "amp/repository/repository.rb"
 
 module Amp
-  VERSION = '0.5.2'
-  VERSION_TITLE = "John Locke"
+  VERSION = '0.5.3'
+  VERSION_TITLE = "John Locke" # the next one should totally be "Suomalaisen Susijengi"
   
   def self.new_irb_session(bndng)
     require 'irb'
@@ -235,4 +258,4 @@ if ENV["TESTING"] == "true"
 end
 
 # Benchmarking stuff
-need { 'amp/profiling_hacks' }
+

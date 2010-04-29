@@ -18,7 +18,7 @@ module Amp
         # @return [Template] the template with the given name
         def [](type, template)
           ensure_templates_loaded
-          return all_templates[type.to_sym][template.to_sym]
+          return all_templates[type.to_sym][template.to_sym] || all_templates[:all][template.to_sym]
         end
         
         ##
@@ -159,7 +159,7 @@ module Amp
                                 'or template(name, renderer, text)')
       end
       template = (args.size > 1) ? args[0] : :erb
-      Support::Template.new(name, template, args.last)
+      Support::Template.new(:all, name, template, args.last)
     end
   end
 end

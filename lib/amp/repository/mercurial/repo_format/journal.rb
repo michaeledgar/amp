@@ -175,11 +175,10 @@ module Amp
           file, offset = hash[:file], hash[:offset]
           begin
             self.opener.open(file, "a") do |fp|
-              p "OPENED #{file} truncating to #{offset}"
               fp.truncate offset
             end
           rescue
-            @reporter.report "Failed to truncate #{File.join(".hg","store",file)}\n"
+            @reporter.report "Failed to truncate #{self.opener.join(file)}\n"
           end
         end
         @entries = []

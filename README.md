@@ -1,4 +1,4 @@
-Amp Release v0.5.1 (John Locke)
+Amp Release v0.5.3 (John Locke)
 ==============================
 
 **Homepage**:   [http://amp.carboni.ca](http://amp.carboni.ca)   
@@ -6,7 +6,7 @@ Amp Release v0.5.1 (John Locke)
 **Git**:        [http://github.com/michaeledgar/amp](http://github.com/michaeledgar/amp)   
 **Mercurial**:  [http://bitbucket.org/carbonica/amp](http://bitbucket.org/carbonica/amp)   
 **Author**:     Michael Edgar & Ari Brown  
-**Copyright**:  2009  
+**Copyright**:  2009-2010
 **License**:    GPLv2 (inherited from Mercurial)  
 
 
@@ -74,7 +74,7 @@ ________
     % amp commit -m "leethaxness"
     % amp push
   
-Nothing really changes from using the hg command. There are a few differences
+Nothing really changes from using the hg/git command. There are a few differences
 here and there (see `amp help [COMMAND]`), but really, it's pretty much the same.
   
 Using amp as a library:

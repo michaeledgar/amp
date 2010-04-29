@@ -144,7 +144,7 @@ module Amp
             end
             l = header + (b.map {|line| add_line(line, options)})
           elsif b.nil? || b.empty?
-            a = b.split_lines_better
+            a = b.split_lines_better if b
             header = []
             if options[:pretty]
               l1 = b.nil? ? "Removed file " : "Changed file "

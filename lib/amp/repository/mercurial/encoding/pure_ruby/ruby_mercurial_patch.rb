@@ -22,14 +22,14 @@ module Amp
         def self.apply_patches(source, patches)
           return source if patches.empty?
           patch_lens = patches.map {|patch| patch.size}
-          pl = patch_lens.sum
+          pl = patch_lens.inject(0) {|a, b| a += b} # sum
           bl = source.size + pl
           tl = bl + bl + pl
           b1, b2 = 0, bl
           
           return a if tl == 0 #empty patches. lame.
           
-          output = StringIO.new "",(ruby_19? ? "r+:ASCII-8BIT" : "r+")
+          output = StringIO.new "", Support.binary_mode("r+")
           output.write source
           
           frags = [[source.size, b1]]

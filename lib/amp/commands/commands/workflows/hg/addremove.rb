@@ -82,5 +82,6 @@ EOS
     end
     repo.staging_area.remove to_del unless opts[:"dry-run"]
     
+    repo.staging_area.save
   end
 end

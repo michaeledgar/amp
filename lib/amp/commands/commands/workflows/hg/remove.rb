@@ -33,6 +33,7 @@ command :remove do |c|
     
     repo.staging_area.remove(remove, :unlink => ! opts[:"no-unlink"]) # forgetting occurs here
     repo.forget(forget)
+    repo.staging_area.save
     
     remove += forget
     

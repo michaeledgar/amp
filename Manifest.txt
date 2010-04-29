@@ -76,6 +76,7 @@ lib/amp/commands/commands/workflows/hg/untrack.rb
 lib/amp/commands/commands/workflows/hg/update.rb
 lib/amp/commands/commands/workflows/hg/verify.rb
 lib/amp/commands/commands/workflows/hg/view.rb
+lib/amp/commands/commands/workflows/hg/what_changed.rb
 lib/amp/commands/dispatch.rb
 lib/amp/commands/hooks.rb
 lib/amp/dependencies/amp_support.rb
@@ -143,6 +144,10 @@ lib/amp/repository/abstract/common_methods/local_repo.rb
 lib/amp/repository/abstract/common_methods/staging_area.rb
 lib/amp/repository/abstract/common_methods/versioned_file.rb
 lib/amp/repository/generic_repo_picker.rb
+lib/amp/repository/git/repo_format/changeset.rb
+lib/amp/repository/git/repo_format/staging_area.rb
+lib/amp/repository/git/repo_format/versioned_file.rb
+lib/amp/repository/git/repositories/local_repository.rb
 lib/amp/repository/git/repository.rb
 lib/amp/repository/mercurial/encoding/mercurial_diff.rb
 lib/amp/repository/mercurial/encoding/mercurial_patch.rb
@@ -160,6 +165,7 @@ lib/amp/repository/mercurial/repo_format/staging_area.rb
 lib/amp/repository/mercurial/repo_format/store.rb
 lib/amp/repository/mercurial/repo_format/tag_manager.rb
 lib/amp/repository/mercurial/repo_format/updatable.rb
+lib/amp/repository/mercurial/repo_format/updater.rb
 lib/amp/repository/mercurial/repo_format/verification.rb
 lib/amp/repository/mercurial/repositories/bundle_repository.rb
 lib/amp/repository/mercurial/repositories/http_repository.rb
@@ -330,13 +336,14 @@ test/revlog_tests/test_revlog.rb
 test/revlog_tests/testindex.i
 test/store_tests/store.tar.gz
 test/store_tests/test_fncache_store.rb
+test/test_19_compatibility.rb
 test/test_base85.rb
 test/test_bdiff.rb
 test/test_changegroup.rb
 test/test_commands.rb
 test/test_difflib.rb
 test/test_generator.rb
-test/test_helper.rb
+test/test_ignore.rb
 test/test_journal.rb
 test/test_match.rb
 test/test_mdiff.rb
@@ -345,3 +352,4 @@ test/test_multi_io.rb
 test/test_support.rb
 test/test_templates.rb
 test/test_ui.rb
+test/testutilities.rb

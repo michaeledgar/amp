@@ -120,10 +120,10 @@ module Amp
           end
           
           files = mapping.files.select {|f| Dir.dirname(f) == path }.map {|f| f[path.size..-1].shift '/' }
-          dirs  = mapping.files.select {|f| File.amp_directories_to(f, true).index(path) && Dir.dirname(f) != path } # only go one deep
+          dirs  = mapping.files.select {|f| FileHelpers.directories_to(f, true).index(path) && Dir.dirname(f) != path } # only go one deep
           dirs.map! do |d|
-            idx = File.amp_directories_to(d, true).index path
-            File.amp_directories_to(d, true)[idx - 1][path.size..-1].shift '/'
+            idx = FileHelpers.directories_to(d, true).index path
+            FileHelpers.directories_to(d, true)[idx - 1][path.size..-1].shift '/'
           end.uniq!
           
           path = path.empty? ? '' : path + '/'

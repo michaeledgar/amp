@@ -36,16 +36,53 @@ module Amp
       end
       
       ##
+      # Returns whether the given text from a decompressed node has meta-data
+      # encoded in it. Not for public use.
+      #
+      # @param [String] data the data from the file
+      # @return [Boolean] is there metadata?
+      def has_metadata?(data)
+        return data.start_with?("\1\n")
+      end
+      
+      ##
+      # Returns the location of the end of the metadata. Metadata prefixes the
+      # data in the block.
+      #
+      # @param [String] text the text to inspect
+      # @param [Integer] the location of the end of the metadata
+      def normal_data_start(text)
+        text.index("\1\n", 2) + 2
+      end
+      
+      ##
+      # Returns the location of the end of the metadata. Metadata prefixes the
+      # data in the block.
+      #
+      # @param [String] text the text to inspect
+      # @param [Integer] the location of the end of the metadata
+      def metadata_end(text)
+        text.index("\1\n", 2)
+      end
+      
+      ##
+      # Returns the start of the metadata in the text
+      #
+      # @return [Integer] the location of the start of the metadata
+      def metadata_start
+        2
+      end
+      
+      ##
       # Reads the data of the revision, ignoring the meta data for copied files
       # @param [String] node the node_id to read
       # @return [String] the data of the revision
       #
       def read(node)
-        t = decompress_revision(node)
-        return t unless t.start_with?("\1\n")
+        text = decompress_revision(node)
+        return text unless has_metadata?(text)
     
-        start = t.index("\1\n", 2)
-        t[(start+2)..-1]
+        text[normal_data_start(text)..-1]
       end
       
       ##
@@ -55,16 +92,29 @@ module Amp
       #
       def read_meta(node)
         t = decompress_revision(node)
-        return {} unless t.start_with?("\1\n")
+        return {} unless has_metadata?(t)
         
-        start = t.index("\1\n", 2)
-        mt = t[2..(start-1)]
-        m = {}
-        mt.split("\n").each do |l|
-          k, v = l.split(": ", 2)
-          m[k] = v
+        mt = t[metadata_start..(metadata_end(t) - 1)]
+        mt.split("\n").inject({}) do |hash, line|
+          k, v = line.split(": ", 2)
+          hash[k] = v
+          hash
         end
-        m
+      end
+      
+      ##
+      # Combines the revision data and the metadata into one text blob. Uses
+      # Mercurial's encoding method.
+      #
+      # @param [String] text the data for the revision
+      # @param [Hash] meta the metadata to attach
+      # @return [String] the compiled data
+      def inject_metadata(text, meta)
+        if (meta && meta.any?) || text.start_with?("\1\n")
+          mt = meta ? meta.map {|k, v| "#{k}: #{v}\n"} : ""
+          text = "\1\n" + mt.join + "\1\n" + text
+        end
+        text
       end
       
       ##
@@ -76,13 +126,9 @@ module Amp
       # @param [Integer] link the revision number this is linked to
       # @param [Integer] p1 (nil) the first parent of this new revision
       # @param [Integer] p2 (nil) the second parent of this new revision
-      # @param [String] digest referring to the node this makes
+      # @return [String] digest referring to the node this makes
       def add(text, meta, journal, link, p1=nil, p2=nil)
-        if (meta && meta.any?) || text.start_with?("\1\n")
-          mt = ""
-          mt = meta.map {|k, v| "#{k}: #{v}\n"} if meta
-          text = "\1\n" + mt.join + "\1\n" + text
-        end
+        text = inject_metadata(text, meta)
         add_revision(text, journal, link, p1, p2)
       end
       
@@ -96,12 +142,11 @@ module Amp
         return false if parents_for_node(node).first != NULL_ID
         
         m = read_meta node
-        
-        if m.any? && m["copy"]
-          return [m["copy"], m["copyrev"].unhexlify]
+        if m["copy"]
+          [m["copy"], m["copyrev"].unhexlify]
+        else
+          false
         end
-        
-        false
       end
       
       ##

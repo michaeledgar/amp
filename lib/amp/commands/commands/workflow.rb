@@ -8,10 +8,10 @@ command :workflow do |c|
   c.before do |opts, args|
     if args.size < 1
       puts "Usage:      amp workflow workflow_name"
-      c.break
+      false
+    else
+      true
     end
-    
-    true
   end
   
   c.on_run do |opts, args|

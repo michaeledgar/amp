@@ -50,13 +50,16 @@ command :rm do |c|
     
     repo.staging_area.remove remove, :unlink => opts[:"no-unlink"] unless opts[:"dry-run"] # forgetting occurs here
     repo.forget forget unless opts[:"dry-run"]
+    repo.staging_area.save    
     
     remove += forget
-        # 
-        # if remove.size == 1
-        #   Amp::UI.say "File #{remove.first.red} removed at #{Time.now}"
-        # else
-        #   Amp::UI.say "#{remove.size.to_s.red} files removed at #{Time.now}"
-        # end
+
+    if remove.size == 1
+      Amp::UI.say "File #{remove.first.red} removed at #{Time.now}"
+    else
+      Amp::UI.say "#{remove.size.to_s.red} files removed at #{Time.now}"
+    end
+
+
   end
 end

@@ -81,7 +81,7 @@ module Amp
         unless count.zero?
           doff = @offset - @size
           @data.unshift @data.join
-          @data.delete_range(1..-1)
+          @data.slice!(1, @data.size)
           s = @data[0][doff..(doff+count-1)]
           @offset += s.size
           ret += s
@@ -130,7 +130,7 @@ module Amp
         # writing pending data.
         
         if @owner.delay_count == 0
-          @owner.delay_name = File.amp_name(fp)
+          @owner.delay_name = FileHelpers.name(fp)
           mode.gsub!(/a/, 'w') if @owner.empty?
           return @real_opener.open(name+".a", mode) # See what I did there?
         end
@@ -154,6 +154,10 @@ module Amp
     # When you call #finalize, the fake file will replace the real deal.
     class ChangeLog < Revlog
       attr_accessor :delay_count, :delay_name, :index_file, :delay_buffer, :node_map
+      
+      class ChangelogEntry < Struct.new(:manifest_node, :user, :time, :files, :description, :extra)
+        alias_method :desc, :description
+      end
       
       ##
       # Initializes the revision log. Just pass in an Opener. Amp::Opener.new(path)
@@ -188,7 +192,7 @@ module Amp
           src = @_real_opener.join(@index_file+".a")
           dest = @_real_opener.join(@index_file)
           @opener = @_real_opener # switch back to normal mode....
-          return File.amp_force_rename(src, dest)
+          return FileHelpers.force_rename(src, dest)
         end
         
         if @delay_buffer && @delay_buffer.any?
@@ -257,7 +261,7 @@ module Amp
       # @param [Hash] data the extra data to format
       # @return [String] the encoded data
       def encode_extra(data)
-        " " + data.sort.map {|k| "#{k}:#{data[k]}".add_slashes }.join("\0")
+        data.sort.map {|k, v| "#{k}:#{v}".add_slashes }.join("\0")
       end
       
       ##
@@ -274,7 +278,7 @@ module Amp
       def read(node)
         text = decompress_revision node
         if text.nil? || text.empty?
-          return [NULL_ID, "", [0,0], [], "", {"branch" => "default"}]
+          return ChangelogEntry.new(NULL_ID, "", [0,0], [], "", {"branch" => "default"})
         end
         #p text
         last = text.index("\n\n")
@@ -290,13 +294,41 @@ module Amp
         else
           time, timezone, extra = extra_data
           time, timezone = time.to_f, timezone.to_i
-          extra = decode_extra text
+          extra = decode_extra extra
         end
-        extra["branch"] = "default" unless extra["branch"]
+        extra["branch"] ||= "default"
         
         files = l[3..-1]
               
-        [manifest, user, [time, timezone], files, desc, extra]
+        ChangelogEntry.new(manifest, user, [time, timezone], files, desc, extra)
+      end
+      
+      ##
+      # Compile the commit text that gets stored in the changelog.
+      #
+      # @param [String] manifest_node the manifest node in binary form
+      # @param [String] user the committing username
+      # @param [Time] date the time of the commit
+      # @param [Array<String>] files the files being committed
+      # @param [String] message the message being committed
+      # @param [Hash] extra the extra data to be included like branch info
+      def compile_commit_text(manifest_node, user, date, files, message, extra)
+        # username has no leading whitespace
+        user = user.strip
+        raise RevlogSupport::RevlogError.new("no \\n in username") if user =~ /\n/
+        
+        # friendly date format
+        parsed_date = "#{date.to_i} #{-1 * date.utc_offset}"
+        
+        # encode extra data
+        if extra
+          extra = (extra.any?) ? (" " + encode_extra(extra)) : ""
+          parsed_date = "#{parsed_date}#{extra}"
+        end
+        
+        # Join them in lines
+        l = [manifest_node.hexlify, user, parsed_date] + files.sort + ["", message]
+        l.join "\n"
       end
       
       ##
@@ -315,23 +347,13 @@ module Amp
       # @param [Time] date the date of the commit
       # @param [Hash] extra any extra data
       def add(manifest, files, desc, journal, p1=nil, p2=nil, user=nil, date=nil, extra={})
-        user = user.strip
-        raise RevlogSupport::RevlogError.new("no \\n in username") if user=~ /\n/
-        user, desc = user, desc #TODO: encoding!
-        
-        date = Time.now unless date
-        parsed_date = "#{date.to_i} #{-1 * date.utc_offset}"
-        
+        date ||= Time.now
         if extra && ["default", "", nil].include?(extra["branch"])
           extra.delete "branch"
         end
-        if extra
-          extra = (extra.any?) ? encode_extra(extra) : ""
-          parsed_date = "#{parsed_date}#{extra}"
-        end
         
-        l = [manifest.hexlify, user, parsed_date] + files.sort + ["", desc]
-        text = l.join "\n"
+        text = compile_commit_text(manifest, user, date, files, desc, extra)
+        
         add_revision text, journal, self.size, p1, p2
       end
     end

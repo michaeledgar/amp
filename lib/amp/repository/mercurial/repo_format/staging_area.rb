@@ -2,15 +2,27 @@ module Amp
   module Repositories
     module Mercurial
       class StagingArea < AbstractStagingArea
+        
         attr_reader :dirstate
-
+        attr_reader :repo
+        alias_method :repository, :repo
+        
         def initialize(repo)
-          @ignore_all = false
+          @ignore_all = nil
           @repo = repo
           @check_exec = false
         end
         
         ######### API Methods #################################################
+        
+        ##
+        # The directory used by the VCS to store magical information (.hg, .git, etc.).
+        #
+        # @api
+        # @return [String] relative to root
+        def vcs_dir
+          '.hg'
+        end
         
         ##
         # Adds a list of file paths to the repository for the next commit.
@@ -42,7 +54,6 @@ module Amp
                 dirstate.add file
               end
             end
-            dirstate.write unless rejected.size == files.size
           end
           rejected
         end
@@ -79,9 +90,6 @@ module Amp
                 dirstate.remove f
               end
             end
-            
-            # Write 'em out boss
-            dirstate.write if successful
           end
           
           true
@@ -97,6 +105,12 @@ module Amp
           files.each do |file|
             dirstate.normal(file)
           end
+        end
+        
+        ##
+        # Saves the staging area's state.  Any added files, removed files, "normalized" files
+        # will have that status saved here.
+        def save
           dirstate.write
         end
         
@@ -142,7 +156,7 @@ module Amp
           
           return if opts[:after] && !exists
           unless opts[:"dry-run"]
-            # Performs actual file copy from one locatino to another.
+            # Performs actual file copy from one location to another.
             # Overwrites file if it's there.
             begin
               File.safe_unlink(abstarget) if exists
@@ -216,7 +230,6 @@ module Amp
               state  = dirstate[dest].status
               dirstate.add dest if [:untracked, :removed].include?(state)
               dirstate.copy source => dest
-              dirstate.write
               
               #Amp::Logger.info("copy #{source} -> #{dest}")
             end

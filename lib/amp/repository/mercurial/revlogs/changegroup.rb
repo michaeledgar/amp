@@ -88,7 +88,7 @@ module Amp
           case header
           when "HG10UN", ""
             # new StringIO
-            result = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
+            result = StringIO.new "", Amp::Support.binary_mode("w+")
             # have to fix the fact that StringIO doesn't conform to the other streams,
             # and give it a #flush method. Kind of hackish.
             class << result
@@ -130,17 +130,17 @@ module Amp
           # if we have no header, we're uncompressed
           if !header.start_with?("HG")
             # append the header to it. meh
-            headerio = StringIO.new(header, (ruby_19? ? "w+:ASCII-8BIT" : "r+"))
-            Amp::Support::MultiIO.new(headerio, file_handle)
+            headerio = StringIO.new header, Amp::Support.binary_mode("r+")
+            Amp::Support::MultiIO.new headerio, file_handle
             # WOW we have legacy support already
           elsif header == "HG10GZ"
             # Get a gzip reader
             Zlib::GzipReader.new(file_handle)
           elsif header == "HG10BZ"
             # get a BZip reader, but it has to decompress "BZ" first. Meh.
-            headerio = StringIO.new("BZ", (ruby_19? ? "w+:ASCII-8BIT" : "r+"))
-            input = Amp::Support::MultiIO.new(headerio, file_handle)
-            BZ2::Reader.new(input)
+            headerio = StringIO.new "BZ", Amp::Support.binary_mode("r+")
+            input = Amp::Support::MultiIO.new headerio, file_handle
+            BZ2::Reader.new input
           end
         end
             
@@ -156,7 +156,7 @@ module Amp
         #   or a socket. If not specified, a StringIO is created and returned.
         # @return [IO, #write] the output IO stream is returned, even if a new one is not
         #   created on the fly.
-        def self.write_bundle(changegroup, bundletype, fh = StringIO.new("", (ruby_19? ? "w+:ASCII-8BIT" : "w+")))
+        def self.write_bundle(changegroup, bundletype, fh = StringIO.new("", Amp::Support.binary_mode("w+")))
           # rewind the changegroup to start at the beginning
           changegroup.rewind
           # pick out our header

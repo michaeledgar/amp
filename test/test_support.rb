@@ -13,18 +13,6 @@ class TestSupport < AmpTestCase
     assert_equal(["hi there what's\n", "\r up there\r kids\n", " lol"], "hi there what's\n\r up there\r kids\n lol".split_newlines)
   end
   
-  def test_absolute
-    root = "/root"
-    paths = { "/Monkey"  => "/Monkey",
-              "asd/asdf" => "/root/asd/asdf",
-              "bllop"    => "/root/bllop"
-            }
-    
-    paths.each do |path, result|
-      assert_equal result, path.absolute(root)
-    end
-  end
-  
   def test_opposite_method
     obj = OppositeMethodTestKlass.new
     assert_respond_to obj, :opposite
@@ -34,6 +22,40 @@ class TestSupport < AmpTestCase
     assert obj.opposite(false)
   end
   
+  def test_array_hash
+    hash = ArrayHash.new
+    assert_equal [], hash[:hello]
+    hash[:other] << "hi"
+    assert_equal ["hi"], hash[:other]
+  end
+  
+  def test_symbol_to_proc
+    assert_equal [1,2,3], ["1","2","3"].map(&:to_i)
+  end
+  
+  def test_time_to_diff
+    t = Time.at(1234567890.123456)
+    expected = "2009-02-13 18:31:30.123456"
+    assert_equal expected, t.to_diff
+  end
+  
+  def test_hide_password
+    url = "http://user:password@www.bob.com/"
+    expected = "http://user:***@www.bob.com/"
+    assert_equal expected, url.hide_password
+    
+    url = "https://u:somepass@.ru" # weird URL
+    expected = "https://u:***@.ru"
+    assert_equal expected, url.hide_password
+  end
+  
+  def test_hexlify
+    assert_equal "0102dead", "\x01\x02\xde\xad".hexlify
+    assert_equal "fffedabb1234", "\xff\xfe\xda\xbb\x12\x34".hexlify
+  end
+  
+  ###
+  # File additions. Really it's more just like 
 end
 
 

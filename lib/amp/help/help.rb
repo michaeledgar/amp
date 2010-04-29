@@ -16,7 +16,7 @@ module Amp
       #
       # @return [Hash<String => Array<HelpEntry>>] the entry table for the help system
       def entries
-        @entries ||= Hash.new() {|h, k| h[k] = []}
+        @entries ||= ArrayHash.new
       end
       
       ##

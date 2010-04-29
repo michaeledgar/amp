@@ -7,12 +7,10 @@ command :copy do |c|
   c.synonym :cp
   c.before do |opts, args|
     if args.size < 2
-      Amp::UI.say "Usage: amp copy source [other-sources...] destination"
-      c.break
+      raise abort("Usage: amp copy source [other-sources...] destination")
     elsif args.size > 2 && !File.directory?(args.last)
-      Amp::UI.say "If you want to copy more than 1 file, your destination must" +
-                  " be a directory."
-      c.break
+      raise abort("If you want to copy more than 1 file, your destination must" +
+                  " be a directory.")
     end
     true
   end
@@ -26,6 +24,7 @@ command :copy do |c|
       Amp::UI.say "#{source} => #{destination}"
       repo.staging_area.copy source, destination, opts
     end
+    repo.staging_area.save
   end
 end
 

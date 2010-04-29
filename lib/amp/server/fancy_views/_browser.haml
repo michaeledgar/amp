@@ -14,8 +14,8 @@
   - file_list.each do |file|
     %tr{:class => (path + "/" + file[:link] == orig_path) ? "selected" : ""}
       - if file[:type] == :file
-        - fl = repo.file(path + '/' + file[:name])
-        - last = fl.index[-2].link_rev
+        - fl = repo.file_log(path + '/' + file[:name])
+        - last = fl[-2].link_rev
       %td.filename
         = link_to_file root, changeset_node, file[:link], :text => file[:name]
       %td.date

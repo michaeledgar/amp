@@ -279,16 +279,16 @@ module Amp
           # windows stuff
           k = tool_setting_string(tool, "regkey")
           if k && k.any?
-            p = File.amp_lookup_reg(k, tool_setting_string(tool, "regname"))
+            p = FileHelpers.lookup_reg(k, tool_setting_string(tool, "regname"))
             if p && p.any?
-              p = File.amp_find_executable(p + check_tool_string(tool, "regappend"))
+              p = FileHelpers.find_executable(p + check_tool_string(tool, "regappend"))
               if p
                 return p
               end
             end
           end
           # normal *nix lookup
-          return File.amp_find_executable(tool_setting_string(tool, "executable", tool))
+          return FileHelpers.find_executable(tool_setting_string(tool, "executable", tool))
         end
         
         ##

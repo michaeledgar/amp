@@ -92,6 +92,18 @@ module Amp
         end
         
         ##
+        # Regarding branch support.
+        #
+        # For each repository format, you begin in a default branch.  Each repo format, of
+        # course, starts with a different default branch.  Mercurial's is "default".
+        #
+        # @api
+        # @return [String] the default branch name
+        def default_branch_name
+          "default"
+        end
+        
+        ##
         # can we copy files? Only for local repos.
         # 
         # @return [Boolean] whether we are able to copy files

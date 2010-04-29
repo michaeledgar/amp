@@ -13,7 +13,7 @@
         = haml :_browser, :locals => {:root => root, :vf_cur => vf_cur, :path => path, :orig_path => orig_path, :file_list => file_list, :changeset_node => changeset_node, :repo => repo}
         .browser-file
           - if vf_cur
-            - filelog = repo.file orig_path
+            - filelog = repo.file_log orig_path
             %h2.header Versions
             %ul.versions
               - filelog.each do |rev|

@@ -7,6 +7,7 @@ command :forget do |c|
     
     puts "Removing #{args.size} file#{args.size == 1 ? '' : 's'} from the staging area"
     args.each {|f| repo.staging_area.normal f; print '.'}
+    repo.staging_area.save
     puts
   end
 end

@@ -51,6 +51,47 @@ module Amp
           ret
         end
         
+        ##
+        # This bears some explanation.
+        #
+        # Rather than simply having a 4-byte header for the index file format, the
+        # Mercurial format takes the first entry in the index, and stores the header
+        # in its offset field. (The offset field is a 64-bit unsigned integer which
+        # stores the offset into the data or index of the associated record's data)
+        # They take advantage of the fact that the first entry's offset will always
+        # be 0. As such, its offset field is always going to be zero, so it's safe
+        # to store data there.
+        #
+        # The format is ((flags << 16) | (version)), where +flags+ is a bitmask (up to 48
+        # bits) and +version+ is a 16-bit unsigned short.
+        #
+        # The worst part is, EVERY SINGLE ENTRY has its offset shifted 16 bits to the left,
+        # apparently all because of this. It fucking baffles my mind. I mean... I guess now
+        # there are flags available if they ever add per-revision flags... but they haven't
+        # yet. And the flags could've just been in the top 16 bits
+        #
+        # So yeah. offset = value >> 16.
+        def true_offset
+          offset_flags >> 16
+        end
+        
+        ##
+        # Sets the offset value of the entry. Needed because offset and flags are two merged
+        # fields.
+        #
+        # @param [Fixnum] val the value to set as the new offset
+        def true_offset=(val)
+          self.offset_flags = (offset_flags & 0xffff) | (val << 16)
+        end
+        
+        ##
+        # Sets the flags of the entry. Needed because offset and flags are two merged fields.
+        #
+        # @param [Fixnum] val the new flags to set
+        def flags=(val)
+          self.offset_flags = (offset_flags & 0xffffffffffff0000) | val
+        end
+        
         # Fixes the values to force them to be signed (possible to be negative)
         def fix_signs
           self.offset_flags     = self.offset_flags.byte_swap_64
@@ -112,19 +153,25 @@ module Amp
         # @return [Index] Some subclassed version of Index that's parsed the file
         def self.parse(opener, inputfile)
           versioninfo = REVLOG_DEFAULT_VERSION
-          i = ""
+          
           begin
+            i = nil
             opener.open(inputfile) do |f|
               i = f.read(4)
             end
-            versioninfo = i.unpack(VERSION_FORMAT).first if i.size > 0
+            versioninfo = i.unpack(VERSION_FORMAT).first if i
             # Check if the data is with the index info.
-            inline = (versioninfo & REVLOG_NG_INLINE_DATA > 0) 
+            inline = versioninfo & REVLOG_NG_INLINE_DATA > 0
             # Get the version number of the index file.
-            version = Support.get_version versioninfo
+            version = get_version versioninfo
           rescue
             inline = true
             version = REVLOG_VERSION_NG
+          end
+          # Get a lazy subclass if we're not inline and huge.
+          opener_filename = opener.join(inputfile)
+          if version == REVLOG_VERSION_NG && !inline && File.exist?(opener_filename) && File.size(opener_filename) > 25.kb
+            return LazyIndex.new opener, inputfile
           end
           
           # Pick a subclass for the version and in-line-icity we found.
@@ -138,6 +185,14 @@ module Amp
           else
             raise RevlogError.new("Invalid format: #{version} flags: #{get_flags(versioninfo)}")
           end
+        end
+        
+        ##
+        # Extracts the version of the revlog from the offset/flags value provided.
+        #
+        # And yeah. version = value && 0xFFFF (last 16 bits)
+        def self.get_version(t)
+          t & 0xFFFF
         end
         
         ##
@@ -249,7 +304,7 @@ module Amp
           
           node_map[entry.last] = curr
           
-          link = entry[4]
+          link = entry.link_rev
           data_file = index_file[0..-3] + ".d"
           
           entry = pack_entry entry, link
@@ -311,12 +366,9 @@ module Amp
           opened = parse_file
           
           if opened
-            first_entry = @index[0]
-            type = get_version(first_entry.offset_flags)
-            first_entry.offset_flags = offset_version(0, type) #turn off inline
-            @index[0] = first_entry
+            fix_first_entry!
           end
-          
+
           @index << IndexEntry.new(0,0,0,-1,-1,-1,-1,Node::NULL_ID)
         end
         
@@ -330,6 +382,19 @@ module Amp
         def inline?; false; end
         
         ##
+        # Reads in an index entry from an IO source.
+        #
+        # @param [IO] input the input, IO source.
+        # @param [Integer] num the number of the entry
+        # @return [IndexEntry] the parsed entry
+        def read_entry(input, num)
+          entry = IndexEntry.new(input).fix_signs
+          @node_map[entry.node_id] = num
+          @index << entry
+          entry
+        end
+        
+        ##
         # Parses each index entry. Internal use only.
         #
         # @return [Boolean] whether the file was opened
@@ -339,11 +404,7 @@ module Amp
             @opener.open(@indexfile,"r") do |f|
               until f.eof?
                 # read the entry
-                entry = IndexEntry.new(f).fix_signs
-                # store it in the map
-                @node_map[entry.node_id] = n
-                # add it to the index
-                @index << entry
+                entry = read_entry(f, n)
                 n += 1
               end
             end
@@ -374,10 +435,20 @@ module Amp
         # This method writes the index to file. Pretty 1337h4><.
         #
         # @param [String] index_file the path to the index file.
+        # @param [IndexEntry] entry the entry to append to the index
+        # @param [Journal] journal a journal to log our actions to. Used for
+        #   error recovery.
+        # @param [Hash<Symbol => String>] data the data to write corresponding to
+        #   this entry. Keys:
+        #   :compression => The type of compression to use. One letter, such as
+        #     "u" for uncompressed 
+        #   :text => the text that makes up the revision data
+        # @param [IO] index_file_handle a possibly re-usable index file handle to use
+        #   for writing. used to limit file opens/closes.
         def write_entry(index_file, entry, journal, data, index_file_handle = nil)
           curr = self.size - 1
           
-          link = (entry.is_a? Array) ? entry[4] : entry.link_rev
+          link = entry.link_rev
           data_file = index_file[0..-3] + ".d"
           
           entry = pack_entry entry, link
@@ -401,14 +472,103 @@ module Amp
           journal << {:file => index_file, :offset => offset, :data => curr}
         end
     
+        def fix_first_entry!
+          first_entry = self[0]
+          type = Index.get_version(first_entry.offset_flags)
+          first_entry.true_offset = 0
+          first_entry.flags = type
+          @index[0] = first_entry
+        end
+      
       end
       
       ##
       # = LazyIndex
       # When this gets filled in, this class will let us access an index without loading
       # every entry first. This is handy because index files can get pretty fuckin big.
-      class LazyIndex < Index
+      #
+      # Only handles non-inline, big files.
+      #
+      # My strategy is going to be this: fill in the node_map to start with, but when they
+      # call [], fill in @index selectively by jumping to the appropriate place in the
+      # open file, and reading then.
+      class LazyIndex < IndexVersionNG
+        ##
+        # Initializes the lazy index.  Keeps a persistent open file handle... this might
+        # have to be reverted later.
+        def initialize(opener, inputfile)
+          @opener = opener
+          @indexfile = inputfile
+          @cache = nil
+          @index = []
+          @node_map = {Node::NULL_ID => Node::NULL_REV}
+          
+          @index_handle = @opener.open(inputfile, "r")
+          max_entry = File.size(@opener.join(inputfile)) / BLOCK_SIZE
+          read_all_node_ids!
+          fix_first_entry!
+          
+          @index[max_entry] = IndexEntry.new(0,0,0,-1,-1,-1,-1,Node::NULL_ID)
+        end
         
+        ##
+        # Reads in an index entry from an IO source. Extra lazy!
+        #
+        # @param [IO] input the input, IO source.
+        # @param [Integer] num the number of the entry
+        # @return [IndexEntry] the parsed entry
+        def read_entry(input, num)
+          IndexEntry.new(input).fix_signs
+        end
+        
+        def read_all_node_ids!
+          idx = 0
+          @index_handle.seek(SHA1_OFFSET, IO::SEEK_SET)
+          until @index_handle.eof?
+            @node_map[@index_handle.read(20)] = idx
+            @index_handle.seek(BLOCK_SIZE - 20, IO::SEEK_CUR)
+            idx += 1
+          end
+          @index_handle.rewind
+        end
+        
+        ##
+        # Gets the entry at the given revision index. This requires a bit more logic because
+        # our index isn't actually loaded.
+        #
+        # @param [Integer, Range] idx the revision number of the desired index entry
+        # @return [IndexEntry] the entry at the requested location in the index
+        def [](idx)
+          if idx.is_a?(Range)
+            return @index[idx].each_with_index.map {|val, idx| force_load(idx)}
+          end
+          # idx is an index now
+          force_load(idx)
+        end
+        
+        ##
+        # Iterates over each entry in the index, including the null revision
+        def each(&b)
+          # force loading of the full listing by using self[]
+          self[0..(@index.size - 1)].each(&b)
+        end
+        
+        ##
+        # Forces the loading of the given revision number.
+        #
+        # @param [Fixnum] idx the index to load manually
+        # @return [IndexEntry] the loaded entry
+        def force_load(idx)
+          return @index[idx] if @index[idx]
+          @index_handle.seek(idx * BLOCK_SIZE)
+          @index[idx] = read_entry(@index_handle, idx)
+        end
+        
+        ##
+        # Closes the active index handle.
+        def close
+          @index_handle.close
+        end
       end
       
       ##
@@ -418,25 +578,8 @@ module Amp
       # entry block (see {IndexEntry}). This means less IO, which is good.
       #
       class IndexInlineNG < IndexVersionNG
-        VERSION_FORMAT = "N"
-        # We're inline!
-        INDEX_FORMAT_NG = "Q NNNNNN a20 x12"
-        # The distance into the entry to go to find the SHA1 hash
-        SHA1_OFFSET = 32
-        # The size of a single block in the index
-        BLOCK_SIZE = 8 + (6 * 4) + 20 + 12
-        
         def inline?; true; end
-        def version; REVLOG_VERSION_NG | REVLOG_NG_INLINE_DATA; end
-        def pack_entry(entry, rev)
-          entry = IndexEntry.new(*entry) if entry.kind_of? Array
-          p = entry.to_s
-          if rev == 0 || rev == 1
-            p = [version].pack(VERSION_FORMAT) + p[4..-1] # initial entry
-          end
-          p
-        end
-        
+        def version; super | REVLOG_NG_INLINE_DATA; end
         
         ##
         # @todo "not sure what the 0 is for yet or i'd make this a hash" (see code)
@@ -447,14 +590,9 @@ module Amp
           n = offset = 0
           begin
             @opener.open(@indexfile,"r") do |f|
-              return false if f.eof?
-              while !f.eof?
+              until f.eof?
                 # read 1 entry
-                entry = IndexEntry.new(f).fix_signs
-                # store it in the map
-                @node_map[entry.node_id] = n
-                # add it to the index
-                @index << entry
+                entry = read_entry(f, n)
                 n += 1
                 break if entry.compressed_len < 0
                 
@@ -472,12 +610,20 @@ module Amp
         # This method writes the index entry to file. Pretty 1337h4><.
         #
         # @param [String] index_file the path to the index file.
+        # @param [IndexEntry] entry the entry to append to the index
+        # @param [Journal] journal a journal to log our actions to. Used for
+        #   error recovery.
+        # @param [Hash<Symbol => String>] data the data to write corresponding to
+        #   this entry. Keys:
+        #   :compression => The type of compression to use. One letter, such as
+        #     "u" for uncompressed 
+        #   :text => the text that makes up the revision data
+        # @param [IO] index_file_handle a possibly re-usable index file handle to use
+        #   for writing. used to limit file opens/closes.
         def write_entry(index_file, entry, journal, data, index_file_handle = nil)
-          curr = self.size - 1
-          prev = curr - 1
+          curr, prev = self.size - 1, self.size - 2
           
-          link = (entry.is_a? Array) ? entry[4] : entry.link_rev
-          
+          link = entry.link_rev
           entry = pack_entry entry, curr
           
           index_file_handle ||= (opened = true && @opener.open(index_file, "a+"))

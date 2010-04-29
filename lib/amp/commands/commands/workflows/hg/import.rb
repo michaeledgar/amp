@@ -108,7 +108,7 @@ EOS
                                                      :cwd   => repo.root   ,
                                                      :file  => files
           ensure
-            files = Amp::Patch.update_dir repo, files, opts.pick(:similarity)
+            files = Amp::Patch.update_dir repo, files, opts.only(:similarity)
           end
           
           unless opts[:"no-commit"]

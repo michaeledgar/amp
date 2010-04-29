@@ -31,7 +31,7 @@ module Amp
       # @param [Amp::Match] match the matcher object
       # @return [Array<Hash, Array<String>>] returns an array: [file_stats, directories]
       def examine_named_files(files, match)
-        results, work = {".hg" => true}, []# ignore the .hg
+        results, work = {vcs_dir => true}, [] # ignore the .hg
         files.reject {|f| results[f] || f == ""}.sort.each do |file|
           path  = File.join(repo.root, file)
           
@@ -103,6 +103,7 @@ module Amp
       # Step 2: visit subdirectories
       # Step 3: report unseen items in the @files hash
       # 
+      # @todo this is still tied to hg
       # @param [Boolean] unknown
       # @param [Boolean] ignored
       # @return [Hash<String => [NilClass, File::Stat]>] nil for directories and
@@ -113,9 +114,9 @@ module Amp
         elsif not unknown
           @ignore_all = true
         end
-      
+        
         files = (match.files || []).uniq
-      
+        
         # why do we overwrite the entire array if it includes the current dir?
         # we even kill posisbly good things
         files = [''] if files.include?('.') # strange thing to do
@@ -126,7 +127,7 @@ module Amp
         
         # Run the patterns
         results = find_with_patterns(results, work, match)
-      
+        
         # step 3: report unseen items in @files
         visit = all_files.select {|f| !results[f] && match.call(f) }.sort
         
@@ -136,7 +137,7 @@ module Amp
           results[file] = keep ? File.lstat(path) : nil
         end
         
-        results.delete ".hg"
+        results.delete vcs_dir
         @ignore_all = nil # reset this
         results
       end
@@ -146,6 +147,10 @@ module Amp
       # Splits up all the files into modified, clean,
       # added, deleted, unknown, ignored, or lookup-needed.
       # 
+      # @param [Boolean] ignored do we collect the ignore files?
+      # @param [Boolean] clean do we collect the clean files?
+      # @param [Boolean] unknown do we collect the unknown files?
+      # @param [Amp::Match] match the matcher
       # @return [Hash<Symbol => Array<String>>] a hash of the filestatuses and their files
       def status(ignored, clean, unknown, match = Match.new { true })
         list_ignored, list_clean, list_unknown = ignored, clean, unknown
@@ -155,7 +160,7 @@ module Amp
       
         walk(list_unknown, list_ignored, match).each do |file, st|
           next if file.nil?
-        
+          
           unless tracking?(file)
             if list_ignored && ignoring_directory?(file)
               ignored << file
@@ -168,6 +173,7 @@ module Amp
         
           # here's where we split up the files
           state = file_status file
+          
           delta += calculate_delta(file, st)
           if !st && [:normal, :modified, :added].include?(state)
             # add it to the deleted folder if it should be here but isn't
@@ -191,6 +197,8 @@ module Amp
           end
         end
         
+        # # This code creates the copied and moved arrays
+        # # 
         # # ugh this should be optimized
         # # as in, built into the code above ^^^^^
         # dirstate.copy_map.each do |dst, src|

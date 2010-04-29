@@ -116,9 +116,9 @@ module Amp
       result = false
       # Run that fucker!!!
       begin
-        full_backtrace_please do
+        #full_backtrace_please do
           result = command.run cmd_opts, ARGV
-        end
+        #end
       rescue AbortError => e
         puts e.to_s
       end

@@ -9,6 +9,7 @@ module Amp
       # and we might need to get stuff from both. It's kind of like the
       # DelayedOpener/FakeAppender for changelogs.
       module BundleRevlog
+        include Amp::Mercurial::RevlogSupport::Support
         include Amp::Mercurial::RevlogSupport::Node
         BUNDLED_INDEX_ENTRY_SIZE = 80
         
@@ -65,9 +66,9 @@ module Amp
             link_rev = (link_mapper && link_mapper[changeset]) || num_revs
             previous ||= parent_1
             
-            @index << [Amp::Mercurial::RevlogSupport::Support.offset_version(start, 0),
+            @index << IndexEntry.new(offset_version(start, 0),
                        chunk_size, -1, -1, link_rev, revision_index_for_node(parent_1),
-                       revision_index_for_node(parent_2), node]
+                       revision_index_for_node(parent_2), node)
             
             @index.node_map[node] = num_revs
             @base_map[num_revs] = previous
@@ -76,7 +77,7 @@ module Amp
             num_revs += 1
           end
         end
-        alias_method :bundle_revlog_initialize, :initialize
+        
         ##
         # Returns whether the revision index is in the bundle part of this revlog,
         # or if it's in the actual, stored revlog file.
@@ -95,7 +96,7 @@ module Amp
         # @param [Fixnum] revision the revision index to lookup the base-revision of
         # @return [String] the revision node ID of the base for the requested revision
         def bundled_base_revision_for_index(revision)
-          @base_map[revision] || base_revision_for_index(revision)
+          @base_map[revision] || self[revision].base_rev
         end
         alias_method :bundled_base, :bundled_base_revision_for_index
         
@@ -129,7 +130,7 @@ module Amp
           both_bundled = bundled_revision?(rev1) && bundled_revision?(rev2)
           if both_bundled
             # super-quick path if both are bundled and rev2 == rev1 + 1 diff
-            revision_base = self.revision_index_for_node bundled_base_revision_for_index(rev2)
+            revision_base = self.revision_index_for_node bundled_base(rev2)
             if revision_base == rev1
               # if rev2 = rev1 + a diff, just get the diff!
               return get_chunk(revision2)
@@ -161,7 +162,7 @@ module Amp
               break
             end
             chain << rev
-            iter_node = bundled_base_revision_for_index rev
+            iter_node = bundled_base rev
             rev = revision_index_for_node iter_node
           end
           # done walking back, see if we have a stored cache!

@@ -12,6 +12,8 @@ module Amp
     # general API for repositories.
     module CommonLocalRepoMethods
       
+      attr_accessor :config
+      
       ##
       # Initializes a new directory to the given path, and with the current
       # configuration.
@@ -24,6 +26,7 @@ module Amp
       def initialize(path="", create=false, config=nil)
         @capabilities = {}
         @root         = File.expand_path path.chomp("/")
+        @config       = config
       end
       
       ##
@@ -33,7 +36,7 @@ module Amp
       # hard stuff yourself.
       def init(config=@config)
         FileUtils.makedirs root
-        working_write "ampfile.rb", <<-EOF
+        working_write "Ampfile", <<-EOF
 # Any ruby code here will be executed before Amp loads a repository and
 # dispatches a command.
 #
@@ -101,6 +104,17 @@ EOF
       end
       
       ##
+      # Walk recursively through the directory tree (or a changeset)
+      # finding all files matched by the match function
+      # 
+      # @param [String, Integer] node selects which changeset to walk
+      # @param [Amp::Match] match the matcher decides how to pick the files
+      # @param [Array<String>] an array of filenames
+      def walk(node=nil, match = Match.create({}) { true })
+        self[node].walk match # calls Changeset#walk
+      end
+      
+      ##
       # Iterates over each changeset in the repository, from oldest to newest.
       # 
       # @yield each changeset in the repository is yielded to the caller, in order
@@ -132,13 +146,15 @@ EOF
       #   totally unchanged?
       # @option [Boolean] opts :unknown (false) do we want to see files we've
       #   never seen before (i.e. files the user forgot to add to the repo)?
+      # @option [Boolean] opts :delta (false) do we want to see the overall delta?
       # @return [Hash<Symbol => Array<String>>] no, I'm not kidding. the keys are:
-      #   :modified, :added, :removed, :deleted, :unknown, :ignored, :clean. The
+      #   :modified, :added, :removed, :deleted, :unknown, :ignored, :clean, and :delta. The
       #   keys are the type of change, and the values are arrays of filenames
       #   (local to the root) that are under each key.
       def status(opts={:node_1 => '.'})
         run_hook :status
         
+        opts[:delta] ||= true
         node1, node2, match = opts[:node_1], opts[:node_2], opts[:match]
         
         match = Match.create({}) { true } unless match
@@ -179,15 +195,9 @@ EOF
           node2.all_files.each do |file|
             # Does it exist in the old manifest? If so, it wasn't added.
             if node1.include? file
-              vf_old, vf_new = node1[file], node2[file]
-              
-              tests = [vf_old.flags != vf_new.flags,
-                       vf_old.file_node != vf_new.file_node &&
-                          (vf_new.changeset.include?(file) || vf_old === vf_new)]
-              
               # It's in the old manifest, so lets check if its been changed
               # Else, it must be unchanged
-              if tests.any?
+              if file_modified? file, :node1 => node1, :node2 => node2 # tests.any?
                 status[:modified] << file
               elsif opts[:clean]
                 status[:clean]    << file
@@ -210,8 +220,9 @@ EOF
         delta = status.delete :delta
         
         status.each {|k, v| v.sort! } # sort dem fuckers
-        status[:delta] = delta
-        status.each {|k, _| status.delete k if opts[:only] && !opts[:only].include?(k)}
+        status[:delta] = delta if opts[:delta]
+        status.each {|k, _| status.delete k if opts[:only] && !opts[:only].include?(k) }
+        status
       end
       
       ##

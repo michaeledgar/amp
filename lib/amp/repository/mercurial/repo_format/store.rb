@@ -454,7 +454,7 @@ module Amp
           if res.size > MAX_PATH_LEN_IN_HGSTORE
             digest = path.sha1.hexdigest
             aep = auxilliary_encode(lower_encode(ndpath))
-            root, ext = File.amp_split_extension aep
+            root, ext = FileHelpers.split_extension aep
             parts = aep.split('/')
             basename = File.basename aep
             sdirs = []

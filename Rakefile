@@ -20,7 +20,7 @@ def remove_task(*task_names)
   end
 end
  
-Hoe.plugin :minitest
+#Hoe.plugin :minitest
 Hoe.spec "amp" do
   developer "Michael Edgar", "adgar@carboni.ca"
   developer "Ari Brown", "seydar@carboni.ca"
@@ -44,8 +44,6 @@ end
 #   self.summary = "Version Control in Ruby. Mercurial Compatible. Big Ideas. (Pure-Ruby version)"
 # end
 
-
-
 remove_task 'test_deps', 'publish_docs', 'post_blog', 
             'deps:fetch', 'deps:list', 'deps:email', 'flay', 'clean', 'flog'
 
@@ -53,11 +51,18 @@ load 'tasks/yard.rake'
 load 'tasks/stats.rake'
 load 'tasks/man.rake'
 
+desc 'Rebuild the manifest'
+task :manifest do
+  sh "hg manifest > Manifest.txt"
+end
+
+task :release => [:manifest]
+
 desc "Build the C extensions"
 task :build do
   curdir = File.expand_path(File.dirname(__FILE__))
   ruby_exe = RUBY_VERSION < "1.9" ? "ruby" : "ruby1.9"
-  Dir['ext/amp/*', 'ext/bz2'].each do |target|
+  Dir['ext/amp/*'].each do |target|
     sh "cd #{File.join(curdir, target)}; #{ruby_exe} #{File.join(curdir, target, "extconf.rb")}" # this is necessary because ruby will build the Makefile in '.'
     sh "cd #{File.join(curdir, target)}; make"
   end
@@ -65,10 +70,6 @@ end
 
 desc "Clean out the compiled code"
 task :clean do
-  sh "rm -rf ext/**/*.o"
-  sh "rm -rf ext/**/Makefile"
-  sh "rm -rf ext/**/*.bundle"
-  sh "rm -rf ext/**/*.so"
   sh "rm -rf ext/amp/**/*.o"
   sh "rm -rf ext/amp/**/Makefile"
   sh "rm -rf ext/amp/**/*.bundle"

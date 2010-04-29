@@ -47,7 +47,7 @@ module Amp
     def revision_pair(repo, revisions)
       #revisions = [revisions] unless revisions.is_a?(Array)
       if !revisions || revisions.empty?
-        return repo.dirstate.parents.first, nil
+        return repo.parents.first, nil
       end
       stop = nil
       

@@ -6,6 +6,7 @@ coverage.info
 .idea/*
 .yardoc
 test/store_tests/store/*
+test/localrepo_tests/Ampfile
 test/localrepo_tests/testrepo/*
 test/localrepo_tests/.hg/*
 test/functional_tests/testrepo/*

@@ -1,7 +1,7 @@
 require 'rtfm/tasks'
 
 RTFM::ManPage.new("amp", 1) do |page|
-  page.summary = "Ruby-based VCS engine"
+  page.summary = "Ruby VCS engine"
   
   page.option :verbose, "Enables verbose output for the entire Amp process."
   page.option :d, "Prings a variety of debug information about the arguments and options passed into amp.", :long => :"debug-opts"

@@ -30,4 +30,4 @@ require File.join(File.dirname(follow_link(__FILE__)), "..", "lib", "amp")
 result = Amp::Dispatch.run
 
 # ensure status makes it out
-exit(result)
+exit(result ? 0 : 1)

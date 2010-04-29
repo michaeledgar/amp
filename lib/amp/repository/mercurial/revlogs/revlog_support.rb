@@ -23,28 +23,6 @@ module Amp
         # Default version in general
         REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
         
-        ##
-        # This bears some explanation.
-        #
-        # Rather than simply having a 4-byte header for the index file format, the
-        # Mercurial format takes the first entry in the index, and stores the header
-        # in its offset field. (The offset field is a 64-bit unsigned integer which
-        # stores the offset into the data or index of the associated record's data)
-        # They take advantage of the fact that the first entry's offset will always
-        # be 0. As such, its offset field is always going to be zero, so it's safe
-        # to store data there.
-        #
-        # The format is ((flags << 16) | (version)), where +flags+ is a bitmask (up to 48
-        # bits) and +version+ is a 16-bit unsigned short.
-        #
-        # The worst part is, EVERY SINGLE ENTRY has its offset shifted 16 bits to the left,
-        # apparently all because of this. It fucking baffles my mind. 
-        #
-        # So yeah. offset = value >> 16.
-        def get_offset(o); o >> 16; end
-        # And yeah. version = value && 0xFFFF (last 16 bits)
-        def get_version(t); t & 0xFFFF; end
-        
         # Combine an offset and a version to spit this baby out
         def offset_version(offset,type)
           (offset << 16) | type
@@ -91,7 +69,7 @@ module Amp
               position = newposition
             end
             parts << deflater.flush
-            binary = parts.join if parts.map {|e| e.size}.sum < size # only add it if
+            binary = parts.join if parts.map {|e| e.size}.inject(0) {|a, b| a += b} < size # only add it if
                                                    # compression made it smaller
           else #tiny, just compress it
             binary = Zlib::Deflate.deflate text

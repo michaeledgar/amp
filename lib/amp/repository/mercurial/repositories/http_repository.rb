@@ -142,7 +142,7 @@ module Amp
           n = nodes.map{|i| i.hexlify }.join ' '
           f = do_read('changegroup', n.empty? ? {} : {:roots => n})[:body]
     
-          s = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
+          s = StringIO.new "", Support.binary_mode("w+")
           s.write Zlib::Inflate.inflate(f)
           s.pos = 0
           s
@@ -165,7 +165,7 @@ module Amp
           head_list = heads.map {|n| n.hexlify }.join ' '
           response  = do_read("changegroupsubset", :bases => base_list, :heads => head_list)
           
-          s = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
+          s = StringIO.new "", Support.binary_mode("w+")
           s.write Zlib::Inflate.inflate(response[:body])
           s.rewind
           s
@@ -241,6 +241,7 @@ module Amp
             
             ret += resp[:body].lstrip.split_newlines.map {|l| (l && l.split(" ").map{|i| i.unhexlify }) || []}
           end
+          ret = [[]] if ret.empty?
           
           Amp::UI.debug "between returns: #{ret.inspect}"
           ret

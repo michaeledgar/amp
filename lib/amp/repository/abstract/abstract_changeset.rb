@@ -2,12 +2,32 @@ module Amp
   module Repositories
     class AbstractChangeset
       include CommonChangesetMethods
+      include Enumerable
+      include Comparable
+      
       ##
       # the nodes that this node inherits from
       # 
       # @return [Array<Abstract Changeset>]
       def parents
         raise NotImplementedError.new("parents() must be implemented by subclasses of AbstractChangeset.")
+      end
+      
+      ##
+      # Iterates over every tracked file in this changeset.
+      # 
+      # @return [AbstractChangeset] self
+      def each
+        raise NotImplementedError.new("each() must be implemented by subclasses of AbstractChangeset.")
+      end
+      
+      ##
+      # How does this changeset compare to +other+? Used in sorting.
+      # 
+      # @param [AbstractChangeset] other
+      # @return [Integer] -1, 0, or 1
+      def <=>(other)
+        raise NotImplementedError.new("<=>() must be implemented by subclasses of AbstractChangeset.")
       end
 
       ##

@@ -1,5 +1,4 @@
 require 'fileutils'
-
 module Amp
   module Repositories
     module Mercurial
@@ -234,10 +233,11 @@ module Amp
         # 
         # @param [String] f the path to the file
         # @return [FileLog] a filelog (a type of revision log) for the given file
-        def file(f)
+        def file_log(f)
           f = f[1..-1] if f[0, 1] == "/"
           Amp::Mercurial::FileLog.new @store.opener, f
         end
+        alias_method :file, :file_log
         
         ##
         # Returns the parent changesets of the specified changeset. Defaults to the
@@ -300,7 +300,7 @@ module Amp
             file.write(data)
           end
           if flags && flags.include?('x')
-            File.amp_set_executable(working_join(path), true)
+            FileHelpers.set_executable(working_join(path), true)
           end
         end
         
@@ -322,6 +322,22 @@ module Amp
           
           @changelog
         end
+        
+        ##
+        # Has the file been modified from node1 to node2?
+        # 
+        # @param [String] file the file to check
+        # @param [Hash] opts needs to have :node1 and :node2
+        # @return [Boolean] has the +file+ been modified?
+        def file_modified?(file, opts={})
+          vf_old, vf_new = opts[:node1][file], opts[:node2][file]
+
+          tests = [vf_old.flags != vf_new.flags,
+                   vf_old.file_node != vf_new.file_node &&
+                      (vf_new.changeset.include?(file) || vf_old === vf_new)]
+          tests.any?
+        end
+
         
         ##
         # Marks a file as resolved according to the merge state. Basic form of
@@ -733,7 +749,7 @@ module Amp
           changed_file_collector = proc do |changed_fileset|
             proc do |cl_node|
               c = changelog.read cl_node
-              c[3].each {|fname| changed_fileset[fname] = true }
+              c.files.each {|fname| changed_fileset[fname] = true }
             end
           end
           
@@ -801,7 +817,7 @@ module Amp
             result
           end
           
-          s = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
+          s = StringIO.new "", Support.binary_mode("w+")
           generate_group[].each {|chunk| s.write chunk }
           s.rewind
           s
@@ -840,7 +856,7 @@ module Amp
               # parents of bases are known from both sides
               bases.each do |base|
                 changelog.parents_for_node(base).each do |parent|
-                  common << parent unless parent.null? # == NULL_ID
+                  common << parent unless null?(parent) #.null? # == NULL_ID
                 end # end each
               end # end each
               
@@ -919,14 +935,14 @@ module Amp
             has_list.sort!(&cmp_by_rev_function(rvlg))
             
             has_list.each do |node|
-              parent_list = revlog.parent_for_node(node).select {|p| p.not_null? }
+              parent_list = revlog.parent_for_node(node).select {|p| not_null?(p) }
             end
             
             while parent_list.any?
               n = parent_list.pop
               unless hasses.include? n
                 hasses[n] = 1
-                p = revlog.parent_for_node(node).select {|p| p.not_null? }
+                p = revlog.parent_for_node(node).select {|p| not_null?(p) }
                 parent_list += p
               end
             end
@@ -953,7 +969,7 @@ module Amp
             # this is what we're returning
             proc do |cl_node|
               c = changelog.read cl_node
-              c[3].each do |f|
+              c.files.each do |f|
                 # This is to make sure we only have one instance of each
                 # filename string for each filename
                 changed_fileset[f] ||= f
@@ -972,7 +988,7 @@ module Amp
               # If a 'missing' manifest thinks it belongs to a changenode
               # the recipient is assumed to have, obviously the recipient
               # must have the manifest.
-              link_node = changelog.node manifest.link_rev(manifest.revision_index_for_node(node))
+              link_node = changelog.node manifest[node].link_rev
               has_mnfst_set[n] = 1 if has_cl_set.include? link_node
             end # end each
             
@@ -1145,7 +1161,7 @@ module Amp
             end
           end # end proc
           
-          s = StringIO.new "",(ruby_19? ? "w+:ASCII-8BIT" : "w+")
+          s = StringIO.new "", Support.binary_mode("w+")
           generate_group.call do |chunk|
             s.write chunk
           end
@@ -1214,7 +1230,7 @@ module Amp
               file.write changeset.get_file(path).data
             end
     
-            dirstate.normal path # pretend nothing happened
+            staging_area.normal path # pretend nothing happened
             UI::status "saved\t#{path}"
           end
     
@@ -1227,6 +1243,7 @@ module Amp
             UI::status "destroyed\t#{path}"
           end # pretend these files were never even there
           
+          staging_area.save
           true # success marker
         end
         
@@ -1602,10 +1619,12 @@ module Amp
         # Undelete a file. For instance, if you remove something and then
         # find out that you NEED that file, you can use this command.
         # 
+        # @unused
+        #
         # @param [[String]] list the files to be undeleted
         def undelete(list)
           manifests = living_parents.map do |p|
-            manifest.read changelog.read(p).first
+            manifest.read changelog.read(p).manifest_node
           end
           
           # now we actually restore the files
@@ -1650,7 +1669,7 @@ module Amp
           should_show = lambda do |head|
             return true if options[:closed]
             
-            extras = changelog.read(head)[5]
+            extras = changelog.read(head).extra
             return !(extras["close"])
           end
           heads = heads.select {|h| should_show[h] }

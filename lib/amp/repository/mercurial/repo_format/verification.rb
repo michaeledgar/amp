@@ -54,11 +54,11 @@ module Amp
           #   includes error messages, warning counts, and so on.
           def verify
             # Maps manifest node IDs to the link revision to which they belong
-            manifest_linkrevs = Hash.new {|h,k| h[k] = []}
+            manifest_linkrevs = ArrayHash.new
             
             # Maps filenames to a list of link revisions (global revision #s) in which
             # that file was changed
-            file_linkrevs = Hash.new {|h, k| h[k] = []}
+            file_linkrevs = ArrayHash.new
             
             # file_node_ids stores a hash for each file. The hash stored maps that file's node IDs
             # (the node stored in the file log itself) to the global "link revision index" - the
@@ -114,10 +114,13 @@ module Amp
             Amp::UI.status("checking manifests...")
             check_revlog(@manifest, "manifest")
             seen = {}
-            
             @manifest.size.times do |idx|
               node = @manifest.node_id_for_index idx
               link_rev = check_entry(@manifest, idx, node, seen, manifest_linkrevs[node], "manifest")
+              
+              if manifest_linkrevs[node].empty?
+                error(link_rev, "#{node.short_hex} not in changesets", "manifest")
+              end  
               manifest_linkrevs.delete node
               
               begin
@@ -125,12 +128,11 @@ module Amp
                   if filename.empty?
                     error(link_rev, "file without name in manifest")
                   elsif filename != "/dev/null"
-                    file_node_map = file_node_ids[filename]
-                    file_node_map[file_node] ||= idx
+                    file_node_ids[filename][file_node] ||= idx
                   end
                 end
               rescue Exception => err
-                exception(idx, "reading manfiest delta #{node.short_hex}", err, "manifest")
+                exception(idx, "reading manifest delta #{node.short_hex}", err, "manifest")
               end
             end
           end
@@ -158,6 +160,7 @@ module Amp
               
               # check for any file node IDs we found in the changeset, but not in the manifest
               file_linkrevs.sort.each do |file, _|
+                
                 if file_node_ids[file].empty?
                   error(file_linkrevs[file].first, "in changeset but not in manifest", file)
                 end
@@ -169,8 +172,8 @@ module Amp
               file_node_ids.map {|file,_| file}.sort.each do |file|
                 unless file_linkrevs[file]
                   begin
-                    filelog = @repository.file(file)
-                    link_rev = file_node_ids[file].map {|node| filelog.link_revision_for_index(filelog.revision_index_for_node(node))}.min
+                    filelog = @repository.file_log file
+                    link_rev = file_node_ids[file].map {|node| filelog[node].link_rev}.min
                   rescue
                     link_rev = nil
                   end
@@ -212,7 +215,7 @@ module Amp
               link_rev = file_linkrevs[file].first
               
               begin
-                file_log = @repository.file(file) 
+                file_log = @repository.file_log file 
               rescue Exception => err
                 error(link_rev, "broken revlog! (#{err})", file)
                 next
@@ -272,7 +275,7 @@ module Amp
               # Check if we screwed up renaming a file (like lost the source revlog or something)
               begin
                 if rename_info && rename_info.any?
-                  filelog_src = @repository.file(rename_info.first)
+                  filelog_src = @repository.file_log(rename_info.first)
                   if filelog_src.index_size == 0
                     error(link_rev, "empty or missing copy source revlog "+
                                     "#{rename_info[0]}, #{rename_info[1].short_hex}", file)
@@ -291,7 +294,7 @@ module Amp
             # Final cross-check
             if file_node_ids[file] && file_node_ids[file].any?
               file_node_ids[file].map { |node, link_rev| 
-                [@manifest.link_revision_for_index(link_rev), node]
+                [@manifest[link_rev].link_rev, node]
               }.sort.each do |link_rev, node|
                 error(link_rev, "#{node.short_hex} in manifests not found", file)
               end
@@ -338,7 +341,7 @@ module Amp
           # @param [Array] ok_link_revisions the acceptable link revisions for the given entry
           # @param [String] filename the name of the file containing the revlog
           def check_entry(log, revision, node, seen, ok_link_revisions, filename)
-            link_rev = log.link_revision_for_index log.revision_index_for_node(node)
+            link_rev = log[node].link_rev
             # is the link_revision invalid?
             if link_rev < 0 || (changelog.any? && ! ok_link_revisions.include?(link_rev))
               problem = (link_rev < 0 || link_rev >= changelog.size) ? "nonexistent" : "unexpected"

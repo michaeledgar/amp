@@ -1,5 +1,5 @@
 - vf_cur = changeset.get_file file
-- vf_parent = parents.first
+- vf_parent = vf_cur.parents.first
 %li
   %h2= vf_cur.path
   %ul.diff

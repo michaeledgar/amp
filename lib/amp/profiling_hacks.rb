@@ -22,15 +22,17 @@ end
 HELP
 end
 
-# $hash = Hash.new {|h, k| h[k] = 0 }
+$hash = Hash.new {|h, k| h[k] = 0 }
+
+# Kernel.module_eval do
 # 
-# Hash.module_eval do
-#   show_caller_for :initialize_copy, "$hash[caller[0]] += 1"
+#   show_caller_for :catch, "$hash[caller[0]] += 1"
+# #  show_caller_for :throw, "$hash[caller[0]] += 1"
 # end
-# 
-# if ENV["TESTING"] == "true"
-#   END {
-#     require 'pp'
-#     STDERR.puts $hash.inspect if $hash.any?
-#   }
-# end
+
+if ENV["TESTING"] == "true"
+  END {
+    require 'pp'
+    puts $hash.sort.inspect if $hash.any?
+  }
+end

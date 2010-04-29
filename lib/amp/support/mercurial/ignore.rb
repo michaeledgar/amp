@@ -4,22 +4,24 @@ module Amp
       extend self
       
       COMMENT = /((^|[^\\])(\\\\)*)#.*/
-      SYNTAXES = {'re' => :regexp, 'regexp' => :regexp, 'glob' => :glob,
-                  'relglob' => :relglob, 'relre' => :regexp, 'path' => :glob,
+      SYNTAXES = {'re'      => :regexp,  'regexp' => :regexp, 'glob' => :glob,
+                  'relglob' => :relglob, 'relre'  => :regexp, 'path' => :glob,
                   'relpath' => :relglob}
+      
       ##
       # Parses the ignore file, +file+ (or ".hgignore")
       # 
       # @param [String] root the root of the repo
       # @param [Array<String>] files absolute paths to files
       def parse_ignore(root, files=[])
-        all_patterns = files.select {|file| File.exist?(File.join(root, file))}.map do |file|
-          text = File.read File.join(root,file)
-          matcher_for_text text
-        end # files.map
+        real_files   = files.select {|f| File.exist? File.join(root, f) }
+        all_patterns = real_files.inject [] do |collection, file|  
+          text = File.read File.join(root, file)
+          collection.concat matcher_for_text(text) # i know this is evil
+        end # real_files.inject
         
         # here's the proc to do the tests
-        regexps_to_proc all_patterns.compact.flatten
+        regexps_to_proc all_patterns
       end
       
       ##
@@ -27,12 +29,11 @@ module Amp
       # 
       # @param [String] file and open file
       def parse_lines(text)
-        lines = text.split("\n").map do |line|
+        lines = text.split("\n").inject [] do |lines, line|
           line = strip_comment line
           line.rstrip!
-          line.empty? ? nil : line
+          line.empty? ? lines : lines << line # I KNOW THIS IS EVIL
         end
-        lines.compact
       end
       
       ##
@@ -53,19 +54,23 @@ module Amp
       # for matching files
       # 
       # @param [String] text the text to parse
-      # @return [[Regexp]] the regexps generated from the strings and syntaxes
+      # @return [Array<Regexp>] the regexps generated from the strings and syntaxes
       def matcher_for_text(text)
         return [] unless text
-        syntax = nil
-        patterns = parse_lines(text).select {|line| !line.empty?}.map do |line|
+        syntax   = nil
+        lines    = parse_lines(text).reject {|line| line.empty? }
+        
+        # take the lines and create a new array of the patterns
+        lines.inject [] do |lines, line|
           # check for syntax changes
           if line.start_with? "syntax:"
             syntax = SYNTAXES[line[7..-1].strip] || :regexp
-            next # move on
+            lines # move on
+          else
+            # I KNOW THIS IS EVIL
+            lines << parse_line(syntax, line) # could be nil, so we need to compact it
           end
-          parse_line syntax, line # could be nil, so we need to compact it
-        end # parsed_lines(text)
-        patterns.compact # kill the nils
+        end # lines.inject
       end
       
       ##
@@ -77,13 +82,11 @@ module Amp
       def matcher_for_string(string)
         scanpt = string =~ /(\w+):(.+)/
         if scanpt.nil?
-          # just a line, no specified syntax
-          include_syntax = :regexp
-          # no syntax, the whole thing is a pattern
-          include_regexp = string   
+          include_syntax = :regexp      # just a line, no specified syntax
+          include_regexp = string       # no syntax, thus whole thing is pattern
         else
-          include_syntax = $1.to_sym        # the syntax is the first match
-          include_regexp = $2.strip # the rest of the string is the pattern
+          include_syntax = $1.to_sym    # the syntax is the first match
+          include_regexp = $2.strip     # the rest of the string is the pattern
         end
         parse_line include_syntax, include_regexp
       end
@@ -107,8 +110,8 @@ module Amp
           pattern = /#{line}/
         when :glob, :relglob
           # glob: glob (shell style), relative to the root of the repository
-          # relglob: glob, except we just match somewhere in the string, not from the root of
-          # the repository
+          # relglob: glob, except we just match somewhere in the string, not
+          # from the root of the repository
           ps = line.split '/**/'
           ps.map! do |l|
             parts = l.split '*' # split it up and we'll escape all the parts
@@ -116,7 +119,7 @@ module Amp
             parts.join '[^/]*' # anything but a slash, ie, no change in directories
           end
           joined = ps.join '/(?:.*/)*'
-          pattern = (syntax == :glob) ? /^#{joined}/ : /#{joined}/
+          pattern = syntax == :glob ? /^#{joined}/ : /#{joined}/
         else
           pattern = nil
         end
@@ -132,7 +135,9 @@ module Amp
       # @return [Proc] a proc that, when called with a file's path, will return whether
       #   it matches any of the regexps.
       def regexps_to_proc(*regexps)
-        regexps = regexps.flatten.compact # needed because of possible nils
+        # flatten: because if you pass in an array vs. three single args
+        # compact: because #parse_line can return nil (and it will travel to here)
+        regexps = regexps.flatten.compact
         if regexps.empty?
           proc { false }
         else

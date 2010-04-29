@@ -165,9 +165,9 @@ class Module
       module_function aliased_meth
     end
     # incase it doesn't exist yet
-    @__memo_cache ||= {}
     # our new method! Replacing the old one.
     define_method meth_name do |*args|
+      @__memo_cache ||= {}
       # we store the memoized data with an i-var.
       @__memo_cache[meth_name] ||= {}
       cache = @__memo_cache[meth_name]
@@ -197,6 +197,15 @@ def #{new_method}(*args, &block)
 end
 EOF
   end
+end
+
+class Object
+  
+  ##
+  # Because tap isn't defined in 1.8.6
+  def tap
+    yield self
+  end unless defined?(tap)
 end
 
 module Kernel
@@ -309,57 +318,6 @@ class File
   def amp_lexist?(filename)
     !!File.lstat(filename) rescue false
   end
-  
-  ##
-  # Sets a file's executable bit.
-  #
-  # @todo Windows version
-  # @param [String] path the path to the file
-  # @param [Boolean] executable sets whether the file is executable or not
-  def self.amp_set_executable(path, executable)
-    s = File.lstat(path).mode
-    sx = s & 0100
-    if executable && !sx
-      # Turn on +x for every +r bit when making a file executable
-      # and obey umask. (direct from merc. source)
-      File.chmod(s | (s & 0444) >> 2 & ~(File.umask(0)), path)
-    elsif !executable && sx
-      File.chmod(s & 0666 , path)
-    end
-  end
-  
-  ##
-  # Does a registry lookup.
-  # *nix version.
-  #
-  # @todo Add Windows Version
-  def self.amp_lookup_reg(a,b)
-    nil
-  end
-  
-  ##
-  # Finds an executable for {command}. Searches like the OS does. If
-  # command is a basename then PATH is searched for {command}. PATH
-  # isn't searched if command is an absolute or relative path.
-  # If command isn't found, nil is returned. *nix only.
-  #
-  # @todo Add Windows Version.
-  # @param [String] command the executable to find
-  # @return [String, nil] If the executable is found, the full path is returned.
-  def self.amp_find_executable(command)
-    find_if_exists = proc do |executable|
-      return executable if File.exist? executable
-      return nil
-    end
-    
-    return find_if_exists[command] if command.include?(File::SEPARATOR)
-    ENV["PATH"].split(File::PATH_SEPARATOR).each do |path|
-      executable = find_if_exists[File.join(path, command)]
-      return executable if executable
-    end
-    
-    nil
-  end
 
   ##
   # taken from Rails' ActiveSupport
@@ -394,7 +352,7 @@ class File
     
     # do a chmod, pretty much
     begin
-      nlink = File.amp_num_hardlinks(file_name)
+      nlink = FileHelpers.num_hardlinks(file_name)
     rescue Errno::ENOENT, OSError
       nlink = 0
       d = File.dirname(file_name)
@@ -404,7 +362,7 @@ class File
     new_mode = default_mode & 0666 if default_mode
     
     # Overwrite original file with temp file
-    amp_force_rename(new_path, file_name)
+    FileHelpers.force_rename(new_path, file_name)
     
     # Set correct permissions on new file
     chown(old_stat.uid, old_stat.gid, file_name)
@@ -460,18 +418,20 @@ class File
       yield buffer
     end
   end
-  
+end
+
+module FileHelpers
   ##
   # Finds the number of hard links to the file.
   # 
   # @param  [String] file the full path to the file to lookup
   # @return [Integer] the number of hard links to the file
-  def self.amp_num_hardlinks(file)
+  def self.num_hardlinks(file)
     lstat = File.lstat(file)
     raise OSError.new("no lstat on windows") if lstat.nil?
     lstat.nlink
   end
-  
+
   ##
   # All directories leading up to this path
   # 
@@ -482,23 +442,23 @@ class File
   # @param  [String] path the path to the file we're examining
   # @param  [Boolean] empty whether or not to return an empty string as well
   # @return [Array] the directories leading up to this path
-  def self.amp_directories_to(path, empty=false)
+  def self.directories_to(path, empty=false)
     path = File.expand_path(path)
     dirs = path.split('/')[0..-2]
     ret  = []
-    
+
     dirs.size.times { ret << dirs.join('/'); dirs.pop }
     ret << '' if empty
     ret
   end
-  
+
   ##
   # Forces a rename from file to dst, removing the dst file if it
   # already exists. Avoids system exceptions that might result.
   # 
   # @param [String] file the source file path
   # @param [String] dst the destination file path
-  def self.amp_force_rename(file, dst)
+  def self.force_rename(file, dst)
     return unless File.exist? file
     if File.exist? dst
       File.unlink dst
@@ -507,28 +467,79 @@ class File
       File.rename file, dst
     end
   end
-  
+
   ##
   # Returns the full name of the file, excluding path information.
   # 
   # @param [File] file the {File} to check
   # @return the name of the file
-  def self.amp_name(file)
+  def self.name(file)
     File.split(file.path).last
   end
-  
+
   ##
   # Splits the path into two parts: pre-extension, and extension, including
   # the dot.
-  # File.amp_split_extension "/usr/bin/conf.ini" => ["conf",".ini"]
+  # FileHelpers.split_extension "/usr/bin/conf.ini" => ["conf",".ini"]
   # 
   # @param [String] path the path to the file to split up
   # @return [String, String] the [filename pre extension, file extension] of
   #   the file provided.
-  def self.amp_split_extension(path)
+  def self.split_extension(path)
     ext  = File.extname  path
     base = File.basename path, ext
     [base, ext]
+  end
+  
+  ##
+  # Finds an executable for {command}. Searches like the OS does. If
+  # command is a basename then PATH is searched for {command}. PATH
+  # isn't searched if command is an absolute or relative path.
+  # If command isn't found, nil is returned. *nix only.
+  #
+  # @todo Add Windows Version.
+  # @param [String] command the executable to find
+  # @return [String, nil] If the executable is found, the full path is returned.
+  def self.find_executable(command)
+    find_if_exists = proc do |executable|
+      return executable if File.exist? executable
+      return nil
+    end
+    
+    return find_if_exists[command] if command.include?(File::SEPARATOR)
+    ENV["PATH"].split(File::PATH_SEPARATOR).each do |path|
+      executable = find_if_exists[File.join(path, command)]
+      return executable if executable
+    end
+    
+    nil
+  end
+  
+  ##
+  # Sets a file's executable bit.
+  #
+  # @todo Windows version
+  # @param [String] path the path to the file
+  # @param [Boolean] executable sets whether the file is executable or not
+  def self.set_executable(path, executable)
+    s = File.lstat(path).mode
+    sx = s & 0100
+    if executable && !sx
+      # Turn on +x for every +r bit when making a file executable
+      # and obey umask. (direct from merc. source)
+      File.chmod(s | (s & 0444) >> 2 & ~(File.umask(0)), path)
+    elsif !executable && sx
+      File.chmod(s & 0666 , path)
+    end
+  end
+  
+  ##
+  # Does a registry lookup.
+  # *nix version.
+  #
+  # @todo Add Windows Version
+  def self.lookup_reg(a,b)
+    nil
   end
 end
 
@@ -575,12 +586,6 @@ class Hash
   end
   
   ##
-  # Create a subset of +self+ with keys +keys+.
-  def pick(*keys)
-    keys.inject({}) {|h, (k, v)| h[k] = v; h }
-  end
-  
-  ##
   # Construct a new hash with only the specified +keyz+
   # 
   # @return [Hash]
@@ -589,32 +594,31 @@ class Hash
   end
 end
 
-class Array
-
-  ## 
-  # Sums all the items in the array
-  # 
-  # @return [Array] the items summed
-  def sum
-    inject(0) {|sum, x| sum + x }
+##
+# Often you need a hash whose values are always arrays. The
+# common idiom is Hash.new {|h, k| h[k] = []}. This is common enough
+# that I'm making an easy-peasy way to make it: ArrayHash
+module ArrayHash
+  class << self
+    ##
+    # Creates a normal Hash for which whenever you access an unknown key,
+    # an array is inserted as its value. So you can do this:
+    #
+    #     hash = ArrayHash.new
+    #     hash[:key] << :value
+    #     hash.inspect #==> "{:key => [:value]}"
+    def new
+      Hash.new {|h, k| h[k] = []}
+    end
   end
-  
+end
+
+class Array
   ##
   # Returns the second item in the array
   #
   # @return [Object] the second item in the array
   def second; self[1]; end
-  
-  # Deletes the given range from the array, in-place.
-  def delete_range(range)
-    newend =   (range.end < 0)   ? self.size + range.end : range.end
-    newbegin = (range.begin < 0) ? self.size + range.begin : range.begin
-    newrange = Range.new newbegin, newend
-    pos = newrange.first
-    newrange.each {|i| self.delete_at pos }
-    
-    self
-  end
   
   def to_hash
     inject({}) {|h, (k, v)| h[k] = v; h }
@@ -703,36 +707,8 @@ class String
     return '' if self == root
     
     # return a more local path if possible...
-    return self[root.length..-1] if start_with? root
+    return self[root.size..-1] if start_with? root
     self # else we're outside the repo
-  end
-  
-  # Am I equal to the NULL_ID used in revision logs?
-  def null?
-    self == Amp::Mercurial::RevlogSupport::Node::NULL_ID
-  end
-  
-  # Am I not equal to the NULL_ID used in revision logs?
-  def not_null?
-    !null?
-  end
-  
-  ##
-  # Does the string start with the given prefix?
-  #
-  # @param [String] prefix the prefix to test
-  # @return [Boolean] does the string start with the given prefix?
-  def start_with?(prefix)
-    self[0,prefix.size] == prefix  # self =~ /^#{str}/
-  end
-  
-  ##
-  # Does the string end with the given suffix?
-  #
-  # @param [String] suffix the suffix to test
-  # @return [Boolean] does the string end with the given suffix?
-  def end_with?(suffix)
-    self[-suffix.size, suffix.size] == suffix   # self =~ /#{str}$/
   end
   
   ##
@@ -778,16 +754,9 @@ class String
   end
   
   ##
-  # easy md5!
-  #
-  # @return [Digest::MD5] the MD5 digest of the string in hex form
-  def md5
-    Digest::MD5.new.update(self)
-  end
-  
-  ##
   # easy sha1!
   # This is unsafe, as SHA1 kinda sucks.
+  # 
   #
   # @return [Digest::SHA1] the SHA1 digest of the string in hex form
   def sha1
@@ -830,8 +799,7 @@ class String
   # @return [String] the URL with passwords censored.
   def hide_password
     if s = self.match(/^http(?:s)?:\/\/[^:]+(?::([^:]+))?(@)/)
-      string = ''
-      string << self[0..s.begin(1)-1]           # get from beginning to the pass
+      string = self[0..s.begin(1)-1]           # get from beginning to the pass
       string << '***'
       string << self[s.begin(2)..-1]
       string
@@ -855,16 +823,6 @@ class String
   end
   
   ##
-  # returns the path as an absolute path with +root+
-  # ROOT MUST BE ABSOLUTE
-  # 
-  # @param [String] root absolute path to the root
-  def absolute(root)
-    return self if self[0] == ?/
-    "#{root}/#{self}"
-  end
-  
-  ##
   # Attempts to discern if the string represents binary data or not. Not 100% accurate.
   # Is part of the YAML code that comes with ruby, but since we don't load rubygems,
   # we don't get this method for free.
@@ -884,32 +842,11 @@ class Time
   # @return [String] diff format: 2009-03-28 18:45:12.541298
   def to_diff
     strftime("%Y-%m-%d %H:%M:%S.#{usec}")
-  end
-  
-  # Returns a nifty date stamp for certain diff types. not used yet.
-  def date_str(offset=0, format="%a %b %d %H:%M:%S %Y %1%2")
-    t, tz = self, offset
-    if format =~ /%1/ || format =~ /%2/
-      sign = (tz > 0) ? "-" : "+"
-      minutes = tz.abs / 60
-      format.gsub!(/%1/, "#{sign}#{(minutes / 60).to_s.rjust(2,'0')}")
-      format.gsub!(/%2/, "#{(minutes % 60).to_s.rjust(2,'0')}")
-    end
-    (self - tz).gmtime.strftime(format)
-  end 
-  
+  end  
 end
 
 class Proc
-  
-  ##
-  # Alias for #call, pretty much.
-  # 
-  # @param [Hash] options hash of the options for the command
-  # @param [Array] args array of extra args
-  def run(options={}, args=[])
-    call options, args
-  end
+  alias_method :run, :call
 end
 
 class Symbol
@@ -1021,6 +958,15 @@ module Amp
       @@rc_path
     end
     
+    ##
+    # Returns the mode to use for binary streams with a given mode. Needed because
+    # of Ruby 1.9 encoding confusion.
+    #
+    # @param [String] mode the mode to use for IO
+    # @return [String] an encoded mode for use with IO
+    def self.binary_mode(mode)
+      ruby_19? ? "#{mode}:ASCII-8BIT" : mode
+    end
     
     ##
     # Advanced calling of system().
@@ -1033,7 +979,7 @@ module Amp
       
 	  	if (temp_environ)
      	 	old_env = ENV.to_hash
-      	temp_environ["HG"] = $amp_executable || File.amp_find_executable("amp")
+      	temp_environ["HG"] = $amp_executable || FileHelpers.find_executable("amp")
       	temp_environ.each {|k, v| ENV[k] = v.to_s}
 	  	end
       Dir.chdir(temp_path) do

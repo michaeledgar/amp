@@ -19,7 +19,7 @@ module Amp
     def initialize(base)
       @root        = File.expand_path base
       @create_mode = nil
-      @default     = nil
+      @default     = :open_hg
     end
     
     ##
@@ -27,10 +27,15 @@ module Amp
     #
     # @return path to the opener's root, as an absolute path.
     def path
-      if @default == :open_file
+      case @default
+      when :open_file
         "#{root}/"
-      else
+      when :open_hg
         "#{root}/.hg/"
+      when :open_git
+        "#{root}/.git"
+      else
+        raise abort "Unknown opener format #{@default.inspect}"
       end
     end
     

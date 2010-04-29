@@ -15,9 +15,6 @@ Module.new do
     c.desc "Starts an interactive template editor"
     c.maybe_repo
     c.on_run do |opts, args|
-      
-      
-      
       repo = opts[:repository]
       
       if opts[:list]

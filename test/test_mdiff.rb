@@ -70,5 +70,6 @@ class TestMdiff < AmpTestCase
                "kidding\n+for serious now\n\\ No newline at end of file\n"
     result = MercurialDiff.unified_diff(start_text, original_day, end_text, second_day, "hello_there.rb", "hello_there.rb")
     
+    assert_equal expected, result
   end
 end

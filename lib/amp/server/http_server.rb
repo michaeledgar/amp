@@ -34,14 +34,11 @@ module Amp
     # It is worth noting that one may serve many repositories using one server
     # using this class. Spiffy, eh?
     class HTTPAuthorizedServer < HTTPServer
-      
-      def self.set_storage(manner, opts={})
+      class << self
+      def set_storage(manner, opts={})
         manner = manner.to_sym
         
         case manner
-        when :sequel
-          set :user_db_name, (opts[:user_db_name] || "users")
-          extend RepoUserManagement::SequelSQLite3
         when :memory
           extend RepoUserManagement::Memory
         else
@@ -49,10 +46,12 @@ module Amp
         end
         
         # since you can only set the storage once...
-        def self.set_storage(*args); end # this will redefine this method to do nothing
+        def set_storage(*args)
+          raise RuntimeError.new("Can't redefine storage type.")
+        end # this will redefine this method to raise
       end
       
-      def self.set_permission(style, *args)
+      def set_permission(style, *args)
         case style
         when :writer
           set_writer *args
@@ -68,20 +67,36 @@ module Amp
       # for now.
       #
       # @param [Symbol, String] manner the type of authentication
-      def self.set_authentication(manner, opts={})
+      def set_authentication(manner, opts={})
         case manner.to_sym
         when :basic
           helpers Sinatra::BasicAuthorization
         when :digest
           helpers Sinatra::DigestAuthorization
         end
-        def self.set_authentication; end
+        # one-time method. don't yet support.
+        def set_authentication
+          raise RuntimeError.new("Can't redefine authentication type.")
+        end
       end
       
       set :authorization_realm, "Amp Repository"
       
-      def repos; self.class.repos; end
-      def users; self.class.users; end
+      ##
+      # Gets all the registered repositories. Helper method.
+      #
+      # @return [Array<LocalRepository>] All the repositories registered with the server
+      def repos
+        self.class.repos
+      end
+      
+      ##
+      # Gets all the registered users. Helper method.
+      #
+      # @return [Array<Amp::Servers::User>] All the users registered with the server
+      def users
+        self.class.users
+      end
       
       ##
       # This block is run on every single request, before the server code for the request is processed.

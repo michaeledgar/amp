@@ -4,11 +4,12 @@ require File.expand_path(File.join(File.dirname(__FILE__), "../../lib/amp"))
 
 class TestRevlog < AmpTestCase
   TEST_REVLOG_INDEX = "testindex.i"
+  TEST_LAZY_INDEX = "hugenotinline.i"
   
   def setup
-    opener = Amp::Opener.new(File.expand_path(File.dirname(__FILE__)))
-    opener.default = :open_file # for testing purposes!
-    @revlog = Amp::Mercurial::Revlog.new(opener, TEST_REVLOG_INDEX)
+    @opener = Amp::Opener.new(File.expand_path(File.dirname(__FILE__)))
+    @opener.default = :open_file # for testing purposes!
+    @revlog = Amp::Mercurial::Revlog.new(@opener, TEST_REVLOG_INDEX)
   end
   
   def test_load_revlog
@@ -21,7 +22,6 @@ class TestRevlog < AmpTestCase
     expected = "|\x03\xfe\x149\x81+\xcc5\xa3\x97\x94*I\xe2\xb9T\xa9\xac\x02"
     assert_equal expected, result
   end
-  
   
   def test_node_raises
     assert_raises(Amp::Mercurial::RevlogSupport::LookupError) { @revlog.node_id_for_index(12345) }
@@ -61,30 +61,6 @@ class TestRevlog < AmpTestCase
     assert_equal expected, result
   end
   
-  def test_revlog_link_revision_for_index
-    result = @revlog.link_revision_for_index 22
-    expected = 22
-    assert_equal expected,result
-    result = @revlog.link_revision_for_index 40
-    expected = 40
-    assert_equal expected,result
-    result = @revlog.link_revision_for_index 1
-    expected = 1
-    assert_equal expected,result
-  end
-  
-  def test_revlog_base_revision_for_index
-    result = @revlog.base_revision_for_index 1
-    expected = 0
-    assert_equal expected,result
-    result = @revlog.base_revision_for_index 10
-    expected = 7
-    assert_equal expected,result
-    result = @revlog.base_revision_for_index 50
-    expected = 48
-    assert_equal expected,result
-  end
-  
   def test_revlog_parents_for_node
     result = @revlog.parents_for_node "\xf8`\x8b/\x1dR\xa2\xaf\x0c\x10M\x89y\xf7,\xdc\xfd6\xaaI"
     expected = ["\xd1\x818?\xc0*\xdf\xe4r\x13\x00\x95T\xf5\xbb\xf9\x84k\xc8\x1c", "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"]
@@ -118,18 +94,6 @@ class TestRevlog < AmpTestCase
     assert_equal expected,result
     result = @revlog.data_start_for_index 35
     expected = 5810
-    assert_equal expected,result
-  end
-  
-  def test_revlog_data_length_for_index
-    result = @revlog.data_size_for_index 42
-    expected = 95
-    assert_equal expected,result
-    result = @revlog.data_size_for_index 7
-    expected = 128
-    assert_equal expected,result
-    result = @revlog.data_size_for_index 35
-    expected = 122
     assert_equal expected,result
   end
   
@@ -335,7 +299,38 @@ class TestRevlog < AmpTestCase
     assert true
   end
   
-  # def test_revlog_ancestor
-  #      assert_equal(19, @revlog.rev(@revlog.ancestor(@revlog.node(19), @revlog.node(45))))
-  #    end
+  def test_revlog_ancestor
+    assert_equal(19, @revlog.rev(@revlog.ancestor(@revlog.node(19), @revlog.node(45))))
+  end
+  
+  def test_revlog_fixes_first_entry
+    assert_equal 0, @revlog[0].true_offset
+  end
+  
+  def test_lazy_index_node_lookup
+    lazy_index = Amp::Mercurial::RevlogSupport::LazyIndex.new(@opener, TEST_LAZY_INDEX)
+    rev = lazy_index.node_map["\x27\x3c\xe1\x2a\xd8\xf1\x55\x31\x7b\x2c\x07\x8e\xc7\x5a\x4e\xba\x50\x7f\x1f\xba"]
+    assert_equal(1, rev)
+    lazy_index.close
+  end
+  
+  def test_lazy_index_normal_lookup
+    lazy_index = Amp::Mercurial::RevlogSupport::LazyIndex.new(@opener, TEST_LAZY_INDEX)
+    entry = lazy_index[13]
+    assert_equal 12, entry.base_rev
+    assert_equal 13, entry.link_rev
+    assert_equal "eb87b7dc4236", entry.node_id.hexlify.downcase[0,12]
+    lazy_index.close
+  end
+  
+  def test_lazy_index_laziness
+    lazy_index = Amp::Mercurial::RevlogSupport::LazyIndex.new(@opener, TEST_LAZY_INDEX)
+    assert_equal nil, lazy_index.index[300]
+    lazy_index.close
+  end
+  
+  def test_lazy_index_fixes_first_entry
+    lazy_index = Amp::Mercurial::RevlogSupport::LazyIndex.new(@opener, TEST_LAZY_INDEX)
+    assert_equal 0, lazy_index[0].true_offset
+  end
 end

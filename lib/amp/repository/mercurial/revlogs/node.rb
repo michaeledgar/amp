@@ -14,6 +14,16 @@ module Amp
         def short(node)
           node.short_hex
         end
+        
+        ##
+        # Is string equal to the NULL_ID used in revision logs?
+        #
+        # @param [String] string the string to check if it's a null revision ID
+        # @return [Boolean] is the string a null ID?
+        def null?(string)
+          string == NULL_ID
+        end
+        opposite_method :not_null?, :null?
       end
     end
   end
