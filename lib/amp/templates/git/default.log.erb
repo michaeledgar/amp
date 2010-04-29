@@ -1,0 +1,18 @@
+changeset:  <%= revision %>
+<%- parents.each do |rent| -%>
+parent:     <%= "#{rent.short_name}" %>
+<%- end -%>
+user:       <%= username %>
+date:       <%= date %>
+<%- if config[:verbose] -%>
+files:      <%= files.join(" ") %>
+<%- end -%>
+<%- if description && description.any?
+    if config[:verbose] -%>
+description:
+<%= description %>
+<%- else -%>
+summary:    <%= description.split_lines_better.first.strip %>
+<%- end -%>
+<%- end -%>
+
