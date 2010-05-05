@@ -1,34 +1,51 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+
 require 'rubygems'
 require 'haml'
 require 'sass'
 
-class Hash
-  alias_method :get, :[]
-  ##
-  # Same as #[], but will take regexps and try to match those.
-  # This will bug out if you are using regexps as keys
-  # 
-  # @return [Hash, Value] will return either a hash (if supplied with a regexp)
-  #   or whatever it would normally return.
-  def [](key)
-    case key
-    when Regexp
-      select {|k, _| k =~ key }.to_hash
-    else
-      get key
-    end
-  end
-end
-
 module Amp
   module Servers
     
+    ##
+    # The FancyHTTPServer takes the Authorized server one step further, by adding
+    # a web interface.  The web interface is optional - just use the superclass
+    # instead of this one. The fancy_views directory contains all the templates
+    # used by the web interface.
     class FancyHTTPServer < HTTPAuthorizedServer
       
+      # Configure sinatra for our view locations
       set :views, File.expand_path(File.join(File.dirname(__FILE__), "fancy_views"))
-      enable :static
       set :public, File.expand_path(File.join(File.dirname(__FILE__), "fancy_views"))
+      enable :static
       
+      PAGE_SIZE = 20
+      
+      class << self
+        def get_paths(*paths, &blk)
+          paths.each {|path| get path, &blk }
+        end
+      end
+      
+      ##
+      # Extremely important method - this method sets up the server setting a
+      # given path to represent the provided repository. Superclasses handle
+      # actually setting up the repository for pushes/pulls, but this class
+      # also adds the web interface on top of that. So this method needs to establish
+      # all of the relevant web paths for Sinatra so Sinatra will handle
+      # web requests.
       def self.amp_repository(http_path, repo, opts={})
         super(http_path, repo)
         
@@ -52,56 +69,93 @@ module Amp
         # - root/
         # - root/commits/
         # - root/commits/4/ (where 4 is a page number)
-        ["#{http_path}/", "#{http_path}/commits/?", "#{http_path}/commits/:page/?"].each do |path|
-          get path do
-            haml :commits, :locals => {:root => http_path, :opts => opts, :repo => repo, :page => params[:page].to_i}
-          end
+        get_paths "#{http_path}/", "#{http_path}/commits/?", "#{http_path}/commits/:page/?" do
+          page  = params[:page] ? params[:page].to_i : 1
+          start = repo.size - 1 - (page * PAGE_SIZE)
+          commits_to_view = (start..(start + PAGE_SIZE)).to_a.map {|i| repo[i]}.reverse
+          haml :commits, :locals => {:root => http_path, :opts => opts, :repo => repo, 
+                                     :page => page, :commits => commits_to_view, 
+                                     :pageroot => "#{http_path}/commits"}
+        end
+
+        
+        ##
+        # Shows the commits created by the user. Paginated. Same display as
+        # the full-commit-listing.
+        #
+        # - root/users/adgar/
+        # -- Views adgar's most recent PAGE_SIZE commits
+        # - root/users/adgar/2/
+        # -- Views the second page of adgar's commits
+        get_paths "#{http_path}/users/:user/?", "#{http_path}/users/:user/:page/?" do
+          page = params[:page] ? params[:page].to_i : 1
+          all_users_commits = repo.select {|x| x.user == params[:user]}.reverse
+          commits_to_view = all_users_commits.enum_slice(PAGE_SIZE).to_a[page-1]
+          haml :commits, :locals => {:root => http_path, :opts => opts, :repo => repo, 
+                                     :page => page, :commits => commits_to_view, 
+                                     :pageroot => "#{http_path}/users/#{params[:user]}"}
         end
         
         ##
-        # Provides a way to view a user in the system.
-        # Current unused.
+        # Directly access a file, possibly scoped by a changeset, for the
+        # current repository. Defaults to tip if changeset is not specified, though
+        # the changeset should only not be specified if accessing the root. Otherwise
+        # things get messy.
         #
-        # - root/users/adgar/
-        # -- Views something about the user with the name "adgar"
-        get "#{http_path}/users/:user" do
-          if users[params[:user]]
-            "You are browsing user #{params[:user]} in a repository located at #{repo.inspect}"
-          else
-            "User #{params[:user].inspect} not found :-("
-          end
-        end
-        
-        ["#{http_path}/code/:changeset/?*", "#{http_path}/code/?*"].each do |p|
-          get p do
-            path = params[:splat].join
-            path = path.shift('/').chomp('/') # clean it of slashes
-            changeset_node = params[:changeset] || "tip"
-            changeset = repo[changeset_node]
-            
-            info = load_browser_info changeset, path
-            file_list, path, vf_cur, orig_path = info[:file_list], info[:path], info[:vf_cur], info[:orig_path]
-            
-            haml :file, :locals => {:root => http_path, :repo => repo,     :file_list => file_list,
-                                    :path => path,      :vf_cur => vf_cur, :orig_path => orig_path,
-                                    :changeset => changeset}
-          end
-        end
-
-        get "#{http_path}/diff/:changeset/*" do
-          path = params[:splat].join
-          path = path.shift('/').chomp('/') # clean it of slashes
+        # - root/code/
+        # -- Views the root of the source tree at the tip revision
+        # - root/code/tip/
+        # -- Also views the root of the source tree at the tip revision
+        # - root/code/tip/README
+        # -- Views the README file at the tip revision
+        # - root/code/abcdef/lib/amp/silly.rb
+        # -- Views the file lib/amp/silly.rb at revision abcdef
+        get_paths "#{http_path}/code/:changeset/?*", "#{http_path}/code/?*" do
+          path = params[:splat].join.shift('/').chomp('/') # clean it of slashes
           changeset_node = params[:changeset] || "tip"
           changeset = repo[changeset_node]
           
           info = load_browser_info changeset, path
-          file_list, path, vf_cur, orig_path = info[:file_list], info[:path], info[:vf_cur], info[:orig_path]
+          browser_html = render_browser(repo, http_path, changeset_node, info)
           
-          haml :file_diff, :locals => {:root => http_path, :repo => repo,     :file_list => file_list,
-                                  :path => path,      :vf_cur => vf_cur, :orig_path => orig_path,
-                                  :changeset => changeset}
+          path, vf_cur, file_path = info[:path], info[:vf_cur], info[:file_path]
+          
+          haml :file, :locals => {:root => http_path, :repo => repo,
+                                  :path => path,      :vf_cur => vf_cur, :file_path => file_path,
+                                  :changeset => changeset, :browser_html => browser_html}
+        end
+
+        ##
+        # Shows the diff of a file with its most recent changeset, scoped a
+        # given changeset. No specifying diffs is really supported just yet. 
+        # The file and changeset should be specified.
+        #
+        # - root/diff/tip/silly.rb
+        # -- Shows the diff of silly.rb at tip and README at its most recent state
+        # - root/diff/tip/
+        # -- Shows the diff of a readme file at the root of the directory, or nothing at all,
+        #    from the tip revision to its most recent state.
+        get "#{http_path}/diff/:changeset/*" do
+          path = params[:splat].join.shift('/').chomp('/') # clean it of slashes
+          changeset_node = params[:changeset] || "tip"
+          changeset = repo[changeset_node]
+          
+          info = load_browser_info changeset, path
+          browser_html = render_browser(repo, http_path, changeset_node, info)
+          
+          path, vf_cur, file_path = info[:path], info[:vf_cur], info[:file_path]
+          
+          haml :file_diff, :locals => {:root => http_path, :repo => repo,
+                                       :path => path,      :vf_cur => vf_cur, :file_path => file_path,
+                                       :changeset => changeset, :browser_html => browser_html}
         end
         
+        ##
+        # Displays the raw data for the requested file at the given changeset. Does not
+        # do any formatting. A file should always be provided. There is no default file.
+        #
+        # - /root/raw/abcdef1234/README.md
+        # -- displays the raw markdown file README.md as it existed at revision abcdef1234
         get "#{http_path}/raw/:changeset/*" do
           changeset_node = params[:changeset]
           path = params[:splat].join.shift("/").chomp("/")
@@ -113,6 +167,11 @@ module Amp
           vf_cur.data
         end
         
+        ##
+        # Retrieves the stylesheet for the code browser and web display
+        # Uses sass.
+        #
+        # - /stylesheet.css
         get '/stylesheet.css' do
           content_type 'text/css', :charset => 'utf-8'
           sass :stylesheet
@@ -123,62 +182,93 @@ module Amp
       helpers do
         
         ##
-        # @TODO this needs SERIOUS explanation and work
+        # Prepares the file listing for the file browser when looking
+        # at source, possibly scoped by a changeset. Has to be able
+        # to tell directories apart from files.
         def load_browser_info(changeset, path)
           
           mapping = changeset.manifest_entry
-          orig_path = nil
-          # if the path is a file (because we only keep track of files)
+          file_path = nil
+          # if the path is a file (because we only keep track of files) look it
+          # up directly
           if mapping[path]
             # give it the appropriate information (the versioned file)
-            vf_cur    = changeset.get_file(path)
-            file_list = [] # and return an empty file_list
-            orig_path = path
+            file_path = path
             path = Dir.dirname path
+          elsif mapping.keys.grep(/^#{path}readme/i).any?
+            # If we're not asking for a file, check if there's a readme.
+            file_path = mapping.keys.grep(/^#{path}readme/i).first
           end
+          # path is now the directory to view. force trailing slash.
+          path << '/' unless path.empty?
           
-          files = mapping.files.select {|f| Dir.dirname(f) == path }.map {|f| f[path.size..-1].shift '/' }
-          dirs  = mapping.files.select {|f| FileHelpers.directories_to(f, true).index(path) && Dir.dirname(f) != path } # only go one deep
-          dirs.map! do |d|
-            idx = FileHelpers.directories_to(d, true).index path
-            FileHelpers.directories_to(d, true)[idx - 1][path.size..-1].shift '/'
-          end.uniq!
+          vf_cur = changeset.get_file(file_path) if file_path
+          all_files = mapping.files.select {|f| f.start_with?(path)}.map {|x| x[path.size..-1].shift("/")}
+          # files have no slash, directories do
+          dirs, files = all_files.partition {|f| f.include?("/")}
+          # get only the first level of subdirs
+          dirs.map! {|dir| dir[0...dir.index("/")]}.uniq!
           
-          path = path.empty? ? '' : path + '/'
-          
+          # prepare file list for the browser
           file_list = files.map do |name|
-            {:link => path + name ,
-             :type => :file,
-             :name => name }
+            {:link => path + name, :type => :file, :name => name }
           end
-          
           file_list += dirs.map do |name|
-            {:link => path + name,
-             :type => :directory ,
-             :name => name       }
+            {:link => path + name, :type => :directory , :name => name }
           end
-          
           file_list.sort! {|h1, h2| h1[:name] <=> h2[:name] } # alphabetically sorted
-          vf_cur ||= if mapping[/#{path}readme/i].any? # map[//] returns a hash
-                       change_id = params[:changeset] || "tip"
-                       readme    = mapping[/#{path}readme/i].keys.first
-                       orig_path = readme
-                       changeset.get_file readme
-                     else
-                       nil
-                     end
-          
-          path = path.chomp '/' # path will not have any trailing slashes
-          
-          {:path => path, :vf_cur => vf_cur, :file_list => file_list, :orig_path => orig_path}
+                    
+          {:path => path.chomp('/'), :vf_cur => vf_cur, :file_list => file_list, :file_path => file_path}
         end
         
-        def link(root, action, changeset_node, after_path, opts={})
-          after_path = "/#{after_path}" if after_path
+        ##
+        # Renders the file browser scoped for a repository, a path, a changeset node,
+        # and the info prepared by load_browser_info.
+        #
+        # @param [Repository] repo the repository we're dealing with
+        # @param [String] http_path the http_path we've assigned this repository to
+        # @param [String] changeset_node the node we're scoped by
+        # @param [Hash] info browser-related info provided by load_browser_info - consider opaque
+        # @return [String] the HTML marking up the browser
+        def render_browser(repo, http_path, changeset_node, info)
+          info.merge!({:root => http_path, :changeset_node => changeset_node, :repo => repo})
+          haml :_browser, :locals => info
+        end
+        
+        ##
+        # Links to a given user's page. This page provides information about that user's
+        # commit history and any particular extra information.
+        #
+        # @param [String] root the root of this repository's http path
+        # @param [String] user the name of the user to look up
+        # @param [Hash<String=>String>] opts the HTML attributes to attach to the tag
+        # @return [String] an HTML link to the user's info page
+        def link_to_user(root, user, opts={})
+          link(root, "users", user, nil, opts)
+        end
+        
+        ##
+        # Produces a generic link to an action on either a full changeset or
+        # a file, scoped by a given repository. If a file is provided, the
+        # request is also scoped by the changeset provided. Any additional
+        # options are treated as html attributes to include.
+        #
+        # @param [String] root the root path of the repository
+        # @param [Symbol] action the action to link to, such as :diff or :changeset
+        # @param [String] changeset_node the unique ID identifying the changeset
+        #   this action is scoped by
+        # @param [String] file (nil) the file for the query. Can be nil, in which
+        #   case the action operates on the entire repository (or the root)
+        # @param [Hash<String => String>] opts the options to turn into html attribute-value
+        #   pairs and inject into the link's markup
+        # @return [String] an HTML link to the given action on a given repository,
+        #   scoped by a changeset and a filepath.
+        def link(root, action, changeset_node, file = nil, opts={})
+          file = "/#{file}" if file
           changeset_node = changeset_node[0..11]
           text = opts.delete(:text) || changeset_node
           additional_opts = opts.map {|key, value| %{#{key}="#{value}"}}.join(" ")
-          %{<a href="#{root}/#{action}/#{changeset_node}#{after_path}" #{additional_opts}>
+          %{<a href="#{root}/#{action}/#{changeset_node}#{file}" #{additional_opts}>
               #{text}
             </a>}
         end

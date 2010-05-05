@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 require 'pp'
 require 'sinatra/base'
 require 'rack/contrib'
@@ -82,6 +98,13 @@ module Sinatra
     def command_writes?(cmd); !command_reads?(cmd); end
 
     ##
+    # Enables plain headers so that the mercurial client won't complain
+    # about this server.
+    def plain_headers
+      {"content-type" => "text/plain"}
+    end
+
+    ##
     # Command: lookup
     #
     # Looks up a node-id for a key - the key could be an integer (for a revision index),
@@ -94,6 +117,7 @@ module Sinatra
     # @return [String] a response to deliver to the client, in the format "#{success} #{node_id}",
     #   where success is 1 for a successful lookup and node_id is 0 for a failed lookup.
     def amp_get_lookup(amp_repo)
+      headers plain_headers
       begin
         rev = amp_repo.lookup(params["key"]).hexlify
         success = 1
@@ -115,18 +139,19 @@ module Sinatra
     # @return [String] a response to deliver to the client, with each head returned as a full
     #   node-id, in hex form (so 40 bytes total), each separated by a single space.
     def amp_get_heads(amp_repo)
-      repo = amp_repo
-      repo.heads.map {|x| x.hexlify}.join(" ")
+      headers plain_headers
+      amp_repo.heads.map {|x| x.hexlify}.join(" ") << "\n"
     end
     
     def amp_get_branches(amp_repo)
+      headers plain_headers
       nodes = []
       if params["nodes"]
         nodes = params["nodes"].split(" ").map {|x| x.unhexlify}
       end
-      amp_repo.branches(nodes).map do |branches|
+      amp_repo.branches(*nodes).map do |branches|
         branches.map {|branch| branch.hexlify}.join(" ")
-      end.join "\n"
+      end.join("\n") << "\n"
     end
     
     ##
@@ -142,10 +167,11 @@ module Sinatra
     #   it is returned in the format "capability=value1,value2,value3" instead of just 
     #   "capability". No spaces are allowed in the capability= fragment.
     def amp_get_capabilities(amp_repo)
+      headers plain_headers
       caps = ["lookup", "changegroupsubset"]
       # uncompressed for streaming?
       caps << "unbundle=#{Amp::Mercurial::RevlogSupport::ChangeGroup::FORMAT_PRIORITIES.join(',')}"
-      caps.join ' '
+      caps.join(' ') << "\n"
     end
     
     ##
@@ -169,15 +195,16 @@ module Sinatra
     #      abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcde
     #   
     def amp_get_between(amp_repo)
+      headers plain_headers
+
       pairs = []
-      
       if params["pairs"]
         pairs = params["pairs"].split(" ").map {|p| p.split("-").map {|i| i.unhexlify } }
       end
       
       amp_repo.between(pairs).map do |nodes|
         nodes.map {|i| i.hexlify }.join " "
-      end.join "\n"
+      end.join("\n") << "\n"
     end
     
     ##
@@ -214,35 +241,19 @@ module Sinatra
         # Save the writer for safe-keeping
         @writer = block
         
-        # This creates a gzip-writer. By passing in +self+ as the parameter, when we
-        # write to the gzip-writer, it will then call #write on +self+ with the
-        # gzipped data. This allows us to handle the compressed data immediately
-        # instead of funneling it to a buffer or something useless like that.
-        gzip  = ::Zlib::GzipWriter.new self
-        gzip.mtime = Time.now
+        # Get ourselves a deflating stream...
+        deflater  = ::Zlib::Deflate.new
         
         # Gets the IO-like object that we need to gzip
         f = @result_generator.call
         
         begin
           chunk = f.read 4.kb
-          gzip << chunk if chunk && chunk.any?
+          block.call(deflater.deflate(chunk)) if chunk && chunk.any?
         end while chunk && chunk.any?
         
-        # Finish it off
-        gzip.close
-        
-        # We're done!
-        @writer = nil
-      end
-
-      ##
-      # Called by GzipWriter so we can immediately handle our gzipped data.
-      # We write it to the client using the @writer given to us in #each.
-      #
-      # @param [String] data the data to write to the client. Gzipped.
-      def write(data)
-        @writer.call data
+        # finish the job
+        block.call(deflater.deflate(nil, Zlib::FINISH))
       end
     end
     
@@ -263,6 +274,7 @@ module Sinatra
       
       headers.delete 'Content-Length'
       headers["Content-Encoding"] = "gzip"
+      headers["content-type"] = "application/hg-changegroup"
       headers
     end
     
@@ -295,7 +307,6 @@ module Sinatra
       end
       
       throw :halt, [200, headers, result]
-
     end
     
     ##
@@ -385,7 +396,12 @@ module Sinatra
         end
         
         stream = Amp::Mercurial::RevlogSupport::ChangeGroup.unbundle(header, fp)
+        result = DelayedGzipper.new do
+          stream.read
+        end
         
+        headers = gzipped_response
+        throw :halt, [200, headers, result]
       end
       
     end

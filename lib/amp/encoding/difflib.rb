@@ -1,3 +1,21 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+#
+# Special Licensing Note: 
+# This code is a derivative work from Python's standard library, namely, the
+# difflib module. The PSF allows us to license this code as we like.
+
 module Amp
   ##
   # = Difflib

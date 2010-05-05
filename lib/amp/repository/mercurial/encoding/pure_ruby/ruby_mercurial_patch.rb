@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 module Amp
   module Diffs
     module Mercurial
@@ -22,7 +38,7 @@ module Amp
         def self.apply_patches(source, patches)
           return source if patches.empty?
           patch_lens = patches.map {|patch| patch.size}
-          pl = patch_lens.inject(0) {|a, b| a += b} # sum
+          pl = patch_lens.inject {|a, b| a + b} # sum
           bl = source.size + pl
           tl = bl + bl + pl
           b1, b2 = 0, bl

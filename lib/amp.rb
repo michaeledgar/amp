@@ -1,3 +1,17 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+
 module Amp; end
 # The root directory of this application
 Amp::CODE_ROOT = File.expand_path File.dirname(__FILE__)
@@ -36,6 +50,7 @@ module Amp
   autoload :Match,                     "amp/support/match.rb"
   autoload :AmpConfig,                 "amp/support/amp_config.rb"
   autoload :UI,                        "amp/support/amp_ui.rb"
+  autoload :Statistics,                "amp/support/statistics.rb"
   
   module Git
     autoload :Changeset,                 "amp/repository/git/repo_format/changeset.rb"
@@ -196,6 +211,7 @@ require "amp/dependencies/python_config.rb"
 require "amp/dependencies/amp_support.rb"     
 require "amp/support/ruby_19_compatibility.rb"
 require "amp/support/support.rb"              
+require "amp/dependencies/highline_extensions.rb"
 require "amp/templates/template.rb"
 require "amp/repository/mercurial/repository.rb" # we're just loading in
 require 'amp/repository/git/repository.rb'       # all of the base repositories

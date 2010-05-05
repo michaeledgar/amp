@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 require 'fileutils'
 module Amp
   module Repositories
@@ -715,7 +731,7 @@ module Amp
         # This is much easier than the previous function as we can assume that
         # the recipient has any changegnode we aren't sending them.
         #
-        # @param [[String]] common the set of common nodes between remote and self
+        # @param [Array<String>] common the set of common nodes between remote and self
         # @param [Amp::Repository] source
         def get_changegroup(common, source)
           # Call the hooks
@@ -723,7 +739,6 @@ module Amp
           
           nodes = changelog.find_missing common
           revset = Hash.with_keys(nodes.map {|n| changelog.rev(n)})
-    
           changegroup_info nodes, source
           
           identity = proc {|x| x }
@@ -786,12 +801,10 @@ module Amp
             # get the changelog's changegroups
             changelog.group(nodes, identity, coll) {|chunk| result << chunk }
             
-    
             node_iter = gen_node_list[manifest]
             look      = lookup_revlink_func[manifest]
             # get the manifest's changegroups
             manifest.group(node_iter, look) {|chunk| result << chunk }
-                     
             changed_files.keys.sort.each do |fname|
               file_revlog = file fname
               # warning: useless comment
@@ -1590,7 +1603,6 @@ module Amp
         def branches(*nodes)
           branches = []
           nodes = [changelog.tip] if nodes.empty?
-          
           # for each node, find its first parent (adam and eve, basically)
           # -- that's our branch!
           nodes.each do |node|

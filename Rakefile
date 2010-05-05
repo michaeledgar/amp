@@ -1,4 +1,17 @@
 # -*- ruby -*-
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
 
 require 'rake'
 require 'rake/tasklib'
@@ -84,21 +97,6 @@ task :prepare do
   `tar -C test/store_tests/ -xzf test/store_tests/store.tar.gz`
   `tar -C test/localrepo_tests/ -xzf test/localrepo_tests/testrepo.tar.gz`
 end
-
-# liberally modified from Hoe's
-# desc 'Test the amp AWESOMENESS.'
-# task :test do
-#   framework = "test/unit"
-#   test_globs = ['test/**/test_*.rb']
-#   ruby_flags = ENV['RUBY_FLAGS'] || "-w -I#{%w(lib ext bin test).join(File::PATH_SEPARATOR)}" +
-#     (ENV['RUBY_DEBUG'] ? " #{ENV['RUBY_DEBUG']}" : '')
-#   tests = [ framework] +
-#     test_globs.map { |g| Dir.glob(g) }.flatten
-#   tests.map! {|f| %(require "#{f}")}
-#   cmd = "#{ruby_flags} -e '$amp_testing = true; #{tests.join("; ")}' "
-#   
-#   ruby cmd
-# end
 
 desc "Compile Site"
 task :"build-website" do

@@ -1,6 +1,0 @@
-- vf_cur = changeset.get_file file
-- vf_parent = vf_cur.parents.first
-%li
-  %h2= vf_cur.path
-  %ul.diff
-    = parse_diff(vf_cur.unified_diff_with(vf_parent))

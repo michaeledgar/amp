@@ -1,17 +1,71 @@
-!lightblue = #ddddff
-!medblue   = #bbbbff
-!darkblue  = #aaaaff
+/*****************************************************************
+ *                 Licensing Information                         *
+ *                                                               *
+ * The following code is licensed, as standalone code, under     *
+ * the Ruby License, unless otherwise directed within the code.  *
+ *                                                               *
+ * For information on the license of this code when distributed  *
+ * with and used in conjunction with the other modules in the    *
+ * Amp project, please see the root-level LICENSE file.          *
+ *                                                               *
+ * © Michael J. Edgar and Ari Brown, 2009-2010                   *
+ *                                                               *
+ *****************************************************************/
+
+!button = #ddddff
+!button_hover   = !button - #220
+!button_border  = !button - #550
+
+!diff_add  = #aaffaa
+!diff_del  = #ffaaaa
+!diff_ctx  = #aaaaaa
+
+!highlight = #222
+!navbarbg  = #ddd
+!navbar_highlight = !navbarbg + !highlight
+
+!link_color = #33d
+
+!list_bg = #ddffe3
+!list_highlight = !list_bg - !highlight
+
+=has-list-rows
+  tr
+    :background-color = !list_bg
+    :border-bottom solid 1px #555
+    :padding 3px 0
+    :width 100%
+    :float left
+    &:hover, &.selected
+      :background-color = !list_highlight
+
+=simple-list
+  :list-style-type none
+  :margin 0
+
+=cool-left-border
+  :border-left solid 2px #444
+
 =pushleft
   :position relative
   :float left
   :clear left
+  
+=hoverinset(!padding, !hoverbg, !hoverborder)
+  :border none
+  :padding = !padding
+  &:hover
+    :background-color = !hoverbg
+    :border = "solid" 1px !hoverborder
+    :padding = !padding - 1px
+  
 body
   :font-family "Lucida Grande"
   :line-height 1.1em
   :font-size 80%
   a
     :text-decoration none
-    :color #3333dd
+    :color = !link_color
     &:hover
       :text-decoration underline
 #main_container
@@ -19,43 +73,36 @@ body
 
 h2.header
   +pushleft
+  
+/** Navbar Styling **/
 #navbar
   :position absolute
   :top 10px
   :left 10px
-  :background-color #ddd
   :width 140px
+  :background-color = !navbarbg
   ul
     :padding 0
-    :text-align left
     :font-size 12px
-    :font-family "Lucida Grande"
     li
       :padding 6px
-      :background-color #ddd
-      :border none
+      :background-color = !navbarbg
+      &:hover, &.selected
+        +cool-left-border
+        :background-color = !navbar_highlight
+        :padding-left 4px
       a
         :text-decoration none
         :color black
-    li:hover, li.selected
-      :background-color #f8f8f8
-      :border-left solid 2px #444
-      :padding-left 4px
+
 #navbar ul, #navbar li
-  :list-style-type none
-  :margin 0
+  +simple-list
+
 #main
   :padding-left 160px
 .shortlog
   +pushleft
-  tr
-    :background-color #DDFFE3
-    :border-bottom solid 1px #555
-    :padding 3px 0
-    :width 100%
-    :float left
-    &:hover, &.selected
-      :background-color #bbddc3
+  +has-list-rows
   .index
     :width 35px
   .user
@@ -68,84 +115,69 @@ h2.header
       :text-decoration underline
 .pagebutton
   +pushleft
-  :background-color = !lightblue
-  :padding 3px
+  +hoverinset(3px, !button_hover, !button_border)
+  :background-color = !button
   :margin 2px
   :text-decoration none
   :color black
-  &:hover
-    :background-color = !medblue
-    :padding 2px
-    :border solid 1px = !darkblue
+  :border none
+    
 .browser-list
   +pushleft
-  tr
-    :background-color #DDFFE3
-    :border-bottom solid 1px #555
-    :padding 3px 0
-    :width 100%
-    :float left
-    &:hover, &.selected
-      :background-color #bbddc3
+  +has-list-rows
   .filename
     :width 200px
     a
       :color = #3333cc
       :text-decoration none
   .date
-    :width 25%
-  .message
-    :width 50%
+    :width 150px
+
 .browser-file
   +pushleft
   :width 100%
   .source-holder
-    :position relative
-    :float left
-    :clear left
+    +pushleft
     :background-color #eee
     :border solid 1px #ddd
     :width 90%
-    :padding 15px
-    :overflow-x auto
     pre
       +pushleft
-      :font-size 14px
-      :line-height 1.1em
+      :font-size 12px
+      :line-height 1.2em
       :width 100%
       :overflow-x auto
+      :overflow-y hidden
+
 ul.versions
   +pushleft
+  +simple-list
   :width 800px
-  :list-style-type none
   li
+    +hoverinset(3px, !button, !button_border)
+    +simple-list
     :position relative
     :float left
     :clear none
     :width 120px
     :text-align center
-    :padding-top 2px
     :margin 1px
-    :height 20px
+    :height 16px
     :font-size 12px
-    :list-style-type none
-    :background-color = !medblue
+    :background-color = !button_hover
     a
       :color black
       :text-decoration none
-    &:hover
-      :background-color = !lightblue
-      :border = "solid" 1px !darkblue
-      :width 118px
-      :height 19px
-      :padding-top 1px
+      
+/* Styles for the 'changeset description' page */
+
 .changeset-desc
   +pushleft
   blockquote
     +pushleft
-    :border-left solid 2px #444
+    +cool-left-border
     :margin 1em 0 1em 0
-    :padding 0px 0px 0px 8px
+    :padding-left 8px
   .two-column
     +pushleft
     td.label
@@ -154,22 +186,24 @@ ul.versions
     td.data
       :text-align left
       :color #222
+
+/* Diff-related styling */
+
 .diff-list
   +pushleft
   :width 100%
   &>li
-    :list-style-type none
+    +simple-list
 .diff
   :width 90%
   :overflow-x auto
 .diff, .diff li, pre
-  :list-style-type none
-  :margin 0
+  +simple-list
   :padding 1px 0px
-  :size 12px
+  :font-size 12px
 .diff-add
-  :background-color #aaffaa
+  :background-color = !diff_add
 .diff-del
-  :background-color #ffaaaa
+  :background-color = !diff_del
 .diff-ctx
-  :background-color #aaaaaa
+  :background-color = !diff_ctx

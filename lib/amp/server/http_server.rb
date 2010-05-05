@@ -36,6 +36,12 @@ module Amp
     class HTTPAuthorizedServer < HTTPServer
       set :amp_storage_manner, :unset
       class << self
+        ##
+        # Sets how the server handles user lookups. Is it in memory? A database?
+        # This may later allow passing in a proc that handles authorization.
+        #
+        # @param [Symbol] manner the way to look up users. Can be :memory.
+        # @param [Hash] opts options for setting the storage system. Unused.
         def set_storage(manner, opts={})
           if amp_storage_manner != :unset
             raise RuntimeError.new("Can't redefine storage type.")
@@ -50,13 +56,20 @@ module Amp
           
           set :amp_storage_manner, manner.to_sym
         end
-      
-        def set_permission(style, *args)
+        
+        ##
+        # Sets a particular user or users' permissions. Can set users to be writers
+        # or readers.
+        #
+        # @param [Symbol] style the permission level to use. Can be :writer or :reader.
+        # @param [Array<User>] users all other arguments are treated as users to have
+        #   their permissions set/added.
+        def set_permission(style, *users)
           case style
           when :writer
-            set_writer *args
+            set_writer *users
           when :reader
-            set_reader *args
+            set_reader *users
           else
             raise ArgumentError.new("Unknown permission level: #{style.to_s.inspect}")
           end

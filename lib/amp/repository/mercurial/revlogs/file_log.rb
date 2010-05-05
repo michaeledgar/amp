@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 module Amp
   module Mercurial
     ##
@@ -147,19 +163,6 @@ module Amp
         else
           false
         end
-      end
-      
-      ##
-      # Yields a block for every revision, while being sure to follow copies.
-      def each(&block)
-        if @index[0].parent_one_rev == NULL_REV
-          meta_info = renamed?(@index[0].node_id)
-          if meta_info
-            copied_log = FileLog.new(@opener, meta_info.first)
-            copied_log.each(&block)
-          end
-        end
-        super(&block)
       end
       
       ##

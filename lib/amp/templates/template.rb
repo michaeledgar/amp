@@ -1,3 +1,17 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+
 module Amp
   module Support
     ##
@@ -105,7 +119,7 @@ module Amp
         case renderer.to_sym
         when :erb
           require 'erb'
-          locals_assigns = locals.map { |k,v| "#{k} = locals[:#{k}]" }
+          locals_assigns = locals.map { |k,v| "#{k} = locals[#{k.inspect}]" }
           eval locals_assigns.join("\n"), render_binding
           
           erb = ERB.new(text, 0, "-")
@@ -133,7 +147,9 @@ module Amp
       attr_accessor :file
       
       ##
-      # Initializes a new FileTemplate with different 
+      # Initializes a new FileTemplate with a file used as input.
+      #
+      # The renderer is inferred from the file's extension.
       def initialize(type, name, file, renderer = nil)
         if renderer.nil?
           renderer = KNOWN_EXTENSIONS.select {|ext| file.end_with? ext}.first
@@ -145,6 +161,17 @@ module Amp
       
       def save!
         File.open(file, "w") { |out| out.write text }
+      end
+    end
+    
+    ##
+    # = RawTemplate
+    # Class for specifying a tiny bit of text to be interpreted as ERb code, and
+    # using that as a template.
+    class RawERbTemplate < Template
+      def initialize(text)
+        text = "<%= #{text} %>" unless text.include?("<%")
+        super(:raw, "raw#{(rand * 65535).to_i}", :erb, text)
       end
     end
     

@@ -1,3 +1,17 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+
 # Stolen from http://github.com/integrity/sinatra-authorization/blob/0761b5cc58597227364a9c8f3e91fcfc43154555/lib/sinatra/authorization.rb
 # thank you!
 

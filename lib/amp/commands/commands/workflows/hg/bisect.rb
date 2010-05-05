@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 command :bisect do |c|
   c.workflow :hg
   
@@ -195,46 +211,6 @@ EOS
     end
     print ']'
   end
-  
-  # c.on_run do |opts, args|
-  #   repo = opts[:repository]
-  #   
-  #   # Hey! That's a really nice shirt. Where'd you get it?
-  #   last_good = 0
-  #   last_bad  = repo.size - 1
-  #   test_rev  = last_bad
-  #   is_good  = {} # {revision :: integer => good? :: boolean}
-  #   a = [true] * 1#((repo.size / 2) + 3)
-  #   a.concat([false] * (repo.size - a.size))
-  #   p a
-  #   
-  #   run_sample = proc do |test_rev|
-  #     a[test_rev]
-  #   end
-  #   
-  #   until (last_good - last_bad).abs < 1
-  #     #repo.revert [], :to => test_rev
-  #     p [last_good, last_bad]
-  #     
-  #     # if the code sample works
-  #     if run_sample[test_rev]
-  #       is_good[test_rev] = true # then it's a success and mark it as such
-  #       break if test_rev == last_good
-  #       last_good = test_rev
-  #     else
-  #       is_good[test_rev] = false
-  #       last_bad = test_rev
-  #     end
-  #     
-  #     test_rev = (last_good + last_bad) / 2
-  #   end
-  #   
-  #   if is_good[last_bad]
-  #     Amp::UI.say "The selected range of history passes the test. No bug found."
-  #   else
-  #     Amp::UI.say "Revision #{last_bad} has the bug!"
-  #   end
-  # end
 end
 
 # Now for some helpers!

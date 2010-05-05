@@ -1,3 +1,4 @@
+require 'amp/extensions/stats'
 # need { 'lib/amp/extensions/ditz' }
 # need { 'lib/amp/extensions/lighthouse' }
 
@@ -19,23 +20,6 @@ end
 template :silly, <<-EOF
 <%= change_node.hexlify %> <%= revision %>
 EOF
-
-command "stats" do |c|
-  c.workflow :hg
-  c.desc "Prints how many commits each user has contributed"
-  c.on_run do |opts, args|
-    repo = opts[:repository]
-    users = Hash.new {|h, k| h[k] = 0}
-    repo.each do |changeset|
-      users[changeset.user.split("@").first] += 1 #
-    end
-    users.to_a.sort {|a,b| b[1] <=> a[1]}.each do |u,c|
-      puts "#{u}: #{c}"
-    end
-  end
-end
-
-# bisect_command
 
 namespace :docs do
   

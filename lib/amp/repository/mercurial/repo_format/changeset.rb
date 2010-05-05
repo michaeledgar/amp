@@ -1,3 +1,19 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
+
 module Amp
   module Mercurial
     
@@ -51,40 +67,45 @@ module Amp
       ##
       #
       def to_templated_s(opts={})
-        
-        change_node = node
-        revision    = self.revision
-        log         = @repo.changelog
-        changes     = log.read change_node
-        username    = changes.user
-        date        = Time.at changes.time.first
-        files       = changes.files
-        description = changes.description
-        extra       = changes.extra
-        branch      = extra["branch"]
-        cs_tags     = tags
-        type        = opts[:template_type] || 'log'
-        
-        added   = opts[:added] || []
-        removed = opts[:removed] || []
-        updated = opts[:updated] || []
-        config  = opts
-        
+        # Extract local variables for the template. Should prolly do this
+        # in a nicer way.... bah
+        log = @repo.changelog
         parents = useful_parents log, revision
-        parents.map! {|p| [p, log.node(p)[0..5].hexlify] }
+        changes = log.read node
         
-        p1 = useful_parents(log, revision)[0]
-        p2 = useful_parents(log, revision)[1]
+        locals = {:change_node => node,
+                  :revision    => self.revision,
+                  :username    => changes.user,
+                  :date        => Time.at(changes.time.first),
+                  :files       => changes.files,
+                  :description => changes.description,
+                  :extra       => changes.extra,
+                  :branch      => changes.extra["branch"],
+                  :cs_tags     => tags,
+        
+                  :added   => opts[:added]   || [],
+                  :removed => opts[:removed] || [],
+                  :updated => opts[:updated] || [],
+                  :config  => opts,
+        
+                  :p1      => parents.first,
+                  :p2      => parents[1],
+                  :parents => parents.map {|p| [p, log.node(p).short_hex] }
+                }
         
         return "" if opts[:no_output]
         
-        config = opts
-        
-        template = opts[:template]
-        template = "default-#{type}" if template.nil? || template.to_s == "default"
-        
-        template = Support::Template['mercurial', template]
-        template.render({}, binding)
+        type = opts[:template_type] || 'log'
+        if opts[:"template-raw"]
+          template = Support::RawERbTemplate.new(opts[:"template-raw"])
+        elsif opts[:template].is_a?(Support::Template)
+          template = opts[:template]
+        else
+          template = opts[:template]
+          template = "default-#{type}" if template.nil? || template.to_s == "default"
+          template = Support::Template['mercurial', template]
+        end
+        template.render(locals, binding)
       end
       
       def useful_parents(log, revision)

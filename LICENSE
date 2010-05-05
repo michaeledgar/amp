@@ -1,10 +1,22 @@
+Amp is in a bit of limbo as it directs where its license will go. We want the code to fall under
+the Ruby license.  However, we didn't think about that before we looked at the Mercurial source code.
+Mercurial (as noted below) is GPLv2+, and thus any code we derived from its codebase is also GPLv2. Any
+code which then interacts with, links against, calls, etc. that derived code is also considered GPLv2.
+
+So: each file is marked with a *standalone license*. If that code were to be extracted and treated as
+one unit, it would be under the license it is marked under. Almost all files will be marked as the
+Ruby license, but some quite substantial portions will be marked as a derived work and is thus GPLv2.
+
+Our goal is to find developers to clean-room those GPLv2 parts and re-license them as the Ruby license.
+Until then, Amp as a project and distributed as one unit is licensed GPLv2.
+
 This project includes a large amount of source code from a number of different resources.
 They are listed, in no particular order, along with the license ascribed to the code
 associated with it.
 
 1. Mercurial (GPLv2)
 	A large number of algorithms in Amp are inspired by, or in some cases, direct translations,
-	of code in the Mercurial source. This makes this our code a derivative work, and thus GPLv2.
+	of code in the Mercurial source. This makes this that code a derivative work, and thus GPLv2.
 2. BZ2 (Ruby License) - Guy Decoux 
 	This code has been copied verbatim into our repository.
 	
@@ -38,3 +50,19 @@ associated with it.
 	This code has been copied verbatim into our repository.
 	
 	"This program is free software. It may be redistributed and/or modified under the terms of the GPL version 2 (or later) or Ruby’s licence. " -- http://raa.ruby-lang.org/project/minitar/
+	
+6. Difflib - this library from Python's standard library has been directly ported to Ruby.
+   It falls under the PSF license, which allows redistribution under a license of our choice. We
+   choose to redistribute it under the Ruby License.
+
+7. HighLine - this library provides some cross-platform terminal methods. The license is included below.
+
+"= License Terms
+
+Distributed under the user's choice of the {GPL Version 2}[http://www.gnu.org/licenses/old-licenses/gpl-2.0.html] (see COPYING for details) or the
+{Ruby software license}[http://www.ruby-lang.org/en/LICENSE.txt] by
+James Edward Gray II and Greg Brown.
+
+Please email James[mailto:james@grayproductions.net] with any questions."
+
+    We choose to use HighLine's code under the Ruby License.

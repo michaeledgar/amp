@@ -1,3 +1,17 @@
+/##################################################################
+/#                  Licensing Information                         #
+/#                                                                #
+/#  The following code is licensed, as standalone code, under     #
+/#  the Ruby License, unless otherwise directed within the code.  #
+/#                                                                #
+/#  For information on the license of this code when distributed  #
+/#  with and used in conjunction with the other modules in the    #
+/#  Amp project, please see the root-level LICENSE file.          #
+/#                                                                #
+/#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+/#                                                                #
+/##################################################################
+
 !!!
 %html
   %head
@@ -7,26 +21,22 @@
     #main_container
       = haml :_navbar, :locals => {:root => root, :selected => "commits"}
       #main
-        - page = 1 if page == 0
-        - start = (repo.size - 1) - ((page - 1) * 20)
         %br/
         - if page > 1
-          %a.pagebutton{:href => "/commits/#{page-1}/"} Previous Page
-        - if start > 21
-          %a.pagebutton{:href => "/commits/#{page+1}/"} Next Page
+          %a.pagebutton{:href => "#{pageroot}/#{page-1}/"} Previous Page
+        %a.pagebutton{:href => "#{pageroot}/#{page+1}/"} Next Page
         %table.shortlog
           %tr
             %th.index Rev. #
             %th.date Date
             %th.user User
             %th.description Description
-          - (start).downto(start - 21) do |val|
-            - cs = repo[val]
+          - commits.each do |cs|
             %tr
-              %td.index= val
+              %td.index= cs.rev
               %td.date= rel_date Time.at(cs.date.first)
-              - user = cs.user =~ /\@/ ? cs.user.split(/@/).first : cs.user
-              %td.user= user
+              - user = cs.user =~ /\@/ ? cs.user.split(/\@/).first : cs.user
+              %td.user= link_to_user(root, cs.user, :text => user)
               %td.description
                 = link_to_changeset root, cs.node_id.hexlify, :text => cs.description
       

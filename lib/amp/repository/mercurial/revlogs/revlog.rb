@@ -1,3 +1,18 @@
+#######################################################################
+#                  Licensing Information                              #
+#                                                                     #
+#  The following code is a derivative work of the code from the       #
+#  Mercurial project, which is licensed GPLv2. This code therefore    #
+#  is also licensed under the terms of the GNU Public License,        #
+#  verison 2.                                                         #
+#                                                                     #
+#  For information on the license of this code when distributed       #
+#  with and used in conjunction with the other modules in the         #
+#  Amp project, please see the root-level LICENSE file.               #
+#                                                                     #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                        #
+#                                                                     #
+#######################################################################
 require 'set'
 
 module Amp
@@ -68,7 +83,7 @@ module Amp
         if idx.is_a? String
           return @index[@index.node_map[idx]]
         elsif idx.is_a? Array
-          idx
+          IndexEntry.new(*idx)
         else
           return @index[idx]
         end
@@ -809,7 +824,6 @@ module Amp
             data = decompress_revision nb
             meta += Diffs::Mercurial::MercurialDiff.trivial_diff_header(d.size)
           else
-            
             data = revision_diff(a, b)
           end
           

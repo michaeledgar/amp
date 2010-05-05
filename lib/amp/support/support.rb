@@ -1,3 +1,17 @@
+##################################################################
+#                  Licensing Information                         #
+#                                                                #
+#  The following code is licensed, as standalone code, under     #
+#  the Ruby License, unless otherwise directed within the code.  #
+#                                                                #
+#  For information on the license of this code when distributed  #
+#  with and used in conjunction with the other modules in the    #
+#  Amp project, please see the root-level LICENSE file.          #
+#                                                                #
+#  © Michael J. Edgar and Ari Brown, 2009-2010                   #
+#                                                                #
+##################################################################
+
 require 'digest'
 
 if RUBY_VERSION < "1.9" || RUBY_VERSION >= "1.9.2"
@@ -895,10 +909,10 @@ module Net
       # based on http://segment7.net/projects/ruby/snippets/digest_auth.rb
       @@nonce_count += 1
 
-      response['www-authenticate'] =~ /^(\w+) (.*)/
+      match = response['www-authenticate'].scan(/^(\w+) (.*)/).first
 
       params = {}
-      $2.gsub(/(\w+)="(.*?)"/) { params[$1] = $2 }
+      match[1].scan(/(\w+)="(.*?)"/) {|key, val| params[key] = val }
 
       a_1 = "#{user}:#{params['realm']}:#{password}"
       a_2 = "#{@method}:#{@path}"
@@ -933,6 +947,9 @@ module Amp
     SYSTEM = {}
     UMASK = File.umask
     
+    ###                                                                             ###
+    # The code below is GPLv2 because it is ported directly from Mercurial's source.  #
+    ###                                                                             ###
     @@rc_path = nil
     # Returns all paths to hgrc files on the system.
     def self.rc_path
@@ -1054,6 +1071,12 @@ module Amp
       path += rc_files_for_path "/etc/mercurial"
       path
     end
+    
+    ###                                                                             ###
+    # The code above is GPLv2 because it is ported directly from Mercurial's source.  #
+    # The code below this line is distributed under the Ruby license, unless          #
+    # otherwise specified.                                                            #
+    ###                                                                             ###
     
     # Figures up the system is running on a little or big endian processor
     # architecture, and upates the SYSTEM[] hash in the Support module.
