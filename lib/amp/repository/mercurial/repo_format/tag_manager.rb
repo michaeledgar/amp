@@ -342,7 +342,7 @@ module Amp
             b_node, b_heads = global_tags[tag]
             # should we use the already-figured-out tag heads instead?
             if b_node != a_node && b_heads.include?(a_node) && 
-              (!a_heads.include?(bn) || b_heads.size > a_heads.size)
+              (!a_heads.include?(b_node) || b_heads.size > a_heads.size)
               a_node = b_node
             end
             # Union the two head lists into a_heads
