@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##################################################################
 #                  Licensing Information                         #
 #                                                                #
@@ -14,7 +15,7 @@
 
 require 'digest'
 
-if RUBY_VERSION < "1.9" || RUBY_VERSION >= "1.9.2"
+if RUBY_VERSION < "1.9"
   require 'ftools'
   
   autoload :Etc,      'etc'
