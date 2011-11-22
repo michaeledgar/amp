@@ -2,10 +2,10 @@
 $:.push File.expand_path("../lib", __FILE__)
 #require "ruby_speech/version"
 
-Gem::Specification.new do # |s|
-  name        = "amp"
-  developer "Michael Edgar", "adgar@carboni.ca"
-  developer "Ari Brown", "seydar@carboni.ca"
+Gem::Specification.new do |s|
+  s.name        = "amp"
+  s.developer "Michael Edgar", "adgar@carboni.ca"
+  s.developer "Ari Brown", "seydar@carboni.ca"
   self.url = "http://amp.carboni.ca/"
   self.spec_extras = {:extensions => ["ext/amp/mercurial_patch/extconf.rb",
                                  "ext/amp/priority_queue/extconf.rb",
